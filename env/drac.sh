@@ -30,21 +30,20 @@ if [[ "$CC_CLUSTER" == trillium ]]; then
 fi
 
 # Inside a job, use the compute node's own Slurm commands. sbatch --export=ALL (as our submit
-# scripts use) copies the login shell's PATH into the job, and on Nibi that PATH lists a versioned
-# Slurm folder (/opt/software/slurm/<version>/bin) before the generic /opt/software/slurm/bin. When
-# Slurm is upgraded on the compute nodes before the login nodes, srun from that folder cannot load
-# the node's plugins and every job fails in seconds ("Incompatible Slurm plugin ... auth_munge",
-# Nibi, Oct 15-17, 2026). Drop the versioned folders, keeping the generic one.
-if [[ -n "$SLURM_JOB_ID" && -d /opt/software/slurm/bin ]]; then
-    _drac_path=""
-    IFS=: read -r -a _drac_dirs <<< "$PATH"
-    for _d in "${_drac_dirs[@]}"; do
-        [[ "$_d" =~ ^/opt/software/slurm/[0-9][^/]*/bin/?$ ]] && continue
-        _drac_path="${_drac_path:+$_drac_path:}$_d"
-    done
-    [[ ":$_drac_path:" == *:/opt/software/slurm/bin:* ]] || _drac_path="/opt/software/slurm/bin:$_drac_path"
-    export PATH="$_drac_path"
-    unset _drac_path _drac_dirs _d
+# scripts use) copies the login shell's PATH and SLURM_HOME into the job. When a cluster upgrades
+# Slurm on the compute nodes before the login nodes, srun from the login node's Slurm cannot load
+# the node's plugins and every job fails in seconds ("Incompatible Slurm plugin ... auth_munge":
+# Nibi, Oct 15-17, 2026, login nodes on 25.11.7p, GPU nodes on 25.11.8/25.11.9). srun must come
+# from the same Slurm installation as the plugins it loads, so take the node's Slurm folder from
+# PluginDir in its slurm.conf, and put that folder's bin first. No versions are written here.
+if [[ -n "$SLURM_JOB_ID" && -r "${SLURM_CONF:-/etc/slurm/slurm.conf}" ]]; then
+    _drac_plugins="$(grep -m1 -i '^ *PluginDir *=' "${SLURM_CONF:-/etc/slurm/slurm.conf}" | cut -d= -f2 | cut -d: -f1 | tr -d ' ')"
+    _drac_slurm="${_drac_plugins%/lib/slurm}"; _drac_slurm="${_drac_slurm%/lib64/slurm}"
+    if [[ -n "$_drac_plugins" && "$_drac_slurm" != "$_drac_plugins" && -x "$_drac_slurm/bin/srun" ]]; then
+        export SLURM_HOME="$_drac_slurm"
+        export PATH="$_drac_slurm/bin:$PATH"
+    fi
+    unset _drac_plugins _drac_slurm
 fi
 
 # The system OpenMPI (the setup scripts use this, not the Alliance-specific $EBROOTOPENMPI).
