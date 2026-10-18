@@ -4,7 +4,8 @@ Every script in this repository, grouped by what you are trying to do: one line 
 where to run it, and one example. **The full usage is in each script's header:** print it with
 `-h` (for example `bash jobs/submit_gpu.sh -h`), wherever you are. The walkthroughs that use the
 scripts in order are [drac.md](drac.md) (Alliance clusters), [fluidsgpu.md](fluidsgpu.md)
-(pelee/rondeau) and [overview.md](overview.md) (how the pieces fit together).
+(pelee/rondeau) and [overview.md](overview.md) (how the pieces fit together). For your own
+simulation repository: [simulation_repos.md](simulation_repos.md).
 
 Where to run: **login** = an Alliance login node (internet, no GPUs); **job** = submitted with
 `sbatch` (or `jobs/submit_gpu.sh`), never run directly; **server** = pelee or rondeau; **any** =
@@ -48,7 +49,7 @@ What the tests cover: [tests/README.md](../tests/README.md).
 
 | Script | What it does | Where | Example |
 | --- | --- | --- | --- |
-| `jobs/submit_gpu.sh` | Submits any GPU job script on N GPUs with the right Slurm options for the cluster (`DRYRUN=1` prints the command) | login | `bash jobs/submit_gpu.sh jobs/checks.sh 8` |
+| `jobs/submit_gpu.sh` | Submits a GPU job script, this repository's or another's, on N GPUs with the right Slurm options for the cluster; options after `--` go to the script (`DRYRUN=1` prints the command) | login | `bash jobs/submit_gpu.sh jobs/checks.sh 8` |
 | `jobs/viz.sh` | A plotting job on a CPU node, with the `viz` environment, from your project folder | job | `sbatch $OCEAN_HPC_ROOT/jobs/viz.sh scripts/make_movies.jl` |
 | `tools/run_local.sh` | The same as a job, on pelee/rondeau (no Slurm): picks free GPUs, runs in the background, writes a log | server | `bash $OCEAN_HPC_ROOT/tools/run_local.sh -n 4 scripts/run.jl` |
 

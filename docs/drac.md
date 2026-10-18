@@ -264,7 +264,9 @@ precompiles. The `libmpi_path` it prints must be under `/cvmfs`. It writes
 `LocalPreferences.toml` in your project. That file holds paths for this machine, so add it to
 `.gitignore`, and commit `Project.toml` and `Manifest.toml`.
 
-Your job scripts then source the same environment and run Julia in your project:
+The full contract between this repository and a simulation repository (variables, scripts, where
+output goes, a job script to copy) is in [simulation_repos.md](simulation_repos.md). In short, your
+job scripts source the same environment and run Julia in your project:
 
 ```bash
 source /path/to/oceananigans-hpc/env/drac.sh

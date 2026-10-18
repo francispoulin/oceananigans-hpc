@@ -68,6 +68,17 @@ out="$(CC_CLUSTER=nibi DRYRUN=1 bash jobs/submit_poisson_1024.sh 2>&1 | grep p10
 [[ "$out" == *--nodes=1* && "$out" == *--mem=0* ]] && ok=1 || ok=0
 report "$ok" "submit_poisson_1024.sh: 8 GPUs on one Nibi node" "$out"
 
+# Another repository's job script: sbatch options before the script, script options after `--`,
+# logs in the folder submitted from (where jobs can write; on Trillium $OCEAN_JOB_DIR/logs)
+ext="$(mktemp -d)"; mkdir -p "$ext/jobs"; printf '#!/bin/bash\n' > "$ext/jobs/run.sh"
+out="$(cd "$ext" && env -u OCEAN_JOB_DIR CC_CLUSTER=nibi DRYRUN=1 bash "$ROOT/jobs/submit_gpu.sh" jobs/run.sh 4 --time=6:00:00 -- --config=x --stop_days=3 2>&1)"
+[[ "$out" == *"--output=$ext/logs/%x_%j.out --time=6:00:00 jobs/run.sh --config=x --stop_days=3" && ! -d "$ext/logs" ]] && ok=1 || ok=0
+report "$ok" "submit_gpu.sh: another repository's script, options after --, logs next to it" "$out"
+out="$(cd "$ext" && CC_CLUSTER=trillium DRYRUN=1 bash "$ROOT/jobs/submit_gpu.sh" jobs/run.sh 4 -- --config=x 2>&1)"
+[[ "$out" == *"--output=$OCEAN_JOB_DIR/logs/%x_%j.out jobs/run.sh --config=x" ]] && ok=1 || ok=0
+report "$ok" "submit_gpu.sh on trillium: logs in \$OCEAN_JOB_DIR/logs" "$out"
+rm -rf "$ext"
+
 # tools/run_tests.sh: the platform-test job, Slurm options from jobs/gpu_request.sh on every cluster
 rt() {   # cluster gpus must-contain...
     local cluster="$1" g="$2"; shift 2

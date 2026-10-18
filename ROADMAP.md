@@ -50,18 +50,23 @@ Versions: see [CONTRIBUTING.md](CONTRIBUTING.md#versions-and-releases).
 
 ## Phase 3: serve the simulation repositories (platform side only)
 
-- [ ] Contract for a simulation repository: its own `Project.toml` without Makie; plotting in `viz/`
-- [ ] `OCEAN_RESULTS_ROOT`: a standard place for simulation output on each machine, if the simulation
-      repositories want one (BalancedFlows has its own `results_root` setting; moved from Phase 2)
-- [ ] Slurm job template that sources `env/ocean_setup.sh` (with the Trillium variant);
-      `tools/run_local.sh` documented for pelee/rondeau
+- [x] Contract for a simulation repository ([docs/simulation_repos.md](docs/simulation_repos.md)):
+      its own `Project.toml` without Makie; plotting in `viz/`; what it can rely on
+- [x] `OCEAN_RESULTS_ROOT` set by the environment: `$SCRATCH/results` (Alliance),
+      `/mnt/autofs/bow.math/scratch/$USER/results` (pelee/rondeau, shared); repositories write under
+      `$OCEAN_RESULTS_ROOT/<repository>/`
+- [x] A job script for simulation repositories, submitted with `jobs/submit_gpu.sh` (which now takes
+      other repositories' scripts, and script options after `--`); `tools/run_local.sh` on pelee/rondeau
 - [x] Platform tests that simulation repositories rely on (their own regression tests live in
       those repositories)
-- [ ] Nonhydrostatic benchmark repeated with real simulation configurations
-- [ ] Simulation repositories use `OCEAN_HPC_ROOT`; then drop `OCEANANIGANS_DRAC_ROOT` (v0.3.0)
+- [ ] BalancedFlows uses the contract: `OCEAN_HPC_ROOT`, `submit_gpu.sh` for multi-GPU runs on the
+      Alliance, `$OCEAN_RESULTS_ROOT/BalancedFlows/` (in that repository)
+- [ ] Then drop `OCEANANIGANS_DRAC_ROOT` (v0.3.0)
 - [ ] Trillium job folder renamed `$SCRATCH/oceananigans-hpc` (kept as `oceananigans-drac` while
       jobs submitted before the rename are queued)
-- [ ] v1.0.0 when the contract for simulation repositories is settled
+- [ ] Nonhydrostatic benchmark repeated with a real BalancedFlows configuration (needs its
+      nonhydrostatic option)
+- [ ] v1.0.0 when the contract has been used by BalancedFlows on every machine
 
 ## Phase 4: a workflow for updating libraries
 

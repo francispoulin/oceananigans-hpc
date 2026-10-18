@@ -109,3 +109,10 @@ echo "oceananigans-hpc environment (${CC_CLUSTER:-unknown cluster}): repo=$OCEAN
 export OCEAN_DATA_DIR="${OCEAN_DATA_DIR:-$(dirname "${JULIA_DEPOT_PATH##*:}")/ocean_data}"
 export NUMERICALEARTH_DATA_DIRECTORY="${NUMERICALEARTH_DATA_DIRECTORY:-$OCEAN_DATA_DIR}"
 echo "  ocean data: $OCEAN_DATA_DIR"
+
+# Simulation output: one folder per machine family, the same shape everywhere (/scratch/$USER/results).
+# Each simulation repository writes under $OCEAN_RESULTS_ROOT/<repository>/ (docs/simulation_repos.md).
+# On $SCRATCH because Trillium jobs can write nowhere else; $SCRATCH is purged after 60 days without
+# access, so copy what you keep. A value set before sourcing this file wins. Not created here.
+export OCEAN_RESULTS_ROOT="${OCEAN_RESULTS_ROOT:-${SCRATCH:-$HOME/scratch}/results}"
+echo "  results: $OCEAN_RESULTS_ROOT"

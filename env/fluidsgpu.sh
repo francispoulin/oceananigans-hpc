@@ -63,3 +63,13 @@ echo "oceananigans-hpc environment ($OCEAN_MACHINE): repo=$OCEAN_HPC_ROOT, depot
 export OCEAN_DATA_DIR="${OCEAN_DATA_DIR:-$(dirname "${JULIA_DEPOT_PATH##*:}")/ocean_data}"
 export NUMERICALEARTH_DATA_DIRECTORY="${NUMERICALEARTH_DATA_DIRECTORY:-$OCEAN_DATA_DIR}"
 echo "  ocean data: $OCEAN_DATA_DIR"
+
+# Simulation output: on the shared bow.math drive, so pelee and rondeau see the same folder, with the
+# same shape as on the Alliance (.../scratch/$USER/results). Each simulation repository writes under
+# $OCEAN_RESULTS_ROOT/<repository>/ (docs/simulation_repos.md). A value set before sourcing wins.
+if [[ -d "/mnt/autofs/bow.math/scratch/$USER" ]]; then
+    export OCEAN_RESULTS_ROOT="${OCEAN_RESULTS_ROOT:-/mnt/autofs/bow.math/scratch/$USER/results}"
+else
+    export OCEAN_RESULTS_ROOT="${OCEAN_RESULTS_ROOT:-$HOME/results}"
+fi
+echo "  results: $OCEAN_RESULTS_ROOT"
