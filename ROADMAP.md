@@ -40,16 +40,19 @@ Versions: see [CONTRIBUTING.md](CONTRIBUTING.md#versions-and-releases).
 
 ## Phase 2: complete the switch of pelee and rondeau to this setup
 
-- [ ] `setup/configure_mpi.sh` on the simulation project folders; one run each with the new setup,
-      compared with the old one
-- [ ] Remove the old module-based setup (login files, the old `~/.julia` depot; move downloaded
-      ocean data out of it first)
-- [ ] `OCEAN_DATA_DIR` and `OCEAN_RESULTS_ROOT` in every env file and in the contract
-      (`env/README.md`), including how they relate to Trillium's `OCEAN_JOB_DIR`
+- [x] `setup/configure_mpi.sh` on the simulation project folders (BeaufortGyreSimulations,
+      Gulf-Stream-Asymmetry); one regression run each with the new setup: norms bitwise identical
+      to the old setup (Oct 14)
+- [x] Old module-based setup removed: module block out of `~/.profile`, ocean data (ECCO, EN4,
+      ETOPO; 136 files) copied to the shared drive, old `~/.julia` depot deleted (Oct 18)
+- [x] `OCEAN_DATA_DIR` in every env file and in the contract (`env/README.md`), with how it relates
+      to `OCEAN_JOB_DIR`
 
 ## Phase 3: serve the simulation repositories (platform side only)
 
 - [ ] Contract for a simulation repository: its own `Project.toml` without Makie; plotting in `viz/`
+- [ ] `OCEAN_RESULTS_ROOT`: a standard place for simulation output on each machine, if the simulation
+      repositories want one (BalancedFlows has its own `results_root` setting; moved from Phase 2)
 - [ ] Slurm job template that sources `env/ocean_setup.sh` (with the Trillium variant);
       `tools/run_local.sh` documented for pelee/rondeau
 - [x] Platform tests that simulation repositories rely on (their own regression tests live in

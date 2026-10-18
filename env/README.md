@@ -32,3 +32,10 @@ default: the repository).
 
 Ocean data: `OCEAN_DATA_DIR` (default: `ocean_data` next to the Julia depot), also exported as
 `NUMERICALEARTH_DATA_DIRECTORY`, so NumericalEarth stores and finds ECCO, EN4, ETOPO, JRA55… there.
+
+The two are separate on purpose. `OCEAN_DATA_DIR` holds input data that is downloaded once on a
+login node and kept (so it sits next to the depot, never on a purged scratch file system), and jobs
+only read it. `OCEAN_JOB_DIR` is where jobs write their logs and results; it is set only where jobs
+cannot write to the repository (Trillium, on `$SCRATCH`). A standard place for simulation output,
+`OCEAN_RESULTS_ROOT`, is planned with the contract for simulation repositories (`ROADMAP.md`,
+Phase 3).
