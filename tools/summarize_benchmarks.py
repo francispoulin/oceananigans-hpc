@@ -50,7 +50,12 @@ def load(path):
 
 
 def main(paths):
-    jobs = [j for j in (load(p) for p in paths) if j]
+    # A shell pattern that matches nothing (e.g. wk_*.json before any weak-scaling run has finished)
+    # arrives here unexpanded: say so and carry on with the files that exist.
+    missing = [p for p in paths if not Path(p).is_file()]
+    for p in missing:
+        print(f"(no file: {p})", file=sys.stderr)
+    jobs = [j for j in (load(p) for p in paths if p not in missing) if j]
     if not jobs:
         sys.exit("no benchmark results found")
     jobs.sort(key=lambda j: (j["family"], j["cells"], j["ngpu"]))
