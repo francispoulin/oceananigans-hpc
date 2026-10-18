@@ -69,15 +69,28 @@ out="$(CC_CLUSTER=nibi DRYRUN=1 bash jobs/submit_poisson_1024.sh 2>&1 | grep p10
 report "$ok" "submit_poisson_1024.sh: 8 GPUs on one Nibi node" "$out"
 
 # Another repository's job script: sbatch options before the script, script options after `--`,
-# logs in the folder submitted from (where jobs can write; on Trillium $OCEAN_JOB_DIR/logs)
-ext="$(mktemp -d)"; mkdir -p "$ext/jobs"; printf '#!/bin/bash\n' > "$ext/jobs/run.sh"
+# OCEAN_HPC_ROOT exported to the job, logs next to the caller; on Trillium in $SCRATCH/<repository>/logs
+ext="$(mktemp -d)/MySims.jl"; mkdir -p "$ext/jobs"; printf '#!/bin/bash\n' > "$ext/jobs/run.sh"
 out="$(cd "$ext" && env -u OCEAN_JOB_DIR CC_CLUSTER=nibi DRYRUN=1 bash "$ROOT/jobs/submit_gpu.sh" jobs/run.sh 4 --time=6:00:00 -- --config=x --stop_days=3 2>&1)"
-[[ "$out" == *"--output=$ext/logs/%x_%j.out --time=6:00:00 jobs/run.sh --config=x --stop_days=3" && ! -d "$ext/logs" ]] && ok=1 || ok=0
-report "$ok" "submit_gpu.sh: another repository's script, options after --, logs next to it" "$out"
-out="$(cd "$ext" && CC_CLUSTER=trillium DRYRUN=1 bash "$ROOT/jobs/submit_gpu.sh" jobs/run.sh 4 -- --config=x 2>&1)"
-[[ "$out" == *"--output=$OCEAN_JOB_DIR/logs/%x_%j.out jobs/run.sh --config=x" ]] && ok=1 || ok=0
-report "$ok" "submit_gpu.sh on trillium: logs in \$OCEAN_JOB_DIR/logs" "$out"
-rm -rf "$ext"
+[[ "$out" == *"--output=$ext/logs/%x_%j.out --export=ALL,OCEAN_HPC_ROOT=$ROOT --time=6:00:00 jobs/run.sh --config=x --stop_days=3" && ! -d "$ext/logs" ]] && ok=1 || ok=0
+report "$ok" "submit_gpu.sh: another repository's script, options after --, OCEAN_HPC_ROOT exported" "$out"
+out="$(cd "$ext" && CC_CLUSTER=trillium SCRATCH=/scratch/u DRYRUN=1 bash "$ROOT/jobs/submit_gpu.sh" jobs/run.sh 4 -- --config=x 2>&1)"
+[[ "$out" == *"--output=/scratch/u/MySims/logs/%x_%j.out --export=ALL,OCEAN_HPC_ROOT=$ROOT jobs/run.sh --config=x" ]] && ok=1 || ok=0
+report "$ok" "submit_gpu.sh on trillium: another repository's logs in \$SCRATCH/<repository>/logs" "$out"
+out="$(CC_CLUSTER=trillium DRYRUN=1 bash jobs/submit_gpu.sh jobs/checks.sh 4 2>&1)"
+[[ "$out" == *"--output=$OCEAN_JOB_DIR/logs/%x_%j.out"* ]] && ok=1 || ok=0
+report "$ok" "submit_gpu.sh on trillium: this repository's logs in \$OCEAN_JOB_DIR/logs" "$out"
+out="$(CC_CLUSTER=fir DRYRUN=1 bash jobs/submit_gpu.sh jobs/checks.sh 2 --export=ALL,SIZE=64 2>&1)"
+[[ "$out" == *"--export=ALL,SIZE=64,OCEAN_HPC_ROOT=$ROOT jobs/checks.sh"* && "$out" != *"--export=ALL,OCEAN_HPC_ROOT"* ]] && ok=1 || ok=0
+report "$ok" "submit_gpu.sh: OCEAN_HPC_ROOT added to the caller's --export" "$out"
+out="$(CC_CLUSTER=fir DRYRUN=1 bash jobs/submit_gpu.sh jobs/checks.sh 2 --export=NONE 2>&1)"
+[[ "$out" == *"--export=NONE jobs/checks.sh"* ]] && ok=1 || ok=0
+report "$ok" "submit_gpu.sh: --export=NONE left alone" "$out"
+# inside the job (env/drac.sh): the same folder, worked out from SLURM_SUBMIT_DIR
+inj="$(cd "$ext" && CC_CLUSTER=trillium SCRATCH=/scratch/u bash -c 'source "$OCEAN_HPC_ROOT/jobs/gpu_request.sh" 2>/dev/null; job_logs_dir "$PWD"')"
+[[ "$inj" == /scratch/u/MySims/logs ]] && ok=1 || ok=0
+report "$ok" "job_logs_dir in the job agrees with submit_gpu.sh (trillium)" "$inj"
+rm -rf "$(dirname "$ext")"
 
 # tools/run_tests.sh: the platform-test job, Slurm options from jobs/gpu_request.sh on every cluster
 rt() {   # cluster gpus must-contain...

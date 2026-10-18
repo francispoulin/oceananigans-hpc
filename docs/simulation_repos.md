@@ -16,6 +16,7 @@ with a new version, and a change that breaks it keeps the old way working for on
 | `OCEAN_MACHINE` | the machine's short name, for messages and run metadata |
 | `OCEAN_RESULTS_ROOT` | **simulation output**: write under `$OCEAN_RESULTS_ROOT/<your repository>/` |
 | `OCEAN_DATA_DIR` | downloaded input data (ECCO, EN4, ETOPO, ...; NumericalEarth uses it) |
+| `OCEAN_JOB_LOGS` | inside a job (Slurm or `run_local.sh`): the folder of the job's log; put the other small files a job writes (timings, GPU-usage samples) there |
 | `JULIA_DEPOT_PATH` | the shared depot: your project reuses the packages already installed |
 
 plus Julia, the system MPI and CUDA. `JULIA_CUDA_MEMORY_POOL=none`, needed for fast GPU-to-GPU MPI
@@ -64,15 +65,20 @@ source "$OCEAN_HPC_ROOT/env/ocean_setup.sh"
 set -eo pipefail          # after loading modules, as module commands can return harmless errors
 julia --project=. -e 'using Pkg; Pkg.precompile()'
 srun --cpu-bind=none julia --project=. scripts/run.jl "$@"
+# other files the job writes go next to its log, e.g.:  nvidia-smi ... > "$OCEAN_JOB_LOGS/gpu_$SLURM_JOB_ID.csv"
 ```
 
 - **No GPU, task or memory lines:** `submit_gpu.sh` adds `--nodes`, `--ntasks-per-node`,
   `--gpus-per-node` (never `--gpus-per-task`) and `--mem` for the cluster you are on, and checks
   Trillium's rules. Options after `--` reach the script as `"$@"`.
-- **Logs** go to `logs/` in the folder you submit from (on Trillium to `$OCEAN_JOB_DIR/logs`).
-- **Trillium:** jobs cannot write to `/project`, so everything a job writes (results, extra files
-  such as GPU-usage samples) must go to `$SCRATCH`: `$OCEAN_RESULTS_ROOT` already is, and the current
-  folder in a job is not writable there. Precompile on the login node before submitting.
+- **Logs** go to `logs/` in the folder you submit from; on Trillium to `$SCRATCH/<repository>/logs`
+  (the repository's folder name without `.jl`, e.g. `$SCRATCH/BalancedFlows/logs`). Inside the job,
+  `$OCEAN_JOB_LOGS` names that folder: write other small files the job makes there, not to the
+  current folder.
+- **Trillium:** submit from the repository as anywhere else; jobs cannot write to `/project`, and
+  `submit_gpu.sh`, `OCEAN_JOB_LOGS` and `OCEAN_RESULTS_ROOT` all point to `$SCRATCH`. Precompile on
+  the login node before submitting. `submit_gpu.sh` passes `OCEAN_HPC_ROOT` to the job, which
+  Trillium's `sbatch` would otherwise not do (it starts jobs with a clean environment).
 - **pelee and rondeau:** no job script; run
   `bash $OCEAN_HPC_ROOT/tools/run_local.sh -n 4 scripts/run.jl --config=my_preset`.
 

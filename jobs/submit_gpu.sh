@@ -17,7 +17,10 @@
 # Settings: GPUS_PER_NODE (default from the cluster: 8 on Nibi, 4 elsewhere), MEM (memory per node
 # when the node is not full, default 64G), JOB_NAME (default <script>_<N>gpu).
 # Above one node, N must be a multiple of the GPUs per node. Logs: logs/<name>_<jobid>.out in the
-# folder you submit from (on Trillium, where jobs can't write there: $OCEAN_JOB_DIR/logs).
+# folder you submit from; on Trillium, where jobs can't write there, $OCEAN_JOB_DIR/logs for this
+# repository and $SCRATCH/<repository>/logs for another (job_logs_dir in jobs/gpu_request.sh).
+# Inside the job, OCEAN_JOB_LOGS names that folder. The job also gets OCEAN_HPC_ROOT, even where
+# sbatch starts jobs with a clean environment (Trillium).
 #
 # Without this wrapper (same result), e.g. 16 GPUs on Nibi:
 #     sbatch --nodes=2 --ntasks-per-node=8 --gpus-per-node=h100:8 --mem=0 jobs/checks.sh
@@ -48,8 +51,20 @@ else
     nodes=$(( n / g )); per_node=$g
 fi
 gpu_request "$per_node" "${MEM:-64G}"
-JOB_LOGS="${OCEAN_JOB_DIR:-$PWD}/logs"     # next to the caller (this repository or another)
+JOB_LOGS="$(job_logs_dir "$PWD")"          # next to the caller (this repository or another)
 [[ -n "$DRYRUN" ]] || mkdir -p "$JOB_LOGS"
+
+# The job must find this repository (it sources env/ocean_setup.sh): add OCEAN_HPC_ROOT to the
+# caller's --export, or export everything plus it (the default elsewhere; Trillium's sbatch exports
+# nothing unless told).
+have_export=0
+for i in "${!sbatch_opts[@]}"; do
+    case "${sbatch_opts[$i]}" in
+        --export=NONE) have_export=1 ;;
+        --export=*) sbatch_opts[$i]="${sbatch_opts[$i]},OCEAN_HPC_ROOT=$OCEAN_HPC_ROOT"; have_export=1 ;;
+    esac
+done
+(( have_export )) || sbatch_opts=(--export="ALL,OCEAN_HPC_ROOT=$OCEAN_HPC_ROOT" "${sbatch_opts[@]}")
 name="${JOB_NAME:-$(basename "$script" .sh)_${n}gpu}"
 
 cmd=(sbatch --job-name="$name" --nodes="$nodes" --ntasks-per-node="$per_node" "${GPU_OPTS[@]}"

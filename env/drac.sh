@@ -84,6 +84,14 @@ if [[ "$CC_CLUSTER" == trillium && -n "$SLURM_JOB_ID" && "$JULIA_DEPOT_PATH" != 
     unset _drac_rw
 fi
 
+# Inside a job: where its log is (the same rule submit_gpu.sh used), so a job can put the other
+# files it writes next to it. On Trillium that is on $SCRATCH, the only place jobs can write.
+if [[ -n "$SLURM_JOB_ID" && -n "$SLURM_SUBMIT_DIR" ]]; then
+    source "$OCEAN_HPC_ROOT/jobs/gpu_request.sh"
+    export OCEAN_JOB_LOGS="$(job_logs_dir "$SLURM_SUBMIT_DIR")"
+    mkdir -p "$OCEAN_JOB_LOGS" 2>/dev/null || true
+fi
+
 # One CPU thread per rank is enough when the work is on the GPU.
 export JULIA_NUM_THREADS="${JULIA_NUM_THREADS:-1}"
 

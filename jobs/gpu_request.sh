@@ -28,6 +28,26 @@ gpu_request() {
     fi
 }
 
-# Logs: the repository, or $OCEAN_JOB_DIR where jobs can't write to it (Trillium: $SCRATCH).
-JOB_LOGS="${OCEAN_JOB_DIR:-${OCEAN_HPC_ROOT:-.}}/logs"
+# Where a job writes its log, from the folder it is submitted from. Used by submit_gpu.sh when
+# submitting, and by env/drac.sh inside the job (as OCEAN_JOB_LOGS), so both agree: on Trillium the
+# job's environment is not passed on from the submitting shell, so the job works it out again.
+#   - this repository:    logs/ in it, or $OCEAN_JOB_DIR/logs where jobs can't write to it (Trillium)
+#   - another repository: logs/ in it; on Trillium, where jobs can't write to /project,
+#                         $SCRATCH/<repository>/logs (folder name of the git repository, minus .jl)
+job_logs_dir() {   # <folder submitted from>
+    local dir root name
+    dir="$(cd "$1" 2>/dev/null && pwd -P)" || dir="$1"
+    root="$(cd "${OCEAN_HPC_ROOT:-.}" 2>/dev/null && pwd -P)"
+    if [[ "$dir" == "$root" || "$dir" == "$root"/* ]]; then
+        echo "${OCEAN_JOB_DIR:-$root}/logs"
+    elif [[ "$CC_CLUSTER" == trillium ]]; then
+        name="$(basename "$(git -C "$dir" rev-parse --show-toplevel 2>/dev/null || echo "$dir")")"
+        echo "$SCRATCH/${name%.jl}/logs"
+    else
+        echo "$dir/logs"
+    fi
+}
+
+# This repository's own submit scripts write their logs here.
+JOB_LOGS="$(job_logs_dir "${OCEAN_HPC_ROOT:-.}")"
 mkdir -p "$JOB_LOGS"
