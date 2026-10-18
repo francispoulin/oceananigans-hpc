@@ -99,6 +99,7 @@ fi
 name="${name:-$(basename "$script" .jl)}"
 mkdir -p logs
 log="logs/${name}_$(date +%Y%m%d-%H%M%S).out"
+export OCEAN_JOB_LOGS="$PWD/logs"      # as in Slurm jobs (env/drac.sh): where this run's log is
 
 echo "machine:  ${OCEAN_MACHINE:-$(hostname -s)}"
 echo "GPUs:     ${CUDA_VISIBLE_DEVICES:-none (CPU)}"

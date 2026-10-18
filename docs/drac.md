@@ -438,9 +438,13 @@ Trillium (run by SciNet) uses the same software stack, so `env/drac.sh` works un
   or `--gpus-per-node=4`, with `--ntasks-per-node` to match). `--mem` is ignored (1 GPU = 1/4 node,
   188 GiB). Don't name a partition: the scheduler picks `debug` or `compute`.
 - **Files:** `$HOME` and `$PROJECT` are **read-only on compute nodes**. Keep the repository and the
-  Julia depot in project space (install and precompile on the login node), but submit jobs from
-  `$SCRATCH` and write all output there. `drac.sh` sets `OCEAN_JOB_DIR=$SCRATCH/oceananigans-drac`,
-  where `tools/run_tests.sh` writes its logs and summary. Julia 1.10 also wants to update the
+  Julia depot in project space (install and precompile on the login node). Jobs may be submitted
+  from the repository, but everything they write must go to `$SCRATCH`: `jobs/submit_gpu.sh` puts
+  the log there (`$OCEAN_JOB_DIR/logs` for this repository, `$SCRATCH/<repository>/logs` for a
+  simulation repository; `OCEAN_JOB_LOGS` names it inside the job), and `OCEAN_RESULTS_ROOT` is on
+  `$SCRATCH`. A job script submitted with plain `sbatch` must do the same (or be submitted from
+  `$SCRATCH`). `drac.sh` sets `OCEAN_JOB_DIR=$SCRATCH/oceananigans-drac`, where
+  `tools/run_tests.sh` writes its logs and summary. Julia 1.10 also wants to update the
   timestamp of each precompiled file it loads, which fails on a read-only depot
   (`SystemError: futimes: Permission denied`); inside Trillium jobs `drac.sh` therefore puts a
   writable copy of the compiled files first in `JULIA_DEPOT_PATH` (`$SCRATCH/julia_depot_jobs`,
