@@ -23,6 +23,8 @@ Scripts in `setup/`, `jobs/` and `tools/` rely only on these, so a new machine n
 | `JULIA_DEPOT_PATH` | one depot, set after loading modules |
 | `JULIA_NUM_THREADS` | default 1 |
 | `JULIA_NUM_PRECOMPILE_TASKS` | default 2, so precompiling doesn't hit login-node thread limits |
+| `OCEAN_DATA_DIR` | downloaded input data (ECCO, EN4, ETOPO, ...); also `NUMERICALEARTH_DATA_DIRECTORY` |
+| `OCEAN_RESULTS_ROOT` | simulation output: `$SCRATCH/results` on the Alliance, `/mnt/autofs/bow.math/scratch/$USER/results` on pelee/rondeau; repositories write under `$OCEAN_RESULTS_ROOT/<repository>/` |
 
 plus the modules that put `julia` and the system `mpiexec` on `PATH`.
 
@@ -35,7 +37,7 @@ Ocean data: `OCEAN_DATA_DIR` (default: `ocean_data` next to the Julia depot), al
 
 The two are separate on purpose. `OCEAN_DATA_DIR` holds input data that is downloaded once on a
 login node and kept (so it sits next to the depot, never on a purged scratch file system), and jobs
-only read it. `OCEAN_JOB_DIR` is where jobs write their logs and results; it is set only where jobs
-cannot write to the repository (Trillium, on `$SCRATCH`). A standard place for simulation output,
-`OCEAN_RESULTS_ROOT`, is planned with the contract for simulation repositories (`ROADMAP.md`,
-Phase 3).
+only read it. `OCEAN_JOB_DIR` is where this repository's own jobs write their logs and test results; it is set
+only where jobs cannot write to the repository (Trillium, on `$SCRATCH`). `OCEAN_RESULTS_ROOT` is
+for simulation output, from any repository: see [docs/simulation_repos.md](../docs/simulation_repos.md).
+Values set before sourcing `ocean_setup.sh` are kept.
