@@ -29,6 +29,24 @@ if [[ "$CC_CLUSTER" == trillium ]]; then
     export OCEAN_JOB_DIR="${OCEAN_JOB_DIR:-$SCRATCH/oceananigans-drac}"   # old name kept: see ROADMAP.md
 fi
 
+# Inside a job, use the compute node's own Slurm commands. sbatch --export=ALL (as our submit
+# scripts use) copies the login shell's PATH into the job, and on Nibi that PATH lists a versioned
+# Slurm folder (/opt/software/slurm/<version>/bin) before the generic /opt/software/slurm/bin. When
+# Slurm is upgraded on the compute nodes before the login nodes, srun from that folder cannot load
+# the node's plugins and every job fails in seconds ("Incompatible Slurm plugin ... auth_munge",
+# Nibi, Oct 15-17, 2026). Drop the versioned folders, keeping the generic one.
+if [[ -n "$SLURM_JOB_ID" && -d /opt/software/slurm/bin ]]; then
+    _drac_path=""
+    IFS=: read -r -a _drac_dirs <<< "$PATH"
+    for _d in "${_drac_dirs[@]}"; do
+        [[ "$_d" =~ ^/opt/software/slurm/[0-9][^/]*/bin/?$ ]] && continue
+        _drac_path="${_drac_path:+$_drac_path:}$_d"
+    done
+    [[ ":$_drac_path:" == *:/opt/software/slurm/bin:* ]] || _drac_path="/opt/software/slurm/bin:$_drac_path"
+    export PATH="$_drac_path"
+    unset _drac_path _drac_dirs _d
+fi
+
 # The system OpenMPI (the setup scripts use this, not the Alliance-specific $EBROOTOPENMPI).
 export OCEAN_MPI_ROOT="$EBROOTOPENMPI"
 
