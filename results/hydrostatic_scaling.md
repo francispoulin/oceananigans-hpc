@@ -4,8 +4,9 @@ The current numbers, measured with both GPU-to-GPU settings of `docs/drac.md` st
 (`--gpus-per-node`, CUDA.jl memory pool off). The earlier Nibi runs (Oct 2–14, without them) are in
 [nibi_scaling.md](nibi_scaling.md).
 
-**Status (Oct 17): draft.** Trillium is complete; Rorqual's 16-GPU and Nibi's runs are queued, and
-their rows say *pending*.
+**Status (Oct 18): draft.** Trillium is complete; Nibi has 4, 8 and 32 GPUs (MPI); Rorqual's 16-GPU
+runs and the rest of Nibi's are queued, and their rows say *pending*. Nibi's efficiencies wait for its
+1-GPU run.
 
 ## Setup
 
@@ -30,16 +31,30 @@ Time per step in seconds (fastest window); efficiency = time on 1 GPU / (N × ti
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1 | 1 | 1.0461 | – | 1 | 1.051 | – | 1 | pending | – |
 | 2 | | | | | | | 1 | pending | |
-| 4 | 1 | 0.2638 (99%) | 0.2622 (100%) | 1 | 0.264 (100%) | 0.263 (100%) | 1 | pending | |
-| 8 | 2 | 0.1429 (91%) | 0.1413 (93%) | 2 | 0.148 (88%) | 0.142 (93%) | 1 | pending | pending |
+| 4 | 1 | 0.2638 (99%) | 0.2622 (100%) | 1 | 0.264 (100%) | 0.263 (100%) | 1 | 0.2633 | |
+| 8 | 2 | 0.1429 (91%) | 0.1413 (93%) | 2 | 0.148 (88%) | 0.142 (93%) | 1 | 0.1419 | pending |
 | 16 | 4 | 0.0819 (80%) | 0.0791 (83%) | 4 | pending | pending | 2 | pending | pending |
-| 32 | | | | | | | 4 | pending | pending |
+| 32 | | | | | | | 4 | 0.0550 | pending |
 
 GPU memory per rank on Trillium: 46.6 GiB on 1 GPU, 13.5–14.4 on 4, 7.8–8.2 on 8, 4.9–5.4 on 16
 (NCCL uses 0.4–0.9 GiB more than MPI). Median windows are within 0.4% of the fastest on Trillium.
 
 For comparison, Nibi before the two settings (Oct 2, [nibi_scaling.md](nibi_scaling.md)): 1 GPU
 1.0110 s, then 97%, 97%, 88%, 74% and 46% at 2, 4, 8, 16 and 32 GPUs.
+
+**Nibi, same GPU counts, before and after the two settings** (s per step, fastest window; slowest
+window in brackets, as a percentage above the fastest):
+
+| GPUs | Nodes | Oct 2 | Oct 18 | Change |
+| --- | --- | --- | --- | --- |
+| 4 | 1 | 0.2594 (+1%) | 0.2633 (+2%) | 1.5% slower |
+| 8 | 1 | 0.1438 (+4%) | 0.1419 (+2%) | 1% faster |
+| 32 | 4 | 0.0689 (+60%) | 0.0550 (+25%) | 20% faster |
+
+Within a node the settings change almost nothing for the hydrostatic model (it exchanges only
+halos; the 1.5% is the cost of the memory pool being off, also seen on one GPU). Across 4 nodes it
+is 20% faster and much steadier; against the Oct 2 single-GPU time, efficiency at 32 GPUs goes from
+46% to about 57%. GPU memory per rank: 13.5, 7.8 and 3.5 GiB at 4, 8 and 32 GPUs.
 
 **Reading the results (so far).** Within a node the hydrostatic model scales perfectly (99–100% on
 4 GPUs). Across nodes it keeps 88–93% on 2 nodes and 80–83% on 4, although at 16 GPUs each GPU
