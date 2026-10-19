@@ -24,7 +24,18 @@ fi
 ok "machine ${OCEAN_MACHINE:-?}, repository $OCEAN_HPC_ROOT"
 
 if command -v julia >/dev/null 2>&1; then
-    ok "julia: $(julia --startup-file=no -e 'print(VERSION)') ($(command -v julia))"
+    jv="$(julia --startup-file=no -e 'print(VERSION)')"
+    ok "julia: $jv ($(command -v julia))"
+    # One Julia on every machine: the version the platform's Manifest was made with
+    pv="$(sed -n 's/^julia_version = "\(.*\)"$/\1/p' "$OCEAN_HPC_ROOT/Manifest.toml" 2>/dev/null)"
+    if [[ -n "$pv" && "$jv" != "$pv" ]]; then
+        warn "julia $jv, but the platform uses $pv (every machine runs the same version)"
+        if [[ "${OCEAN_MACHINE:-}" == pelee* || "${OCEAN_MACHINE:-}" == rondeau* ]]; then
+            info "Install it once: bash \$OCEAN_HPC_ROOT/setup/install_julia.sh, then source ocean_setup again"
+        else
+            info "Source ocean_setup again; if that does not help, the julia module in env/ needs updating"
+        fi
+    fi
 else
     warn "julia is not on PATH (module not loaded?)"; exit 1
 fi

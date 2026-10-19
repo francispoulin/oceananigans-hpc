@@ -47,6 +47,8 @@ Versions: see [CONTRIBUTING.md](CONTRIBUTING.md#versions-and-releases).
       ETOPO; 136 files) copied to the shared drive, old `~/.julia` depot deleted (Oct 18)
 - [x] `OCEAN_DATA_DIR` in every env file and in the contract (`env/README.md`), with how it relates
       to `OCEAN_JOB_DIR`
+- [ ] One Julia on every machine: 1.10.10 on pelee/rondeau too (`setup/install_julia.sh`; the
+      modules there stop at 1.10.8); setup and platform tests rerun on pelee and rondeau
 
 ## Phase 3: serve the simulation repositories (platform side only)
 
