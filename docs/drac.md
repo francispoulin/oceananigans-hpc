@@ -409,7 +409,7 @@ versions, are in [results/tests/](../results/tests/).
 | Machine | Date | Commit | Result | GPU | Julia |
 | --- | --- | --- | --- | --- | --- |
 | Nibi | 2026-10-19 | e386059 | 21 passed | H100 80GB | 1.10.10 |
-| Fir | FIR_DATE | e386059 | FIR_RESULT | H100 80GB | 1.10.10 |
+| Fir | 2026-10-19 | e386059 | 21 passed | H100 80GB | 1.10.10 |
 | Rorqual | 2026-10-18 | e386059 | 21 passed | H100 80GB | 1.10.10 |
 | Trillium | 2026-10-19 | e386059 | 21 passed | H100 80GB | 1.10.10 |
 | pelee | 2026-10-18 | 68d7c0b | 21 passed | A100 40GB | 1.10.10 |

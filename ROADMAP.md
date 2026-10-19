@@ -37,7 +37,7 @@ Versions: see [CONTRIBUTING.md](CONTRIBUTING.md#versions-and-releases).
 - [x] Each cluster fact in one place: `jobs/gpu_request.sh` (GPUs per node, memory, Trillium's
       rules), used by every script; the docs' tables are checked against it automatically
 - [x] Release **v0.1.0** (Oct 17): tested on Fir, Rorqual, Trillium and rondeau
-- [ ] Release **v0.2.0**: contract for simulation repositories (Phase 3), Julia 1.10.10 everywhere,
+- [x] Release **v0.2.0** (Oct 19): contract for simulation repositories (Phase 3), Julia 1.10.10 everywhere,
       tested on every machine including Nibi
 
 ## Phase 2: complete the switch of pelee and rondeau to this setup
