@@ -19,7 +19,8 @@
 #   --wait      stay attached until the run ends (still logged); exit status = the run's
 #   --dry-run   show what would run, start nothing
 #
-# Output goes to logs/<name>_<date-time>.out in the current folder. The command prints the
+# Output goes to logs/<name>_<date-time>.out in the current folder (_2, _3, ... added if a run with
+# the same name started in the same second). The command prints the
 # process ID; stop the run with `kill <pid>` (stops all its ranks).
 #
 # With N > 1, each MPI rank sees only its own GPU (rank i -> i-th chosen GPU), and
@@ -27,8 +28,9 @@
 # code verified on pelee (1 vs 4 GPUs agree to ~1e-11; jobs/gpu_wrapper.sh there): CUDA-aware
 # MPI needs the memory pool off to pass GPU buffers between processes.
 #
-# Free = no compute process on it now. Two runs started in the same second can still collide;
-# check with `nvidia-smi` if in doubt.
+# Free = no compute process on it now. A Julia run appears on its GPU only once CUDA starts (tens
+# of seconds), so runs started within that time can pick the same GPU: give runs started together
+# their own GPUs with -g (docs/fluidsgpu.md, "Running").
 
 [[ "${1:-}" == -h || "${1:-}" == --help ]] && { sed -n '2,/^[^#]/{/^#SBATCH/d;/^# *shellcheck/d;s/^# \{0,1\}//p;}' "$0"; exit 0; }   # -h: usage
 set -eo pipefail
@@ -98,7 +100,18 @@ fi
 
 name="${name:-$(basename "$script" .jl)}"
 mkdir -p logs
-log="logs/${name}_$(date +%Y%m%d-%H%M%S).out"
+# logs/<name>_<date-time>.out; a second run with the same name in the same second gets _2, _3, ...
+# The file is created here with noclobber (set -C: create only if absent, atomically), so two runs
+# started together can never share a log.
+base="logs/${name}_$(date +%Y%m%d-%H%M%S)"
+log="$base.out"
+if [[ $dry -eq 0 ]]; then
+    n=1
+    until ( set -C; : > "$log" ) 2>/dev/null; do
+        n=$((n + 1)); log="${base}_$n.out"
+        [[ $n -gt 100 ]] && { echo "cannot create a log file in $PWD/logs"; exit 1; }
+    done
+fi
 export OCEAN_JOB_LOGS="$PWD/logs"      # as in Slurm jobs (env/drac.sh): where this run's log is
 
 echo "machine:  ${OCEAN_MACHINE:-$(hostname -s)}"

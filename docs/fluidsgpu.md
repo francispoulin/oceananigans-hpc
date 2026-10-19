@@ -55,10 +55,23 @@ bash $OCEAN_HPC_ROOT/tools/run_local.sh -n 0 --viz scripts/make_movies.jl       
 - with `-n 4`, starts 4 MPI ranks, each seeing only its own GPU, with
   `JULIA_CUDA_MEMORY_POOL=none` (needed by CUDA-aware MPI; the setup verified by the Gulf Stream
   code on pelee);
-- runs in the background, immune to logout, with output in `logs/<name>_<date-time>.out`;
+- runs in the background, immune to logout, with output in `logs/<name>_<date-time>.out`
+  (`_2`, `_3`, ... added when runs with the same name start in the same second);
 - prints the process ID: `kill <pid>` stops the run and all its ranks.
 
 `--dry-run` shows what would run without starting anything.
+
+**Starting several runs at once: give each its own GPUs with `-g`.** A GPU counts as free when no
+process is running on it, and a Julia run only shows up on its GPU once CUDA starts, tens of
+seconds after launch. Runs started within that time can pick the same GPU, and then share it
+(slower, or out of memory). So for runs started together, for example from a test script:
+
+```bash
+bash $OCEAN_HPC_ROOT/tools/run_local.sh -g 0,1 -n 2 -j case_a scripts/run.jl --config=a &
+bash $OCEAN_HPC_ROOT/tools/run_local.sh -g 2,3 -n 2 -j case_b scripts/run.jl --config=b &
+```
+
+Runs started by hand a minute or more apart are fine without `-g`.
 
 ## Checks
 

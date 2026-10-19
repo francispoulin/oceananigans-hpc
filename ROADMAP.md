@@ -102,6 +102,8 @@ modules and the plotting stack all change independently.
 - [ ] Shared depot for the group on pelee/rondeau, once several people use it
 - [ ] GPU tests on every pull request (a self-hosted runner on pelee)
 - [ ] Download script for the ocean data sets
+- [ ] `run_local.sh`: reserve the GPUs it hands out for a few minutes, so runs started together
+      without `-g` cannot pick the same GPU (documented for now; fix if it bites)
 - [ ] Contribute multi-GPU nonhydrostatic cases to the Oceananigans benchmark suite
 - [ ] MPI between nodes with GPUDirect RDMA
 - [ ] Faster local work in the distributed pressure solve (the 1 → 2 GPU cost)
