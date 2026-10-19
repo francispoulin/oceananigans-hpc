@@ -142,10 +142,20 @@ name before the repository was renamed, is exported until v0.3.0).
    The automatic checks (`tests/ci/`) cover the Slurm options of every cluster on every pull request.
 2. `version` in `Project.toml` and section 10 of `docs/drac.md` ("Tested with") are updated in a
    pull request.
-3. After merging, tag `main` with an annotated tag and push it:
-   `git tag -a v0.1.0 -m "v0.1.0: ..." && git push origin v0.1.0`.
+3. After merging, tag the merged `main` with an annotated tag and push it, in one chained command
+   so that nothing is tagged if the pull fails (for example because of a test summary left on the
+   machine; remove it first):
+   ```bash
+   git switch main && git pull --ff-only && git describe --tags && \
+   git tag -a v0.2.1 -m "v0.2.1: ..." && git push origin v0.2.1
+   ```
+   Check that `git rev-parse --short "v0.2.1^{commit}"` is the merge of the release pull request.
+   A tag is never moved once its release is published; a mistake is fixed with the next version.
 4. On GitHub, *Releases → Draft a new release*, pick the tag and *Generate release notes* (the list
-   of merged pull requests).
+   of merged pull requests). Above that list, paste the release notes from the release pull request
+   **as raw Markdown**: copy them from the pull request's *Edit* box (or from a code block), not from
+   the rendered page, and use full links (`https://github.com/.../blob/vX.Y.Z/docs/...`), since
+   relative links do not work in a release.
 
 Results, test summaries and upgrade notes refer to these versions.
 
