@@ -26,6 +26,7 @@ they export.
 
 | Script | What it does | Where | Example |
 | --- | --- | --- | --- |
+| `setup/install_julia.sh` | Installs the official Julia release the platform's Manifest was made with, where the modules lack it (pelee/rondeau; once per version) | server | `bash setup/install_julia.sh` |
 | `setup/setup.sh` | Installs the packages and points MPI.jl and OpenMPI_jll at the system MPI | login, server | `bash setup/setup.sh` |
 | `setup/setup_viz.sh` | Sets up `viz/`, the plotting environment (CairoMakie, NCDatasets) | login, server | `bash setup/setup_viz.sh` |
 | `setup/configure_mpi.sh` | The MPI part of the setup, for your own project folder | login, server | `bash setup/configure_mpi.sh /path/to/project` |
@@ -42,7 +43,8 @@ they export.
 | `tests/ci/run_all.sh` | The checks GitHub runs on every pull request (no GPUs or Slurm needed) | any | `bash tests/ci/run_all.sh` |
 | `tests/ci/test_submit_scripts.sh` | Part of `run_all.sh`: the Slurm options of the submit scripts on each cluster | any | `bash tests/ci/test_submit_scripts.sh` |
 
-`tests/ci/` also holds `check_links.py` and `check_cluster_facts.py` (run by `run_all.sh`).
+`tests/ci/` also holds `check_links.py`, `check_cluster_facts.py`, `check_scripts_documented.py` and
+`check_julia_version.py` (run by `run_all.sh`).
 What the tests cover: [tests/README.md](../tests/README.md).
 
 ## Running jobs

@@ -88,3 +88,11 @@ Pull it on every machine (`git pull` in `$OCEAN_HPC_ROOT`), and rerun `setup/set
 release notes say the packages changed. Your project's own Manifest is yours: upgrade it when you
 choose, after the platform has been tested with the new versions ([ROADMAP.md](../ROADMAP.md),
 Phase 4).
+
+**Julia is the same version on every machine**: the `julia_version` of this repository's
+`Manifest.toml` (1.10.10), from the module on the Alliance and from `setup/install_julia.sh` on
+pelee and rondeau. Make your Manifest with that version, so instantiating it on another machine
+does not rewrite it; `tools/check_env.sh .` warns when your Manifest or the running Julia differs.
+When the platform moves to a new Julia, its release notes say so: then regenerate your Manifest
+(`julia --project=. -e 'using Pkg; Pkg.resolve(); Pkg.instantiate()'`), rerun your tests and
+commit it.

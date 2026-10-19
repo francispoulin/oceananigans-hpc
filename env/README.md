@@ -26,7 +26,10 @@ Scripts in `setup/`, `jobs/` and `tools/` rely only on these, so a new machine n
 | `OCEAN_DATA_DIR` | downloaded input data (ECCO, EN4, ETOPO, ...); also `NUMERICALEARTH_DATA_DIRECTORY` |
 | `OCEAN_RESULTS_ROOT` | simulation output: `$SCRATCH/results` on the Alliance, `/mnt/autofs/bow.math/scratch/$USER/results` on pelee/rondeau; repositories write under `$OCEAN_RESULTS_ROOT/<repository>/` |
 
-plus the modules that put `julia` and the system `mpiexec` on `PATH`.
+plus `julia` and the system `mpiexec` on `PATH`: from modules, except Julia on pelee/rondeau, which
+comes from `$OCEAN_SOFTWARE_DIR/julia-<version>` (installed by `setup/install_julia.sh`; default
+`/mnt/autofs/bow.math/scratch/$USER/software`). Every machine runs the Julia version of
+`Manifest.toml` (checked by `tools/check_env.sh` and `tests/ci/check_julia_version.py`).
 
 Optional: `OCEAN_JOB_DIR`, where scripts write logs and results from inside jobs when the
 repository is not writable from compute nodes (set on Trillium to `$SCRATCH/oceananigans-drac`;
