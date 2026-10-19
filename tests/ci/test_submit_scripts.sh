@@ -1,5 +1,6 @@
 #!/bin/bash
-# Checks the Slurm options the submit scripts produce on each cluster, without Slurm or GPUs
+# Checks the Slurm options the submit scripts produce on each cluster, without Slurm or GPUs,
+# and that tools/run_local.sh gives runs started together separate logs
 # (DRYRUN=1 prints the sbatch commands). Runs on every pull request (.github/workflows/checks.yml)
 # and anywhere with bash:  bash tests/ci/test_submit_scripts.sh
 #
@@ -111,6 +112,17 @@ rt trillium "1"   --nodes=1 --ntasks-per-node=1 --gpus-per-node=1 '!--mem'
 out="$(CC_CLUSTER=fir DRYRUN=1 bash tools/run_tests.sh --gpus "1 8" 2>&1)" && ok=0 || ok=1
 [[ "$out" == *"at most 4 GPUs"* ]] || ok=0
 report "$ok" "run_tests.sh on fir refuses 8 GPUs (one node only)" "$out"
+
+# tools/run_local.sh (pelee/rondeau): runs started together with the same name get separate logs
+lt="$(mktemp -d)"; mkdir -p "$lt/bin" "$lt/proj"; touch "$lt/proj/Project.toml" "$lt/proj/run.jl"
+printf '#!/bin/bash\necho "julia $*"\n' > "$lt/bin/julia"; chmod +x "$lt/bin/julia"
+for i in 1 2 3; do
+    (cd "$lt/proj" && PATH="$lt/bin:$PATH" bash "$ROOT/tools/run_local.sh" -n 0 -j same --wait run.jl --i=$i >/dev/null 2>&1) &
+done; wait
+out="$(cat "$lt"/proj/logs/same_*.out 2>/dev/null)"
+[[ $(ls "$lt"/proj/logs/same_*.out 2>/dev/null | wc -l) -eq 3 && "$out" == *--i=1* && "$out" == *--i=2* && "$out" == *--i=3* ]] && ok=1 || ok=0
+report "$ok" "run_local.sh: three runs started together with the same name get three logs" "$(ls "$lt"/proj/logs 2>&1)"
+rm -rf "$lt"
 
 rm -rf "$OCEAN_JOB_DIR"
 echo "$fails failure(s)"
