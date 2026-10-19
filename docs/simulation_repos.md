@@ -45,7 +45,7 @@ for both). Set any of these before `ocean_setup` to use another value.
    `bash $OCEAN_HPC_ROOT/setup/configure_mpi.sh .` and `bash $OCEAN_HPC_ROOT/tools/check_env.sh .`.
 3. **Output under `$OCEAN_RESULTS_ROOT/<repository>/`**, never inside the repository.
 4. **Job scripts source the environment and leave GPUs and memory to `submit_gpu.sh`** (template below).
-5. **Say which version it was tested with** ("oceananigans-hpc v0.1.0") in its README.
+5. **Say which version it was tested with** ("oceananigans-hpc v0.2.0") in its README.
 
 ## A job script
 

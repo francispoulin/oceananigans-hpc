@@ -402,27 +402,26 @@ Reduce `DT` at higher resolution to stay stable (we used 60, 30, 15 and 7.5 s fo
      
 ## 10. Tested with
 
-**Version v0.1.0** (October 2026): the platform tests (`tools/run_tests.sh`, 21 tests on 1 and 4
+**Version v0.2.0** (October 2026): the platform tests (`tools/run_tests.sh`, 21 tests on 1 and 4
 GPUs) pass on every machine, with the GPU settings of step 7. Summaries, with the exact package
 versions, are in [results/tests/](../results/tests/).
 
 | Machine | Date | Commit | Result | GPU | Julia |
 | --- | --- | --- | --- | --- | --- |
-| Fir | 2026-10-17 | 58b382e | 21 passed | H100 80GB | 1.10.10 |
-| Rorqual | 2026-10-16 | 58b382e | 21 passed | H100 80GB | 1.10.10 |
-| Trillium | 2026-10-17 | 58b382e | 21 passed | H100 80GB | 1.10.10 |
-| rondeau | 2026-10-18 | 68d7c0b | 21 passed | A100 40GB | 1.10.10 |
+| Nibi | 2026-10-19 | e386059 | 21 passed | H100 80GB | 1.10.10 |
+| Fir | 2026-10-19 | e386059 | 21 passed | H100 80GB | 1.10.10 |
+| Rorqual | 2026-10-18 | e386059 | 21 passed | H100 80GB | 1.10.10 |
+| Trillium | 2026-10-19 | e386059 | 21 passed | H100 80GB | 1.10.10 |
 | pelee | 2026-10-18 | 68d7c0b | 21 passed | A100 40GB | 1.10.10 |
-| Nibi | pending | | | H100 80GB | 1.10.10 |
+| rondeau | 2026-10-18 | 68d7c0b | 21 passed | A100 40GB | 1.10.10 |
 
 Packages everywhere: Oceananigans 0.113.5, CUDA.jl 6.4.1, MPI.jl 0.20.27, OpenMPI_jll 4.1.10,
-NCDatasets 0.14.15, JLD2 0.6.7. Alliance modules: StdEnv/2023, gcc/12.3, openmpi/4.1.5, cuda/12.6,
-julia/1.10.10. Between 58b382e and a582cbe the scripts changed only by the renaming of the
-repository and of its root variable (`OCEAN_HPC_ROOT`), and rondeau gives the same results at both.
-On October 18 pelee and rondeau moved from Julia 1.10.8 to 1.10.10, the version used everywhere
-(`setup/install_julia.sh`); both give the same results as rondeau did with 1.10.8.
-The release adds these summaries, this table, the version number and one line in
-`tools/run_tests.sh` (summaries now start with the version, from `git describe`).
+NCDatasets 0.14.15, JLD2 0.6.7. Julia 1.10.10 everywhere: the `julia/1.10.10` module on the Alliance
+(with StdEnv/2023, gcc/12.3, openmpi/4.1.5, cuda/12.6), and on pelee and rondeau the official release
+installed by `setup/install_julia.sh` (their modules stop at 1.10.8). Between 68d7c0b and e386059
+only test summaries and docs changed. Every result is the same as with v0.1.0 on each machine, and
+the same on pelee and rondeau with Julia 1.10.8 and 1.10.10. Which machines are retested for a
+release: [CONTRIBUTING.md](../CONTRIBUTING.md#versions-and-releases).
 
 What the tests show on every machine: 4 GPUs against 1 GPU agree bitwise for the hydrostatic model
 and to 5e-14 for the nonhydrostatic pressure solvers; checkpoint restarts are bitwise; every rank

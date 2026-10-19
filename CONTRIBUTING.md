@@ -124,7 +124,22 @@ name before the repository was renamed, is exported until v0.3.0).
 
 **Making a release:**
 
-1. The platform tests pass on every machine at the commit to release; their summaries are committed.
+1. The platform tests (`tools/run_tests.sh`) pass at the commit to release, on the machines below;
+   their summaries are committed. The queues make testing every cluster slow, so how many depends
+   on what changed since the last release:
+   - **Only the numbers can change** (package versions, Julia code the tests run): **one** Alliance
+     cluster, any of Nibi, Fir, Rorqual and Trillium.
+   - **The setup can change** (`env/`, `setup/`, `jobs/`, `tools/run_tests.sh`, Slurm options):
+     **two** clusters, one of them Trillium, which differs most (no writing to `/project` in jobs,
+     a clean job environment, 1 GPU or whole nodes). A change aimed at one cluster (for example
+     Nibi's 8 GPUs per node or its Slurm path) is tested on that cluster.
+   - **pelee or rondeau** as well, when `env/fluidsgpu.sh`, `tools/run_local.sh` or anything else
+     they use changed (no queue there).
+   - **Every machine** for 1.0.0 and for upgrades of Julia, Oceananigans or the GPU stack
+     (ROADMAP.md, Phase 4).
+
+   Machines not retested keep their last summary; the "Tested with" table says which version it was.
+   The automatic checks (`tests/ci/`) cover the Slurm options of every cluster on every pull request.
 2. `version` in `Project.toml` and section 10 of `docs/drac.md` ("Tested with") are updated in a
    pull request.
 3. After merging, tag `main` with an annotated tag and push it:
