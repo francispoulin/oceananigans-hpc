@@ -6,7 +6,7 @@ configuration, plotting environment, launcher, checks, platform tests and benchm
 repositories depend on it by convention, not as a Julia package, and dependencies point one way:
 this repository never depends on a simulation repository.
 
-Boxes are ticked in the pull request that does the work. Last updated: October 17, 2026 (v0.1.0).
+Boxes are ticked in the pull request that does the work. Last updated: October 19, 2026 (v0.2.0).
 Versions: see [CONTRIBUTING.md](CONTRIBUTING.md#versions-and-releases).
 
 ## Phase 1: finish and stabilize
@@ -20,9 +20,9 @@ Versions: see [CONTRIBUTING.md](CONTRIBUTING.md#versions-and-releases).
       Rorqual, Oct 16)
 - [x] How changes are made: [CONTRIBUTING.md](CONTRIBUTING.md)
 - [x] Every script listed in [docs/scripts.md](docs/scripts.md), with its usage printed by `-h`
-- [ ] Platform tests rerun with the Oct 15–16 settings (all but Nibi done)
+- [x] Platform tests rerun with the Oct 15–16 settings
   - [x] rondeau (Oct 16: 21 passed, same answers as Oct 13)
-  - [ ] Nibi (queued; added in v0.1.1)
+  - [x] Nibi (Oct 19, in v0.2.0)
   - [x] Fir (Oct 17)
   - [x] Rorqual (Oct 16)
   - [x] Trillium (Oct 17)
@@ -36,7 +36,9 @@ Versions: see [CONTRIBUTING.md](CONTRIBUTING.md#versions-and-releases).
 - [x] Every clone's remote points to the new name (`git remote set-url`)
 - [x] Each cluster fact in one place: `jobs/gpu_request.sh` (GPUs per node, memory, Trillium's
       rules), used by every script; the docs' tables are checked against it automatically
-- [x] Release **v0.1.0** (Oct 17): tested on Fir, Rorqual, Trillium and rondeau; Nibi in v0.1.1
+- [x] Release **v0.1.0** (Oct 17): tested on Fir, Rorqual, Trillium and rondeau
+- [ ] Release **v0.2.0**: contract for simulation repositories (Phase 3), Julia 1.10.10 everywhere,
+      tested on every machine including Nibi
 
 ## Phase 2: complete the switch of pelee and rondeau to this setup
 
