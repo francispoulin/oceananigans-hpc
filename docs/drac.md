@@ -411,13 +411,16 @@ versions, are in [results/tests/](../results/tests/).
 | Fir | 2026-10-17 | 58b382e | 21 passed | H100 80GB | 1.10.10 |
 | Rorqual | 2026-10-16 | 58b382e | 21 passed | H100 80GB | 1.10.10 |
 | Trillium | 2026-10-17 | 58b382e | 21 passed | H100 80GB | 1.10.10 |
-| rondeau | 2026-10-17 | a582cbe | 21 passed | A100 40GB | 1.10.8 |
+| rondeau | 2026-10-18 | 68d7c0b | 21 passed | A100 40GB | 1.10.10 |
+| pelee | 2026-10-18 | 68d7c0b | 21 passed | A100 40GB | 1.10.10 |
 | Nibi | pending | | | H100 80GB | 1.10.10 |
 
 Packages everywhere: Oceananigans 0.113.5, CUDA.jl 6.4.1, MPI.jl 0.20.27, OpenMPI_jll 4.1.10,
 NCDatasets 0.14.15, JLD2 0.6.7. Alliance modules: StdEnv/2023, gcc/12.3, openmpi/4.1.5, cuda/12.6,
 julia/1.10.10. Between 58b382e and a582cbe the scripts changed only by the renaming of the
 repository and of its root variable (`OCEAN_HPC_ROOT`), and rondeau gives the same results at both.
+On October 18 pelee and rondeau moved from Julia 1.10.8 to 1.10.10, the version used everywhere
+(`setup/install_julia.sh`); both give the same results as rondeau did with 1.10.8.
 The release adds these summaries, this table, the version number and one line in
 `tools/run_tests.sh` (summaries now start with the version, from `git describe`).
 
