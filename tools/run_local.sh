@@ -28,8 +28,9 @@
 # code verified on pelee (1 vs 4 GPUs agree to ~1e-11; jobs/gpu_wrapper.sh there): CUDA-aware
 # MPI needs the memory pool off to pass GPU buffers between processes.
 #
-# Free = no compute process on it now. Two runs started in the same second can still collide;
-# check with `nvidia-smi` if in doubt.
+# Free = no compute process on it now. A Julia run appears on its GPU only once CUDA starts (tens
+# of seconds), so runs started within that time can pick the same GPU: give runs started together
+# their own GPUs with -g (docs/fluidsgpu.md, "Running").
 
 [[ "${1:-}" == -h || "${1:-}" == --help ]] && { sed -n '2,/^[^#]/{/^#SBATCH/d;/^# *shellcheck/d;s/^# \{0,1\}//p;}' "$0"; exit 0; }   # -h: usage
 set -eo pipefail
