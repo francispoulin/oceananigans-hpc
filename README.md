@@ -5,7 +5,15 @@ on GPUs, including multi-GPU runs with CUDA-aware MPI: on the clusters of the Di
 Alliance of Canada (DRAC), and on the Waterloo fluids group's own servers.
 
 A community project, not part of [CliMA](https://github.com/CliMA). Formerly named
-Oceananigans-DRAC; old links and clones keep working.
+Oceananigans-DRAC; old links and clones keep working. To rename an existing clone's folder as well:
+when no job submitted from it is queued or running (`squeue -u $USER`; on pelee/rondeau no
+`run_local.sh` run), `mv Oceananigans-DRAC oceananigans-hpc`, change the path in the `ocean_setup`
+alias in `~/.bashrc`, open a new shell and run `check_env`. Nothing else stores the folder's path.
+
+**Results:** hydrostatic scaling on Nibi, Trillium and Rorqual, with a figure
+([results/hydrostatic_scaling.md](results/hydrostatic_scaling.md)), and the nonhydrostatic pressure
+solve ([results/pressure_solver_1024.md](results/pressure_solver_1024.md)); summary in
+[docs/drac.md, section 8](docs/drac.md#8-scaling).
 
 **Status:** platform tests pass on every machine below; current work and plans are in
 [ROADMAP.md](ROADMAP.md). How changes are made: [CONTRIBUTING.md](CONTRIBUTING.md). Every
