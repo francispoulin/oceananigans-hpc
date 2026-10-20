@@ -32,7 +32,7 @@ Versions: see [CONTRIBUTING.md](CONTRIBUTING.md#versions-and-releases).
 - [x] Automatic checks on every pull request (`tests/ci/`): shell syntax, `shellcheck`, submit
       scripts' Slurm options for each cluster, links in the docs
 - [x] Repository renamed oceananigans-hpc (was Oceananigans-DRAC); `OCEAN_HPC_ROOT` replaces
-      `OCEANANIGANS_DRAC_ROOT`, which is still exported until v0.4.0
+      `OCEANANIGANS_DRAC_ROOT` (exported until v0.3.0, removed in v0.4.0)
 - [x] Every clone's remote points to the new name (`git remote set-url`)
 - [x] Each cluster fact in one place: `jobs/gpu_request.sh` (GPUs per node, memory, Trillium's
       rules), used by every script; the docs' tables are checked against it automatically
@@ -66,9 +66,9 @@ Versions: see [CONTRIBUTING.md](CONTRIBUTING.md#versions-and-releases).
       those repositories)
 - [x] Long option names for `tools/run_local.sh` (`--gpus`, `--gpu-ids`, `--project`, `--job-name`;
       `--name=value` too), asked for by BalancedFlows; the short forms (`-n`, `-g`, `-p`, `-j`) still work
-- [ ] BalancedFlows uses the contract: `OCEAN_HPC_ROOT`, `submit_gpu.sh` for multi-GPU runs on the
-      Alliance, `$OCEAN_RESULTS_ROOT/BalancedFlows/` (in that repository)
-- [ ] Then drop `OCEANANIGANS_DRAC_ROOT` (v0.4.0; v0.3.0 added long option names instead)
+- [x] BalancedFlows uses the contract: `OCEAN_HPC_ROOT`, `submit_gpu.sh` for multi-GPU runs on the
+      Alliance, `$OCEAN_RESULTS_ROOT/BalancedFlows/` (BalancedFlows v0.7.0; old name dropped in its #27)
+- [x] Then drop `OCEANANIGANS_DRAC_ROOT` (v0.4.0); `ocean_setup` points out `~/.bashrc` lines that still use it
 - [x] Trillium job folder `$SCRATCH/oceananigans-hpc` (was `oceananigans-drac`) in `env/drac.sh`
 - [ ] Folders renamed on every machine: clones `Oceananigans-DRAC` → `oceananigans-hpc` (README), and on
       Trillium `$SCRATCH/oceananigans-drac` → `oceananigans-hpc`; Nibi and Fir once their queued jobs end

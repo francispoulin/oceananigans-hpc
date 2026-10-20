@@ -17,7 +17,7 @@ using TOML
 
 const project = abspath(get(ARGS, 1, "."))
 const mpiroot = get(ENV, "OCEAN_MPI_ROOT", "")
-const vizdir  = joinpath(get(ENV, "OCEAN_HPC_ROOT", get(ENV, "OCEANANIGANS_DRAC_ROOT", "")), "viz")
+const vizdir  = joinpath(get(ENV, "OCEAN_HPC_ROOT", ""), "viz")
 nwarn = 0
 ok(s)   = println("  \e[32mOK\e[0m    ", s)
 warn(s) = (global nwarn += 1; println("  \e[33mWARN\e[0m  ", s))

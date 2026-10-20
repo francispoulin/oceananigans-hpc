@@ -29,3 +29,12 @@ else
 fi
 
 unset _ocean_env_dir _ocean_host
+
+# OCEANANIGANS_DRAC_ROOT, this variable's name before the repository was renamed, was removed in
+# v0.4.0. Clear a value left from an older setup, and point out ~/.bashrc lines that still use it
+# (an alias using it would otherwise fail with a puzzling "/tools/...: No such file").
+unset OCEANANIGANS_DRAC_ROOT
+if grep -qs 'OCEANANIGANS_DRAC_ROOT' ~/.bashrc; then
+    echo "ocean_setup: ~/.bashrc uses OCEANANIGANS_DRAC_ROOT, removed in oceananigans-hpc v0.4.0;" >&2
+    echo "             use OCEAN_HPC_ROOT instead (lines: grep -n OCEANANIGANS_DRAC_ROOT ~/.bashrc)." >&2
+fi

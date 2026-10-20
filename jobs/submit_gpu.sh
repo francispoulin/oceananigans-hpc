@@ -27,7 +27,6 @@
 
 [[ "${1:-}" == -h || "${1:-}" == --help ]] && { sed -n '2,/^[^#]/{/^#SBATCH/d;/^# *shellcheck/d;s/^# \{0,1\}//p;}' "$0"; exit 0; }   # -h: usage
 set -eo pipefail
-OCEAN_HPC_ROOT="${OCEAN_HPC_ROOT:-${OCEANANIGANS_DRAC_ROOT:-}}"   # old name: environments set up before the rename
 : "${OCEAN_HPC_ROOT:?run ocean_setup first}"
 [[ $# -ge 2 && "$2" =~ ^[0-9]+$ && "$2" -ge 1 ]] || {
     echo "usage: bash jobs/submit_gpu.sh <job script> <number of GPUs> [sbatch options...] [-- script options...]"; exit 1; }

@@ -55,9 +55,6 @@ export OPAL_PREFIX="$OCEAN_MPI_ROOT"
 
 # Root of this repository (the folder containing env/), for scripts that need it.
 export OCEAN_HPC_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-# Old name (until v0.4.0), for simulation repositories and ~/.bashrc lines written before the
-# repository was renamed (Oceananigans-DRAC -> oceananigans-hpc, Oct 2026). Use OCEAN_HPC_ROOT.
-export OCEANANIGANS_DRAC_ROOT="$OCEAN_HPC_ROOT"
 
 # Julia depot: where packages and compiled code are stored (about 2 GB). Not on $SCRATCH,
 # which is purged after 60 days without access. Choose another (e.g. project space) by
