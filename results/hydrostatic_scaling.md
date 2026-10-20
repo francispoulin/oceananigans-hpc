@@ -4,9 +4,8 @@ The current numbers, measured with both GPU-to-GPU settings of `docs/drac.md` st
 (`--gpus-per-node`, CUDA.jl memory pool off). The earlier Nibi runs (Oct 2–14, without them) are in
 [nibi_scaling.md](nibi_scaling.md).
 
-**Status (Oct 18): draft.** Trillium is complete; Nibi has 4, 8 and 32 GPUs (MPI); Rorqual's 16-GPU
-runs and the rest of Nibi's are queued, and their rows say *pending*. Nibi's efficiencies wait for its
-1-GPU run.
+**Status (Oct 20): draft.** Trillium and Rorqual are complete; Nibi has 1–32 GPUs with MPI, and its
+NCCL runs and weak scaling beyond 4 GPUs are queued (rows say *pending*).
 
 ## Setup
 
@@ -29,36 +28,43 @@ Time per step in seconds (fastest window); efficiency = time on 1 GPU / (N × ti
 
 | GPUs | Trillium nodes | Trillium MPI | Trillium NCCL | Rorqual nodes | Rorqual MPI | Rorqual NCCL | Nibi nodes | Nibi MPI | Nibi NCCL |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | 1 | 1.0461 | – | 1 | 1.051 | – | 1 | pending | – |
-| 2 | | | | | | | 1 | pending | |
-| 4 | 1 | 0.2638 (99%) | 0.2622 (100%) | 1 | 0.264 (100%) | 0.263 (100%) | 1 | 0.2633 | |
-| 8 | 2 | 0.1429 (91%) | 0.1413 (93%) | 2 | 0.148 (88%) | 0.142 (93%) | 1 | 0.1419 | pending |
-| 16 | 4 | 0.0819 (80%) | 0.0791 (83%) | 4 | pending | pending | 2 | pending | pending |
-| 32 | | | | | | | 4 | 0.0550 | pending |
+| 1 | 1 | 1.0461 | – | 1 | 1.051 | – | 1 | 1.0459 | – |
+| 2 | | | | | | | 1 | 0.5352 (98%) | |
+| 4 | 1 | 0.2638 (99%) | 0.2622 (100%) | 1 | 0.264 (100%) | 0.263 (100%) | 1 | 0.2633 (99%) | |
+| 8 | 2 | 0.1429 (91%) | 0.1413 (93%) | 2 | 0.148 (88%) | 0.142 (93%) | 1 | 0.1419 (92%) | pending |
+| 16 | 4 | 0.0819 (80%) | 0.0791 (83%) | 4 | 0.0866 (76%) | 0.0797 (82%) | 2 | 0.0805 (81%) | pending |
+| 32 | | | | | | | 4 | 0.0550 (59%) | pending |
 
 GPU memory per rank on Trillium: 46.6 GiB on 1 GPU, 13.5–14.4 on 4, 7.8–8.2 on 8, 4.9–5.4 on 16
-(NCCL uses 0.4–0.9 GiB more than MPI). Median windows are within 0.4% of the fastest on Trillium.
+(NCCL uses 0.4–0.9 GiB more than MPI); the same on Rorqual and Nibi. Median windows are within 0.4% of
+the fastest on Trillium and Rorqual, and on Nibi up to 8 GPUs; on Nibi at 16 and 32 GPUs the median is
+3% and 1% above the fastest, and the slowest window 8% and 25%.
 
 For comparison, Nibi before the two settings (Oct 2, [nibi_scaling.md](nibi_scaling.md)): 1 GPU
 1.0110 s, then 97%, 97%, 88%, 74% and 46% at 2, 4, 8, 16 and 32 GPUs.
 
-**Nibi, same GPU counts, before and after the two settings** (s per step, fastest window; slowest
-window in brackets, as a percentage above the fastest):
+**Nibi before and after the two settings** (s per step, fastest window; slowest window in brackets,
+as a percentage above the fastest; efficiency against the 1-GPU run of the same day):
 
-| GPUs | Nodes | Oct 2 | Oct 18 | Change |
-| --- | --- | --- | --- | --- |
-| 4 | 1 | 0.2594 (+1%) | 0.2633 (+2%) | 1.5% slower |
-| 8 | 1 | 0.1438 (+4%) | 0.1419 (+2%) | 1% faster |
-| 32 | 4 | 0.0689 (+60%) | 0.0550 (+25%) | 20% faster |
+| GPUs | Nodes | Oct 2 | Oct 17–20 | Change | Efficiency Oct 2 → Oct 17–20 |
+| --- | --- | --- | --- | --- | --- |
+| 1 | 1 | 1.0110 (+0%) | 1.0459 (+0%) | 3.5% slower | – |
+| 2 | 1 | 0.5228 (+2%) | 0.5352 (+0%) | 2.4% slower | 97% → 98% |
+| 4 | 1 | 0.2594 (+1%) | 0.2633 (+2%) | 1.5% slower | 97% → 99% |
+| 8 | 1 | 0.1438 (+4%) | 0.1419 (+2%) | 1% faster | 88% → 92% |
+| 16 | 2 | 0.0851 (+23%) | 0.0805 (+8%) | 5% faster | 74% → 81% |
+| 32 | 4 | 0.0689 (+60%) | 0.0550 (+25%) | 20% faster | 46% → 59% |
 
 Within a node the settings change almost nothing for the hydrostatic model (it exchanges only
-halos; the 1.5% is the cost of the memory pool being off, also seen on one GPU). Across 4 nodes it
-is 20% faster and much steadier; against the Oct 2 single-GPU time, efficiency at 32 GPUs goes from
-46% to about 57%. GPU memory per rank: 13.5, 7.8 and 3.5 GiB at 4, 8 and 32 GPUs.
+halos): 1–4 GPUs are 1.5–3.5% slower, the cost of the memory pool being off, which is also seen on one
+GPU. Across nodes runs are faster and much steadier: 5% faster on 2 nodes and 20% on 4, with the
+spread between windows down from 23% to 8% and from 60% to 25%. GPU memory per rank: 46.6, 24.8, 13.5,
+7.8, 4.9 and 3.5 GiB on 1 to 32 GPUs.
 
-**Reading the results (so far).** Within a node the hydrostatic model scales perfectly (99–100% on
-4 GPUs). Across nodes it keeps 88–93% on 2 nodes and 80–83% on 4, although at 16 GPUs each GPU
-has only 13 million cells: the model exchanges only thin halos, so the network matters much less than
+**Reading the results (so far).** Within a node the hydrostatic model scales almost perfectly (98–100%
+on 2 and 4 GPUs, 92% on Nibi's 8). Across nodes it keeps 88–93% on 2 four-GPU nodes and 76–83% at
+16 GPUs on every cluster, although each GPU then has only 13 million cells; at 32 GPUs (Nibi, 6.5 million
+cells per GPU) it falls to 59%: the model exchanges only thin halos, so the network matters much less than
 for the nonhydrostatic pressure solve ([pressure_solver_1024.md](pressure_solver_1024.md)). NCCL
 gains 1–4% once the run crosses nodes and is the same as MPI within a node.
 
@@ -69,18 +75,21 @@ time step halves with the grid spacing. Grid split in x, except where noted.
 
 | GPUs | Nodes | Grid (resolution) | Δt (s) | Time per step (s) | Efficiency | Job |
 | --- | --- | --- | --- | --- | --- | --- |
-| 1 | 1 | 1440 × 720 × 200 (1/4°) | 60 | pending | 100% | `hyd2_1gpu` |
-| 4 | 1 | 2880 × 1440 × 200 (1/8°) | 30 | pending | | `wk_4gpu` |
+| 1 | 1 | 1440 × 720 × 200 (1/4°) | 60 | 1.0459 | 100% | `hyd2_1gpu` |
+| 4 | 1 | 2880 × 1440 × 200 (1/8°) | 30 | 1.0683 | 98% | `wk_4gpu` |
 | 16 | 2 | 5760 × 2880 × 200 (1/16°) | 15 | pending | | `wk_16gpu` |
 | 64 | 8 | 11520 × 5760 × 200 (1/32°) | 7.5 | pending | | `wk_64gpu` |
 | 64 | 8 | 11520 × 5760 × 200, 8 × 8 split | 7.5 | pending | | `wk_64gpu_8x8` |
 
-Before the two settings (Oct 5–14): 97.5% on 4 GPUs and 84.7% on 64 GPUs (1.1929 s per step;
+GPU memory per rank: 46.6 GiB on 1 GPU, 48.4 on 4. Before the two settings (Oct 5–14): 97.5% on 4 GPUs and 84.7% on 64 GPUs (1.1929 s per step;
 54.9 GiB per GPU, so about 290 million cells per H100 is the practical limit).
 
 ## Notes
 
-- Efficiency on Trillium and Rorqual is against their own 1-GPU time (1.046 and 1.051 s), about
-  3.5% slower than Nibi's Oct 2 run (1.011 s); the memory pool being off is the likely reason.
-- Rorqual's numbers are from Oct 16, Trillium's from Oct 17; the software versions on each
+- Efficiency on each cluster is against its own 1-GPU time with the same settings: 1.046 s on Trillium and
+  Nibi, 1.051 s on Rorqual; all about 3.5% slower than Nibi's Oct 2 run (1.011 s), the memory pool being off.
+- Efficiencies here use the fastest window; `tools/summarize_benchmarks.py` reports them from the median,
+  which differs by at most 2 points (Nibi, 16 GPUs).
+- Rorqual's numbers are from Oct 15–18, Trillium's from Oct 17, Nibi's from Oct 17–20 (jobs 24350485–90 and
+  24042817–18); the software versions on each
   cluster are in [tests/](tests/).
