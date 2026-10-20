@@ -30,7 +30,7 @@ def check(ok, what):
         fails.append(what)
 
 
-env = {k: v for k, v in os.environ.items() if k not in ("OCEAN_HPC_ROOT", "OCEANANIGANS_DRAC_ROOT")}
+env = {k: v for k, v in os.environ.items() if k != "OCEAN_HPC_ROOT"}
 for name in scripts:
     listed = name in page or (name.startswith("tests/ci/") and pathlib.Path(name).name in page)
     text = (root / name).read_text()

@@ -15,7 +15,6 @@ warn() { printf '  \033[33mWARN\033[0m  %s\n' "$*"; nwarn=$((nwarn+1)); }
 info() { printf '        %s\n' "$*"; }
 
 echo "== Environment"
-OCEAN_HPC_ROOT="${OCEAN_HPC_ROOT:-${OCEANANIGANS_DRAC_ROOT:-}}"   # old name: environments set up before the rename
 if [[ -z "$OCEAN_HPC_ROOT" ]]; then
     warn "ocean_setup has not been sourced in this shell (OCEAN_HPC_ROOT is empty)."
     info "Run: source /path/to/oceananigans-hpc/env/ocean_setup.sh   (or your alias)"

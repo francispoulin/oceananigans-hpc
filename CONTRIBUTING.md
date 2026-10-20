@@ -120,7 +120,8 @@ Before 1.0 (`0.y.z`, while the interface is still settling) a breaking change bu
 and everything else the patch number. 1.0.0 comes once the contract for simulation repositories is
 settled (`ROADMAP.md`, Phase 3). A breaking change keeps the old way working for one minor version
 where it can, with a note saying when it goes (for example `OCEANANIGANS_DRAC_ROOT`, the variable's
-name before the repository was renamed, is exported until v0.4.0).
+name before the repository was renamed, was exported alongside `OCEAN_HPC_ROOT` from v0.1.0 to v0.3.0
+and removed in v0.4.0).
 
 **Making a release:**
 
