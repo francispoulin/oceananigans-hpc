@@ -55,7 +55,7 @@ export OPAL_PREFIX="$OCEAN_MPI_ROOT"
 
 # Root of this repository (the folder containing env/), for scripts that need it.
 export OCEAN_HPC_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-# Old name (until v0.3.0), for simulation repositories and ~/.bashrc lines written before the
+# Old name (until v0.4.0), for simulation repositories and ~/.bashrc lines written before the
 # repository was renamed (Oceananigans-DRAC -> oceananigans-hpc, Oct 2026). Use OCEAN_HPC_ROOT.
 export OCEANANIGANS_DRAC_ROOT="$OCEAN_HPC_ROOT"
 

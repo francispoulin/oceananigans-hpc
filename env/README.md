@@ -16,7 +16,7 @@ Scripts in `setup/`, `jobs/` and `tools/` rely only on these, so a new machine n
 
 | Variable | Meaning |
 | --- | --- |
-| `OCEAN_HPC_ROOT` | root of this repository (also exported as `OCEANANIGANS_DRAC_ROOT`, the old name, until v0.3.0) |
+| `OCEAN_HPC_ROOT` | root of this repository (also exported as `OCEANANIGANS_DRAC_ROOT`, the old name, until v0.4.0) |
 | `OCEAN_MACHINE` | short machine name, for messages and logs |
 | `OCEAN_MPI_ROOT` | installation prefix of the system OpenMPI (contains `lib/libmpi.so`) |
 | `OPAL_PREFIX` | set to `$OCEAN_MPI_ROOT` (see `src/drac_mpi.jl`) |
