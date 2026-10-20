@@ -402,8 +402,8 @@ Reduce `DT` at higher resolution to stay stable (we used 60, 30, 15 and 7.5 s fo
      
 ## 10. Tested with
 
-**Version v0.2.1** (October 2026): the platform tests (`tools/run_tests.sh`, 21 tests on 1 and 4
-GPUs) pass on every machine, with the GPU settings of step 7. Summaries, with the exact package
+**Version v0.3.0** (October 2026): the platform tests (`tools/run_tests.sh`, 21 tests on 1 and 4
+GPUs, or 1 and 2) pass on every machine, with the GPU settings of step 7. Summaries, with the exact package
 versions, are in [results/tests/](../results/tests/).
 
 | Machine | Date | Commit | Result | GPU | Julia |
@@ -413,14 +413,16 @@ versions, are in [results/tests/](../results/tests/).
 | Rorqual | 2026-10-18 | e386059 | 21 passed | H100 80GB | 1.10.10 |
 | Trillium | 2026-10-19 | e386059 | 21 passed | H100 80GB | 1.10.10 |
 | pelee | 2026-10-19 | 56c36df | 21 passed | A100 40GB | 1.10.10 |
-| rondeau | 2026-10-18 | 68d7c0b | 21 passed | A100 40GB | 1.10.10 |
+| rondeau | 2026-10-19 | 86b6e02 | 21 passed (1 and 2 GPUs) | A100 40GB | 1.10.10 |
 
 Packages everywhere: Oceananigans 0.113.5, CUDA.jl 6.4.1, MPI.jl 0.20.27, OpenMPI_jll 4.1.10,
 NCDatasets 0.14.15, JLD2 0.6.7. Julia 1.10.10 everywhere: the `julia/1.10.10` module on the Alliance
 (with StdEnv/2023, gcc/12.3, openmpi/4.1.5, cuda/12.6), and on pelee and rondeau the official release
 installed by `setup/install_julia.sh` (their modules stop at 1.10.8). Between 68d7c0b and e386059
 only test summaries and docs changed. v0.2.1 changes only `tools/run_local.sh` (pelee and rondeau),
-retested on pelee at 56c36df; the other rows are unchanged from v0.2.0. Every result is the same as with v0.1.0 on each machine, and
+retested on pelee at 56c36df. v0.3.0 changes only how `tools/run_local.sh` reads its options (pelee and
+rondeau), retested on rondeau at 86b6e02 on 1 and 2 GPUs (two of its GPUs were in use); the other rows
+are unchanged from v0.2.0. Every result is the same as with v0.1.0 on each machine, and
 the same on pelee and rondeau with Julia 1.10.8 and 1.10.10. Which machines are retested for a
 release: [CONTRIBUTING.md](../CONTRIBUTING.md#versions-and-releases).
 

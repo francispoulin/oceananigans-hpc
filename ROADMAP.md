@@ -32,13 +32,14 @@ Versions: see [CONTRIBUTING.md](CONTRIBUTING.md#versions-and-releases).
 - [x] Automatic checks on every pull request (`tests/ci/`): shell syntax, `shellcheck`, submit
       scripts' Slurm options for each cluster, links in the docs
 - [x] Repository renamed oceananigans-hpc (was Oceananigans-DRAC); `OCEAN_HPC_ROOT` replaces
-      `OCEANANIGANS_DRAC_ROOT`, which is still exported until v0.3.0
+      `OCEANANIGANS_DRAC_ROOT`, which is still exported until v0.4.0
 - [x] Every clone's remote points to the new name (`git remote set-url`)
 - [x] Each cluster fact in one place: `jobs/gpu_request.sh` (GPUs per node, memory, Trillium's
       rules), used by every script; the docs' tables are checked against it automatically
 - [x] Release **v0.1.0** (Oct 17): tested on Fir, Rorqual, Trillium and rondeau
 - [x] Release **v0.2.0** (Oct 19): contract for simulation repositories (Phase 3), Julia 1.10.10 everywhere,
       tested on every machine including Nibi
+- [x] Release **v0.3.0** (Oct 19): long option names for `tools/run_local.sh`; tested on rondeau
 
 ## Phase 2: complete the switch of pelee and rondeau to this setup
 
@@ -67,7 +68,7 @@ Versions: see [CONTRIBUTING.md](CONTRIBUTING.md#versions-and-releases).
       `--name=value` too), asked for by BalancedFlows; the short forms (`-n`, `-g`, `-p`, `-j`) still work
 - [ ] BalancedFlows uses the contract: `OCEAN_HPC_ROOT`, `submit_gpu.sh` for multi-GPU runs on the
       Alliance, `$OCEAN_RESULTS_ROOT/BalancedFlows/` (in that repository)
-- [ ] Then drop `OCEANANIGANS_DRAC_ROOT` (v0.3.0)
+- [ ] Then drop `OCEANANIGANS_DRAC_ROOT` (v0.4.0; v0.3.0 added long option names instead)
 - [ ] Trillium job folder renamed `$SCRATCH/oceananigans-hpc` (kept as `oceananigans-drac` while
       jobs submitted before the rename are queued)
 - [ ] Nonhydrostatic benchmark repeated with a real BalancedFlows configuration (needs its
