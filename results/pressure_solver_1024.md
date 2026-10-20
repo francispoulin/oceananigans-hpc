@@ -5,7 +5,8 @@ solve transposes the full 3-D field between GPUs. This page times it alone
 (`benchmarks/poisson_solver.jl`), with MPI and with NCCL, after the two GPU-to-GPU settings of
 `docs/drac.md` step 7.
 
-**Status (Oct 17): draft.** Nibi's 8-GPU runs (one node) are queued; that row says *pending*.
+**Status (Oct 20): draft.** Nibi's 8-GPU runs (one node) are queued (expected Oct 21); that row says
+*pending*.
 
 ## Setup
 

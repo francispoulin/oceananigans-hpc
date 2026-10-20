@@ -5,7 +5,7 @@ The current numbers, measured with both GPU-to-GPU settings of `docs/drac.md` st
 [nibi_scaling.md](nibi_scaling.md).
 
 **Status (Oct 20): draft.** Trillium and Rorqual are complete; Nibi has 1–32 GPUs with MPI, and its
-NCCL runs and weak scaling beyond 4 GPUs are queued (rows say *pending*).
+NCCL runs and weak scaling beyond 4 GPUs are queued (rows say *pending*; expected Oct 21–27).
 
 ## Setup
 
@@ -24,7 +24,10 @@ NCCL runs and weak scaling beyond 4 GPUs are queued (rows say *pending*).
 
 ## Strong scaling, 1/4° (1440 × 720 × 200, 207 million cells)
 
+![Time per step and strong-scaling efficiency against GPUs, Nibi, Trillium and Rorqual, MPI and NCCL, with Nibi before the GPU settings](hydrostatic_scaling.png)
+
 Time per step in seconds (fastest window); efficiency = time on 1 GPU / (N × time on N GPUs).
+The figure is made from this table: `python3 tools/plot_scaling.py` (after editing the table).
 
 | GPUs | Trillium nodes | Trillium MPI | Trillium NCCL | Rorqual nodes | Rorqual MPI | Rorqual NCCL | Nibi nodes | Nibi MPI | Nibi NCCL |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
