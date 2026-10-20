@@ -32,7 +32,7 @@ comes from `$OCEAN_SOFTWARE_DIR/julia-<version>` (installed by `setup/install_ju
 `Manifest.toml` (checked by `tools/check_env.sh` and `tests/ci/check_julia_version.py`).
 
 Optional: `OCEAN_JOB_DIR`, where scripts write logs and results from inside jobs when the
-repository is not writable from compute nodes (set on Trillium to `$SCRATCH/oceananigans-drac`;
+repository is not writable from compute nodes (set on Trillium to `$SCRATCH/oceananigans-hpc`;
 default: the repository).
 
 Ocean data: `OCEAN_DATA_DIR` (default: `ocean_data` next to the Julia depot), also exported as

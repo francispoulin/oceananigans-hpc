@@ -26,7 +26,7 @@ export OCEAN_MACHINE="${CC_CLUSTER:-alliance}"
 # OCEAN_JOB_DIR when it is set (default: this repository). Not for the Julia depot: $SCRATCH is
 # purged, and the depot only needs to be written from the login node.
 if [[ "$CC_CLUSTER" == trillium ]]; then
-    export OCEAN_JOB_DIR="${OCEAN_JOB_DIR:-$SCRATCH/oceananigans-drac}"   # old name kept: see ROADMAP.md
+    export OCEAN_JOB_DIR="${OCEAN_JOB_DIR:-$SCRATCH/oceananigans-hpc}"
 fi
 
 # Inside a job, use the compute node's own Slurm commands. sbatch --export=ALL (as our submit

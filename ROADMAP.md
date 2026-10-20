@@ -69,8 +69,9 @@ Versions: see [CONTRIBUTING.md](CONTRIBUTING.md#versions-and-releases).
 - [ ] BalancedFlows uses the contract: `OCEAN_HPC_ROOT`, `submit_gpu.sh` for multi-GPU runs on the
       Alliance, `$OCEAN_RESULTS_ROOT/BalancedFlows/` (in that repository)
 - [ ] Then drop `OCEANANIGANS_DRAC_ROOT` (v0.4.0; v0.3.0 added long option names instead)
-- [ ] Trillium job folder renamed `$SCRATCH/oceananigans-hpc` (kept as `oceananigans-drac` while
-      jobs submitted before the rename are queued)
+- [x] Trillium job folder `$SCRATCH/oceananigans-hpc` (was `oceananigans-drac`) in `env/drac.sh`
+- [ ] Folders renamed on every machine: clones `Oceananigans-DRAC` → `oceananigans-hpc` (README), and on
+      Trillium `$SCRATCH/oceananigans-drac` → `oceananigans-hpc`; Nibi and Fir once their queued jobs end
 - [ ] Nonhydrostatic benchmark repeated with a real BalancedFlows configuration (needs its
       nonhydrostatic option)
 - [ ] v1.0.0 when the contract has been used by BalancedFlows on every machine
