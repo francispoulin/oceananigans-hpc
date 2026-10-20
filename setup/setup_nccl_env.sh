@@ -5,7 +5,7 @@
 #
 #     bash setup/setup_nccl_env.sh [DIR]     # default DIR: $OCEAN_HPC_ROOT/envs/nccl
 #
-# Then run with it:  bash tools/run_local.sh -p envs/nccl ...  (envs/ is not committed).
+# Then run with it:  bash tools/run_local.sh --project envs/nccl ...  (envs/ is not committed).
 # Delete the folder to remove it; nothing else changes.
 #
 # On EACH OTHER machine that shares this folder (e.g. rondeau after setting up on pelee), run once,
@@ -52,4 +52,4 @@ julia --project="$DIR" -e '
     println(ext === nothing ? "FAIL: OceananigansNCCLExt did not load" : "OK: OceananigansNCCLExt loaded")
     ext === nothing && exit(1)'
 
-echo "Done. Use: bash tools/run_local.sh -p $DIR ... (Oceananigans version must match the main environment above)."
+echo "Done. Use: bash tools/run_local.sh --project $DIR ... (Oceananigans version must match the main environment above)."

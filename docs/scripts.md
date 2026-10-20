@@ -53,7 +53,7 @@ What the tests cover: [tests/README.md](../tests/README.md).
 | --- | --- | --- | --- |
 | `jobs/submit_gpu.sh` | Submits a GPU job script, this repository's or another's, on N GPUs with the right Slurm options for the cluster; options after `--` go to the script (`DRYRUN=1` prints the command) | login | `bash jobs/submit_gpu.sh jobs/checks.sh 8` |
 | `jobs/viz.sh` | A plotting job on a CPU node, with the `viz` environment, from your project folder | job | `sbatch $OCEAN_HPC_ROOT/jobs/viz.sh scripts/make_movies.jl` |
-| `tools/run_local.sh` | The same as a job, on pelee/rondeau (no Slurm): picks free GPUs, runs in the background, writes a log | server | `bash $OCEAN_HPC_ROOT/tools/run_local.sh -n 4 scripts/run.jl` |
+| `tools/run_local.sh` | The same as a job, on pelee/rondeau (no Slurm): picks free GPUs, runs in the background, writes a log | server | `bash $OCEAN_HPC_ROOT/tools/run_local.sh --gpus 4 scripts/run.jl` |
 
 `jobs/gpu_request.sh` holds the Slurm rules of each cluster (GPUs per node, memory, Trillium's
 "1 GPU or whole nodes"); the submit scripts and `run_tests.sh` source it. It is not run on its own.

@@ -12,8 +12,8 @@
 # the ~65 ms per step that 2 GPUs lose in nonhydrostatic_box.jl (results/nonhydrostatic_rondeau.md).
 # To repeat (e.g. on a new machine or MPI):
 #
-#   bash tools/run_local.sh --wait -n 2 -j a2a_2gpu_own benchmarks/alltoall_bandwidth.jl
-#   bash tools/run_local.sh --wait -n 2 --all-visible -j a2a_2gpu_all benchmarks/alltoall_bandwidth.jl
+#   bash tools/run_local.sh --wait --gpus 2 --job-name a2a_2gpu_own benchmarks/alltoall_bandwidth.jl
+#   bash tools/run_local.sh --wait --gpus 2 --all-visible --job-name a2a_2gpu_all benchmarks/alltoall_bandwidth.jl
 #   (same with -n 4)
 #   grep -h "^RESULT" logs/a2a_*.out
 #

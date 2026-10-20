@@ -122,6 +122,28 @@ done; wait
 out="$(cat "$lt"/proj/logs/same_*.out 2>/dev/null)"
 [[ $(ls "$lt"/proj/logs/same_*.out 2>/dev/null | wc -l) -eq 3 && "$out" == *--i=1* && "$out" == *--i=2* && "$out" == *--i=3* ]] && ok=1 || ok=0
 report "$ok" "run_local.sh: three runs started together with the same name get three logs" "$(ls "$lt"/proj/logs 2>&1)"
+
+# run_local.sh: long and short option names give the same command (the log line has the time, so it
+# is left out); `--name=value` works; mistakes stop with a message
+printf '#!/bin/bash\nexit 0\n' > "$lt/bin/nvidia-smi"; chmod +x "$lt/bin/nvidia-smi"
+mkdir -p "$lt/other"; touch "$lt/other/Project.toml"
+rl() { (cd "$lt/proj" && PATH="$lt/bin:$PATH" bash "$ROOT/tools/run_local.sh" --dry-run "$@" 2>&1) | grep -v '^log:'; }
+short="$(rl -n 2 -g 1,3 -p ../other -j myrun run.jl --x=1)"
+for long in "--gpus 2 --gpu-ids 1,3 --project ../other --job-name myrun" \
+            "--gpus=2 --gpu-ids=1,3 --project=../other --job-name=myrun"; do
+    # shellcheck disable=SC2086  # $long is several options on purpose
+    out="$(rl $long run.jl --x=1)"
+    [[ "$out" == "$short" && "$out" == *"GPUs:     1,3"* && "$out" == *"mpiexec -n 2"* && "$out" == *"--x=1"* ]] && ok=1 || ok=0
+    report "$ok" "run_local.sh: $long gives the same command as -n 2 -g 1,3 -p ../other -j myrun" "$out
+--- short form:
+$short"
+done
+for bad in "--gpus" "--gpus two" "--gpus --wait" "--wait=1" "--gpu 2"; do
+    # shellcheck disable=SC2086
+    out="$(cd "$lt/proj" && PATH="$lt/bin:$PATH" bash "$ROOT/tools/run_local.sh" --dry-run $bad run.jl 2>&1)" && ok=0 || ok=1
+    [[ "$out" == *"(dry run"* ]] && ok=0
+    report "$ok" "run_local.sh refuses '$bad'" "$out"
+done
 rm -rf "$lt"
 
 rm -rf "$OCEAN_JOB_DIR"

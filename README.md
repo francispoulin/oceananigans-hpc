@@ -117,7 +117,7 @@ julia --project=$OCEAN_HPC_ROOT/viz scripts/make_movies.jl      # plots, with vi
 ```
 
 Plotting jobs on the Alliance: `sbatch $OCEAN_HPC_ROOT/jobs/viz.sh scripts/make_movies.jl`.
-On pelee and rondeau: `bash $OCEAN_HPC_ROOT/tools/run_local.sh -n 0 --viz scripts/make_movies.jl`.
+On pelee and rondeau: `bash $OCEAN_HPC_ROOT/tools/run_local.sh --gpus 0 --viz scripts/make_movies.jl`.
 
 ## Contributing
 

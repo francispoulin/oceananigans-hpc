@@ -43,16 +43,17 @@ Alliance and pelee needs a separate clone on each (the usual case: the drives ar
 From your project folder, after `ocean_setup`:
 
 ```bash
-bash $OCEAN_HPC_ROOT/tools/run_local.sh -n 4 scripts/run.jl --resolution=4km    # 4 GPUs
-bash $OCEAN_HPC_ROOT/tools/run_local.sh -n 1 scripts/run.jl                     # 1 GPU
-bash $OCEAN_HPC_ROOT/tools/run_local.sh -n 0 --viz scripts/make_movies.jl       # plots
+bash $OCEAN_HPC_ROOT/tools/run_local.sh --gpus 4 scripts/run.jl --resolution=4km    # 4 GPUs
+bash $OCEAN_HPC_ROOT/tools/run_local.sh --gpus 1 scripts/run.jl                     # 1 GPU
+bash $OCEAN_HPC_ROOT/tools/run_local.sh --gpus 0 --viz scripts/make_movies.jl       # plots
 ```
 
-`run_local.sh`:
+`run_local.sh` (all its options: `bash $OCEAN_HPC_ROOT/tools/run_local.sh --help`; the short forms
+`-n`, `-g`, `-p`, `-j` of `--gpus`, `--gpu-ids`, `--project`, `--job-name` also work):
 
-- picks GPUs with no running process (or exactly the ones given with `-g 0,1`) and refuses to
+- picks GPUs with no running process (or exactly the ones given with `--gpu-ids 0,1`) and refuses to
   start if not enough are free, showing who is using them;
-- with `-n 4`, starts 4 MPI ranks, each seeing only its own GPU, with
+- with `--gpus 4`, starts 4 MPI ranks, each seeing only its own GPU, with
   `JULIA_CUDA_MEMORY_POOL=none` (needed by CUDA-aware MPI; the setup verified by the Gulf Stream
   code on pelee);
 - runs in the background, immune to logout, with output in `logs/<name>_<date-time>.out`
@@ -61,14 +62,14 @@ bash $OCEAN_HPC_ROOT/tools/run_local.sh -n 0 --viz scripts/make_movies.jl       
 
 `--dry-run` shows what would run without starting anything.
 
-**Starting several runs at once: give each its own GPUs with `-g`.** A GPU counts as free when no
+**Starting several runs at once: give each its own GPUs with `--gpu-ids`.** A GPU counts as free when no
 process is running on it, and a Julia run only shows up on its GPU once CUDA starts, tens of
 seconds after launch. Runs started within that time can pick the same GPU, and then share it
 (slower, or out of memory). So for runs started together, for example from a test script:
 
 ```bash
-bash $OCEAN_HPC_ROOT/tools/run_local.sh -g 0,1 -n 2 -j case_a scripts/run.jl --config=a &
-bash $OCEAN_HPC_ROOT/tools/run_local.sh -g 2,3 -n 2 -j case_b scripts/run.jl --config=b &
+bash $OCEAN_HPC_ROOT/tools/run_local.sh --gpu-ids 0,1 --gpus 2 --job-name case_a scripts/run.jl --config=a &
+bash $OCEAN_HPC_ROOT/tools/run_local.sh --gpu-ids 2,3 --gpus 2 --job-name case_b scripts/run.jl --config=b &
 ```
 
 Runs started by hand a minute or more apart are fine without `-g`.
@@ -80,7 +81,7 @@ Before the first multi-GPU run, run the checks on 2 GPUs (then 4), from the repo
 ```bash
 cd $OCEAN_HPC_ROOT
 for c in single_mpi cuda_aware_mpi distributed_vs_serial output; do
-    bash tools/run_local.sh --wait -n 2 -j check_$c checks/$c.jl || break
+    bash tools/run_local.sh --wait --gpus 2 --job-name check_$c checks/$c.jl || break
 done
 grep -h "PASS\|FAIL" logs/check_*.out      # one PASS per check
 ```

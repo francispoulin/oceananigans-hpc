@@ -61,8 +61,8 @@ check_env                                     # if anything seems wrong (alias f
 
 | Task | Alliance | pelee / rondeau |
 | --- | --- | --- |
-| Run a simulation | your project's Slurm script (sources `env/ocean_setup.sh`) | `tools/run_local.sh -n 4 scripts/run.jl ...` |
-| Make movies / plots | `sbatch $OCEAN_HPC_ROOT/jobs/viz.sh "scripts/make_movies.jl <run>"` | `tools/run_local.sh -n 0 --viz scripts/make_movies.jl <run>` |
+| Run a simulation | your project's Slurm script (sources `env/ocean_setup.sh`) | `tools/run_local.sh --gpus 4 scripts/run.jl ...` |
+| Make movies / plots | `sbatch $OCEAN_HPC_ROOT/jobs/viz.sh "scripts/make_movies.jl <run>"` | `tools/run_local.sh --gpus 0 --viz scripts/make_movies.jl <run>` |
 | Check the whole setup | `tools/run_tests.sh` (submits one job) | `tools/run_tests.sh` |
 | Benchmark | `jobs/benchmark.sh`, `jobs/benchmark_nh.sh` | `tools/run_local.sh ... benchmarks/nonhydrostatic_box.jl` |
 

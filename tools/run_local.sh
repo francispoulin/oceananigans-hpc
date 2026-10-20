@@ -3,15 +3,18 @@
 # GPUs, survives logout, and writes a log, like sbatch does on the Alliance. After ocean_setup,
 # from your project folder:
 #
-#     bash $OCEAN_HPC_ROOT/tools/run_local.sh -n 4 scripts/run.jl --arg=1   # 4 GPUs, MPI
-#     bash $OCEAN_HPC_ROOT/tools/run_local.sh -n 1 scripts/run.jl          # 1 GPU
-#     bash $OCEAN_HPC_ROOT/tools/run_local.sh -n 0 --viz scripts/make_movies.jl  # CPU, viz
+#     bash $OCEAN_HPC_ROOT/tools/run_local.sh --gpus 4 scripts/run.jl --arg=1   # 4 GPUs, MPI
+#     bash $OCEAN_HPC_ROOT/tools/run_local.sh --gpus 1 scripts/run.jl            # 1 GPU
+#     bash $OCEAN_HPC_ROOT/tools/run_local.sh --gpus 0 --viz scripts/make_movies.jl  # CPU, viz
+#     bash $OCEAN_HPC_ROOT/tools/run_local.sh -n 4 scripts/run.jl                # short form, same as --gpus 4
 #
-# Options:
-#   -n N        number of GPUs (= MPI ranks when N > 1); 0 = CPU only. Default 1.
-#   -g 0,2      use exactly these GPUs instead of picking free ones
-#   -p DIR      Julia project (default: current folder); --viz = the viz environment
-#   -j NAME     run name for the log file (default: script name)
+# Options (long form, short form; `--name=value` works as well as `--name value`):
+#   --gpus N, -n N         number of GPUs (= MPI ranks when N > 1); 0 = CPU only. Default 1.
+#   --gpu-ids 0,2, -g 0,2  use exactly these GPUs instead of picking free ones (still give
+#                          --gpus for the number of ranks: --gpus 2 --gpu-ids 0,2)
+#   --project DIR, -p DIR  Julia project (default: current folder)
+#   --viz                  use the viz environment as the Julia project
+#   --job-name NAME, -j NAME  run name for the log file (default: script name)
 #   --all-visible  with N > 1, every rank sees all N chosen GPUs and picks its own by local
 #               rank (Oceananigans' Distributed(GPU()) does this), instead of seeing only its own.
 #               Not needed for speed on pelee/rondeau: MPI uses NVLink either way
@@ -30,7 +33,7 @@
 #
 # Free = no compute process on it now. A Julia run appears on its GPU only once CUDA starts (tens
 # of seconds), so runs started within that time can pick the same GPU: give runs started together
-# their own GPUs with -g (docs/fluidsgpu.md, "Running").
+# their own GPUs with --gpu-ids (docs/fluidsgpu.md, "Running").
 
 [[ "${1:-}" == -h || "${1:-}" == --help ]] && { sed -n '2,/^[^#]/{/^#SBATCH/d;/^# *shellcheck/d;s/^# \{0,1\}//p;}' "$0"; exit 0; }   # -h: usage
 set -eo pipefail
@@ -38,29 +41,40 @@ OCEAN_HPC_ROOT="${OCEAN_HPC_ROOT:-${OCEANANIGANS_DRAC_ROOT:-}}"   # old name: en
 : "${OCEAN_HPC_ROOT:?run ocean_setup first}"
 
 ngpu=1; gpus=""; project="$PWD"; name=""; dry=0; wait_end=0; all_visible=0
+# value <option> <next argument>: the option's value, or stop with a message if it is missing
+value() { [[ -n "${2:-}" && "$2" != -* ]] || { echo "$1 needs a value (try --help)" >&2; exit 1; }; }
 while [[ $# -gt 0 ]]; do
+    if [[ "$1" == --?*=* ]]; then set -- "${1%%=*}" "${1#*=}" "${@:2}"; with_value=1; else with_value=0; fi
     case "$1" in
-        -n) ngpu="$2"; shift 2 ;;
-        -g) gpus="$2"; shift 2 ;;
-        -p) project="$(cd "$2" && pwd)"; shift 2 ;;
-        --viz) project="$OCEAN_HPC_ROOT/viz"; shift ;;
-        -j) name="$2"; shift 2 ;;
-        --wait) wait_end=1; shift ;;
-        --all-visible) all_visible=1; shift ;;
-        --dry-run) dry=1; shift ;;
-        -h|--help) sed -n '2,32p' "$0"; exit 0 ;;
+        --gpus|-n)     value "$1" "${2:-}"; ngpu="$2"; shift 2 ;;
+        --gpu-ids|-g)  value "$1" "${2:-}"; gpus="$2"; shift 2 ;;
+        --project|-p)  value "$1" "${2:-}"; project="$(cd "$2" && pwd)"; shift 2 ;;
+        --job-name|-j) value "$1" "${2:-}"; name="$2"; shift 2 ;;
+        --viz|--wait|--all-visible|--dry-run)
+            (( with_value )) && { echo "$1 takes no value (try --help)"; exit 1; }
+            case "$1" in
+                --viz) project="$OCEAN_HPC_ROOT/viz" ;;
+                --wait) wait_end=1 ;;
+                --all-visible) all_visible=1 ;;
+                --dry-run) dry=1 ;;
+            esac
+            shift ;;
+        -h|--help) sed -n '2,/^[^#]/{/^#SBATCH/d;/^# *shellcheck/d;s/^# \{0,1\}//p;}' "$0"; exit 0 ;;
+        --gpu|--ngpus|--ranks|--gpu-id|--ids)    # near misses: say which option was meant
+            echo "unknown option $1: use --gpus N for how many GPUs, --gpu-ids 0,2 for which ones"; exit 1 ;;
         -*) echo "unknown option $1 (try --help)"; exit 1 ;;
         *) break ;;
     esac
 done
-[[ $# -ge 1 ]] || { echo "usage: run_local.sh [-n N] [-g list] [-p dir|--viz] [-j name] script.jl [args...]"; exit 1; }
+[[ "$ngpu" =~ ^[0-9]+$ ]] || { echo "--gpus needs a whole number (0 = CPU only), not '$ngpu'"; exit 1; }
+[[ $# -ge 1 ]] || { echo "usage: run_local.sh [--gpus N] [--gpu-ids list] [--project dir|--viz] [--job-name name] script.jl [args...]"; exit 1; }
 script="$1"; shift
 [[ -f "$script" ]] || { echo "no such script: $script (run from your project folder)"; exit 1; }
 [[ -f "$project/Project.toml" ]] || { echo "no Project.toml in $project"; exit 1; }
 
 # ---- choose GPUs ----
 if [[ "$ngpu" -gt 0 ]]; then
-    command -v nvidia-smi >/dev/null || { echo "nvidia-smi not found: no GPUs here? Use -n 0."; exit 1; }
+    command -v nvidia-smi >/dev/null || { echo "nvidia-smi not found: no GPUs here? Use --gpus 0."; exit 1; }
     if [[ -z "$gpus" ]]; then
         busy="$(nvidia-smi --query-compute-apps=gpu_uuid --format=csv,noheader | sort -u)"
         free=()
