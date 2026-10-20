@@ -334,45 +334,45 @@ and 9 times faster on 4 (700 → 78 ms). Across nodes the network sets the limit
 within one node where possible (8 GPUs on Nibi), and use NCCL when it must cross nodes; the
 hydrostatic model exchanges only halos and scales well across nodes.
 
-## 8. Scaling on Nibi
+## 8. Scaling
 
-The Oceananigans benchmark suite, case `earth_ocean` on a latitude–longitude grid with 200
-levels, Float64, WENO advection, CATKE, 2 tracers. Median of 5 windows of 100 steps; one
-MPI rank per GPU; grid split in x. Throughput is for the whole grid.
+Measured in October 2026 with the two GPU-to-GPU settings of step 7, on H100s. Full tables, setup and
+the runs still queued: [results/hydrostatic_scaling.md](../results/hydrostatic_scaling.md) (hydrostatic
+model) and [results/pressure_solver_1024.md](../results/pressure_solver_1024.md) (the nonhydrostatic
+pressure solve).
 
-**Strong scaling at three resolutions:**
+**Hydrostatic model:** the Oceananigans benchmark suite, case `earth_ocean` (latitude–longitude grid,
+1440 × 720 × 200 at 1/4°, Float64, WENO, CATKE, 2 tracers), one MPI rank per GPU, grid split in x.
 
-| Resolution (cells) | GPUs | Nodes | Time per step (s) | Efficiency | Throughput (cells/s) | Memory per GPU (GiB) |
-| --- | --- | --- | --- | --- | --- | --- |
-| 1/4°, 1440 × 720 × 200 (0.21 billion) | 1 | 1 | 1.0114 | 100% | 2.05e8 | 45.95 |
-| | 2 | 1 | 0.5228 | 96.7% | 3.97e8 | 24.05 |
-| | 4 | 1 | 0.2597 | 97.4% | 7.99e8 | 12.67 |
-| | 8 | 1 | 0.1441 | 87.7% | 1.44e9 | 6.98 |
-| | 16 | 2 | 0.0857 | 73.8% | 2.42e9 | 4.14 |
-| | 32 | 4 | 0.0693 | 45.6% | 2.99e9 | 2.71 |
-| 1/8°, 2880 × 1440 × 200 (0.83 billion) | 4 | 1 | 1.0364 | 100% | 8.00e8 | 47.65 |
-| | 8 | 1 | 0.5279 | 98.2% | 1.57e9 | 25.10 |
-| | 16 | 2 | 0.2837 | 91.3% | 2.92e9 | 13.83 |
-| | 32 | 4 | 0.1609 | 80.5% | 5.16e9 | 8.19 |
-| 1/16°, 5760 × 2880 × 200 (3.3 billion) | 16 | 2 | 1.0526 | 100% | 3.15e9 | 49.97 |
-| | 32 | 4 | 0.5649 | 93.2% | 5.87e9 | 27.53 |
+![Time per step and strong-scaling efficiency against GPUs on Nibi, Trillium and Rorqual](../results/hydrostatic_scaling.png)
 
-Efficiency is relative to the smallest GPU count at each resolution.
+Strong-scaling efficiency against each cluster's 1-GPU run (about 1.05 s per step):
 
-**Weak scaling** (about 207 million cells per GPU):
+| GPUs | Nibi (nodes) MPI | Trillium MPI / NCCL | Rorqual MPI / NCCL |
+| --- | --- | --- | --- |
+| 2 | (1) 98% | | |
+| 4 | (1) 99% | 99% / 100% | 100% / 100% |
+| 8 | (1) 92% | 91% / 93% (2 nodes) | 88% / 93% (2 nodes) |
+| 16 | (2) 81% | 80% / 83% (4 nodes) | 76% / 82% (4 nodes) |
+| 32 | (4) 59% | | |
 
-| Resolution | GPUs | Nodes | Time per step (s) | Efficiency |
-| --- | --- | --- | --- | --- |
-| 1/4° | 1 | 1 | 1.0114 | 100% |
-| 1/8° | 4 | 1 | 1.0364 | 97.6% |
-| 1/16° | 16 | 2 | 1.0526 | 96.1% |
+- Within a node the model scales almost perfectly. Across nodes it keeps about 80% at 16 GPUs, where
+  each GPU has only 13 million cells: it exchanges only thin halos. At 32 GPUs (6.5 million cells per
+  GPU) the GPUs run out of work, and efficiency falls to 59%.
+- Larger grids scale further. Before the settings (Oct 2–5, [results/nibi_scaling.md](../results/nibi_scaling.md)),
+  1/8° kept 80% on 32 GPUs and 1/16° 93%; with the work per GPU held fixed (weak scaling), 16 GPUs on
+  2 nodes cost under 4% and 64 GPUs on 8 nodes 15%. Weak scaling with the settings: 98% on 4 GPUs so
+  far (16 and 64 queued).
+- The settings matter across nodes: on Nibi they make 2 nodes 5% faster and 4 nodes 20% faster, with
+  much steadier timings; within a node they cost 1.5–3.5% (the memory pool is off).
+- NCCL gains 1–7% over MPI across nodes and nothing within a node.
+- Memory: about 240 bytes per cell, so one H100 (80 GB) holds up to about 300 million cells.
 
-Within one node, efficiency stays above 87%. A fixed-size problem scales well across nodes
-as long as each GPU keeps enough work: at 1/4°, 32 GPUs leave only 45 columns each, while
-at 1/8° and 1/16° efficiency on 16–32 GPUs stays at 80–93%. With the work per GPU held
-fixed, going from 1 GPU to 16 GPUs on 2 nodes costs under 4%. Memory use is about 240 bytes
-per cell (plus halo overhead), so one H100 holds up to about 300 million cells. Details:
-`results/nibi_scaling.md`.
+**Nonhydrostatic pressure solve** (1024³ in Float32, which needs all-to-all transposes): within a node
+MPI and NCCL are equal, and 4 GPUs solve in 72–78 ms against 78 ms on one GPU (the step from 1 to 2 GPUs
+costs the most). Across nodes the network sets the limit: 8 GPUs on 2 nodes are slower than 4 GPUs in
+one node on every cluster, and NCCL is 1.4–2.2 times faster than MPI there. **Keep a nonhydrostatic
+model within one node** (8 GPUs on Nibi, 4 elsewhere) and use NCCL when it must cross nodes.
 
 **Running the benchmark suite.** `jobs/benchmark.sh` runs the suite in an Oceananigans
 checkout (its `benchmarking/` folder, set with `BENCH_DIR`). 

@@ -153,6 +153,8 @@ nodes the difference may be larger.
 
 ### Larger grid: 1024³ in Float32
 
+Results on Nibi, Rorqual and Trillium, and what they show: [results/pressure_solver_1024.md](../results/pressure_solver_1024.md).
+
 `jobs/submit_poisson_1024.sh` runs the solver alone on a 1024³ grid in Float32 (fits on one
 H100-80GB, ~38 GiB) on 1, 2, 4 and 8 GPUs with MPI and NCCL (7 jobs; on Nibi all on one node). Motivation: GPU FFT libraries
 scale better on larger grids (Verma et al. 2022, arXiv:2202.12756: 1024³ 2→4 GPUs ~90% vs ~77% at

@@ -1,4 +1,8 @@
-# Oceananigans scaling on Nibi
+# Oceananigans scaling on Nibi (October 2–14, 2026)
+
+**Measured before the two GPU-to-GPU settings** of `docs/drac.md` step 7 (`--gpus-per-task` and the
+CUDA.jl memory pool on). Kept as the record of those runs; the current numbers, on Nibi, Rorqual and
+Trillium, are in [hydrostatic_scaling.md](hydrostatic_scaling.md).
 
 ## Setup
 
@@ -56,12 +60,7 @@ H100 is the practical limit for this configuration.
 `python3 tools/summarize_benchmarks.py <json files>` makes one table from the suite's JSON output
 (fastest and median times, memory, strong and weak efficiency).
 
-## To do
+## Follow-up
 
-- [x] Weak scaling: 4 GPUs (1/8°): 97.5%.
-- [ ] Weak scaling: 16 GPUs (1/16°), job 23883360 (Oct 14).
-- [ ] Median times alongside the fastest window (strong-scaling JSONs on Nibi:
-      `$SCRATCH/software/Oceananigans.jl/benchmarking/results/`; `tools/summarize_benchmarks.py`)
-- [ ] GPU memory per rank for the strong-scaling runs (recorded since the `src/utils.jl` fix)
-- [ ] Larger problem that needs several GPUs: 5760 × 2880 × 200 on 16 → 64 GPUs
-      (jobs b16_gpu64 queued Oct 13)
+The open items of this page (weak scaling at 16 and 64 GPUs, medians and memory for every run) were
+rerun with the two settings: see [hydrostatic_scaling.md](hydrostatic_scaling.md).

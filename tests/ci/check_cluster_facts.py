@@ -49,7 +49,10 @@ def check(ok, what):
 
 # 1. Step-6 table in docs/drac.md
 drac = (root / "docs/drac.md").read_text()
-section = drac[drac.index("**Without the wrapper.**"):]
+after = drac[drac.index("**Without the wrapper.**"):].splitlines()
+start = next(i for i, r in enumerate(after) if r.startswith("|"))    # only the first table after it
+end = next((i for i in range(start, len(after)) if not after[i].startswith("|")), len(after))
+section = "\n".join(after[start:end])
 rows = [r for r in section.splitlines() if re.match(r"^\| \d+ \|", r)]
 header = next(r for r in section.splitlines() if r.startswith("| GPUs |"))
 columns = [c.strip() for c in header.strip("|").split("|")][1:]

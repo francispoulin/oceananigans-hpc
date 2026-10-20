@@ -70,6 +70,7 @@ What the tests cover: [tests/README.md](../tests/README.md).
 | `jobs/submit_poisson_scaling.sh` | The pressure-solver MPI vs NCCL set at 512²×256, strong and weak (17 jobs) | login | `bash jobs/submit_poisson_scaling.sh` |
 | `jobs/submit_poisson_1024.sh` | The pressure solver at 1024³ in Float32 on 1–8 GPUs (7 jobs) | login | `bash jobs/submit_poisson_1024.sh` |
 | `tools/summarize_benchmarks.py` | One Markdown table (times, efficiencies, memory) from the suite's JSON results | any | `python3 tools/summarize_benchmarks.py results/*.json` |
+| `tools/plot_scaling.py` | The hydrostatic scaling figure (time and efficiency vs GPUs) from the table in `results/hydrostatic_scaling.md`; needs matplotlib | any | `python3 tools/plot_scaling.py` |
 
 Results: `grep -ah "^RESULT" logs/<job name>_*.out` for the `benchmarks/` scripts, and
 `summarize_benchmarks.py` for the suite. Details: [benchmarks/README.md](../benchmarks/README.md).
