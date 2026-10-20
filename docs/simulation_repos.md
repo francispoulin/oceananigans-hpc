@@ -80,7 +80,7 @@ srun --cpu-bind=none julia --project=. scripts/run.jl "$@"
   the login node before submitting. `submit_gpu.sh` passes `OCEAN_HPC_ROOT` to the job, which
   Trillium's `sbatch` would otherwise not do (it starts jobs with a clean environment).
 - **pelee and rondeau:** no job script; run
-  `bash $OCEAN_HPC_ROOT/tools/run_local.sh -n 4 scripts/run.jl --config=my_preset`.
+  `bash $OCEAN_HPC_ROOT/tools/run_local.sh --gpus 4 scripts/run.jl --config=my_preset`.
 
 ## When oceananigans-hpc changes
 

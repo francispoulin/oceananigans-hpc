@@ -63,6 +63,8 @@ Versions: see [CONTRIBUTING.md](CONTRIBUTING.md#versions-and-releases).
       other repositories' scripts, and script options after `--`); `tools/run_local.sh` on pelee/rondeau
 - [x] Platform tests that simulation repositories rely on (their own regression tests live in
       those repositories)
+- [x] Long option names for `tools/run_local.sh` (`--gpus`, `--gpu-ids`, `--project`, `--job-name`;
+      `--name=value` too), asked for by BalancedFlows; the short forms (`-n`, `-g`, `-p`, `-j`) still work
 - [ ] BalancedFlows uses the contract: `OCEAN_HPC_ROOT`, `submit_gpu.sh` for multi-GPU runs on the
       Alliance, `$OCEAN_RESULTS_ROOT/BalancedFlows/` (in that repository)
 - [ ] Then drop `OCEANANIGANS_DRAC_ROOT` (v0.3.0)
