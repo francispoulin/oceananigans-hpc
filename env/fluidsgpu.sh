@@ -22,7 +22,25 @@ fi
 # CUDA-aware OpenMPI is used with 12.3.2.
 module load cuda/12.3.2
 module load openmpi/4.1.7-with-cuda          # CUDA-aware OpenMPI built for the group
-module load julia/1.10.8                     # 1.10.10 on the Alliance; same 1.10 series
+
+# Julia: the same version as on the Alliance clusters, the one the platform's Manifest.toml was
+# made with (its julia_version). The modules here stop at 1.10.8, so it is installed by hand once
+# on the shared drive with setup/install_julia.sh. Without it, the julia/1.10.8 module, with a warning.
+_fluids_julia_v="$(sed -n 's/^julia_version = "\(.*\)"$/\1/p' "$(dirname "${BASH_SOURCE[0]}")/../Manifest.toml")"
+if [[ -z "${OCEAN_SOFTWARE_DIR:-}" ]]; then
+    if [[ -d "/mnt/autofs/bow.math/scratch/$USER" ]]; then OCEAN_SOFTWARE_DIR="/mnt/autofs/bow.math/scratch/$USER/software"
+    else OCEAN_SOFTWARE_DIR="$HOME/software"; fi
+fi
+export OCEAN_SOFTWARE_DIR
+if [[ -x "$OCEAN_SOFTWARE_DIR/julia-$_fluids_julia_v/bin/julia" ]]; then
+    module unload julia 2>/dev/null || true  # a julia module loaded earlier would not matter, but keep PATH clear
+    export PATH="$OCEAN_SOFTWARE_DIR/julia-$_fluids_julia_v/bin:$PATH"
+else
+    module load julia/1.10.8
+    echo "fluidsgpu.sh: Julia $_fluids_julia_v is not installed in $OCEAN_SOFTWARE_DIR; using the julia/1.10.8 module." >&2
+    echo "              Install it once with: bash setup/install_julia.sh" >&2
+fi
+unset _fluids_julia_v
 
 # Default depot if JULIA_DEPOT_PATH is not set before sourcing: on the shared bow.math drive
 # (same on pelee and rondeau, and keeps the large depot off /u), else $HOME.
@@ -46,7 +64,7 @@ fi
 export OPAL_PREFIX="$OCEAN_MPI_ROOT"
 
 export OCEAN_HPC_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-# Old name (until v0.3.0), for simulation repositories and ~/.bashrc lines written before the
+# Old name (until v0.4.0), for simulation repositories and ~/.bashrc lines written before the
 # repository was renamed (Oceananigans-DRAC -> oceananigans-hpc, Oct 2026). Use OCEAN_HPC_ROOT.
 export OCEANANIGANS_DRAC_ROOT="$OCEAN_HPC_ROOT"
 export JULIA_DEPOT_PATH="${_fluids_depot:-$_fluids_default_depot}"
@@ -63,3 +81,13 @@ echo "oceananigans-hpc environment ($OCEAN_MACHINE): repo=$OCEAN_HPC_ROOT, depot
 export OCEAN_DATA_DIR="${OCEAN_DATA_DIR:-$(dirname "${JULIA_DEPOT_PATH##*:}")/ocean_data}"
 export NUMERICALEARTH_DATA_DIRECTORY="${NUMERICALEARTH_DATA_DIRECTORY:-$OCEAN_DATA_DIR}"
 echo "  ocean data: $OCEAN_DATA_DIR"
+
+# Simulation output: on the shared bow.math drive, so pelee and rondeau see the same folder, with the
+# same shape as on the Alliance (.../scratch/$USER/results). Each simulation repository writes under
+# $OCEAN_RESULTS_ROOT/<repository>/ (docs/simulation_repos.md). A value set before sourcing wins.
+if [[ -d "/mnt/autofs/bow.math/scratch/$USER" ]]; then
+    export OCEAN_RESULTS_ROOT="${OCEAN_RESULTS_ROOT:-/mnt/autofs/bow.math/scratch/$USER/results}"
+else
+    export OCEAN_RESULTS_ROOT="${OCEAN_RESULTS_ROOT:-$HOME/results}"
+fi
+echo "  results: $OCEAN_RESULTS_ROOT"

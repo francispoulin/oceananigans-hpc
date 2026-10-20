@@ -55,7 +55,7 @@ export OPAL_PREFIX="$OCEAN_MPI_ROOT"
 
 # Root of this repository (the folder containing env/), for scripts that need it.
 export OCEAN_HPC_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-# Old name (until v0.3.0), for simulation repositories and ~/.bashrc lines written before the
+# Old name (until v0.4.0), for simulation repositories and ~/.bashrc lines written before the
 # repository was renamed (Oceananigans-DRAC -> oceananigans-hpc, Oct 2026). Use OCEAN_HPC_ROOT.
 export OCEANANIGANS_DRAC_ROOT="$OCEAN_HPC_ROOT"
 
@@ -84,6 +84,14 @@ if [[ "$CC_CLUSTER" == trillium && -n "$SLURM_JOB_ID" && "$JULIA_DEPOT_PATH" != 
     unset _drac_rw
 fi
 
+# Inside a job: where its log is (the same rule submit_gpu.sh used), so a job can put the other
+# files it writes next to it. On Trillium that is on $SCRATCH, the only place jobs can write.
+if [[ -n "$SLURM_JOB_ID" && -n "$SLURM_SUBMIT_DIR" ]]; then
+    source "$OCEAN_HPC_ROOT/jobs/gpu_request.sh"
+    export OCEAN_JOB_LOGS="$(job_logs_dir "$SLURM_SUBMIT_DIR")"
+    mkdir -p "$OCEAN_JOB_LOGS" 2>/dev/null || true
+fi
+
 # One CPU thread per rank is enough when the work is on the GPU.
 export JULIA_NUM_THREADS="${JULIA_NUM_THREADS:-1}"
 
@@ -109,3 +117,10 @@ echo "oceananigans-hpc environment (${CC_CLUSTER:-unknown cluster}): repo=$OCEAN
 export OCEAN_DATA_DIR="${OCEAN_DATA_DIR:-$(dirname "${JULIA_DEPOT_PATH##*:}")/ocean_data}"
 export NUMERICALEARTH_DATA_DIRECTORY="${NUMERICALEARTH_DATA_DIRECTORY:-$OCEAN_DATA_DIR}"
 echo "  ocean data: $OCEAN_DATA_DIR"
+
+# Simulation output: one folder per machine family, the same shape everywhere (/scratch/$USER/results).
+# Each simulation repository writes under $OCEAN_RESULTS_ROOT/<repository>/ (docs/simulation_repos.md).
+# On $SCRATCH because Trillium jobs can write nowhere else; $SCRATCH is purged after 60 days without
+# access, so copy what you keep. A value set before sourcing this file wins. Not created here.
+export OCEAN_RESULTS_ROOT="${OCEAN_RESULTS_ROOT:-${SCRATCH:-$HOME/scratch}/results}"
+echo "  results: $OCEAN_RESULTS_ROOT"

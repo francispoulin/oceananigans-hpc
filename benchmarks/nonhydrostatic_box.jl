@@ -14,7 +14,7 @@
 #                       (not supported on distributed grids in this version, as far as we know).
 #
 # Usage (from the repository root, after ocean_setup):
-#   pelee/rondeau:  bash tools/run_local.sh --wait -n 2 -j nh_fft_2gpu benchmarks/nonhydrostatic_box.jl --solver=FFT
+#   pelee/rondeau:  bash tools/run_local.sh --wait --gpus 2 --job-name nh_fft_2gpu benchmarks/nonhydrostatic_box.jl --solver=FFT
 #   Alliance:       sbatch --ntasks-per-node=2 jobs/benchmark_nh.sh            (see that file)
 #
 # Options (all --name=value):
@@ -32,7 +32,7 @@
 #                        results/raw/ is not under version control)
 #   --device=GPU         GPU | CPU
 #   --comm=MPI           MPI | NCCL: NCCLDistributed (transposes and halos over NCCL); needs NCCL.jl
-#                        in the environment (setup/setup_nccl_env.sh, then run_local.sh -p envs/nccl)
+#                        in the environment (setup/setup_nccl_env.sh, then run_local.sh --project envs/nccl)
 #   --parts=false        true: after the step timing, also time the pieces of a step (pressure solve
 #                        alone, the pair of distributed transposes, one halo fill of u, v, w) and
 #                        print a second line "RESULT nhparts ..." (see benchmarks/README.md)

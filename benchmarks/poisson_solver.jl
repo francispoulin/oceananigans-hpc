@@ -7,7 +7,7 @@
 # pressure exist (no tendencies, tracers or closures), so the run is light and quick to profile.
 #
 # Usage (from the repository root, after ocean_setup):
-#   bash tools/run_local.sh --wait -n 2 -j poisson_FT_MPI_2gpu benchmarks/poisson_solver.jl --solver=FourierTridiagonal
+#   bash tools/run_local.sh --wait --gpus 2 --job-name poisson_FT_MPI_2gpu benchmarks/poisson_solver.jl --solver=FourierTridiagonal
 #   NCCL needs NCCL.jl in the environment: bash setup/setup_nccl_env.sh once, then add -p envs/nccl
 #   and --comm=NCCL (see benchmarks/README.md).
 #

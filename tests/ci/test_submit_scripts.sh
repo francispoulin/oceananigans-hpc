@@ -1,5 +1,6 @@
 #!/bin/bash
-# Checks the Slurm options the submit scripts produce on each cluster, without Slurm or GPUs
+# Checks the Slurm options the submit scripts produce on each cluster, without Slurm or GPUs,
+# and that tools/run_local.sh gives runs started together separate logs
 # (DRYRUN=1 prints the sbatch commands). Runs on every pull request (.github/workflows/checks.yml)
 # and anywhere with bash:  bash tests/ci/test_submit_scripts.sh
 #
@@ -68,6 +69,30 @@ out="$(CC_CLUSTER=nibi DRYRUN=1 bash jobs/submit_poisson_1024.sh 2>&1 | grep p10
 [[ "$out" == *--nodes=1* && "$out" == *--mem=0* ]] && ok=1 || ok=0
 report "$ok" "submit_poisson_1024.sh: 8 GPUs on one Nibi node" "$out"
 
+# Another repository's job script: sbatch options before the script, script options after `--`,
+# OCEAN_HPC_ROOT exported to the job, logs next to the caller; on Trillium in $SCRATCH/<repository>/logs
+ext="$(mktemp -d)/MySims.jl"; mkdir -p "$ext/jobs"; printf '#!/bin/bash\n' > "$ext/jobs/run.sh"
+out="$(cd "$ext" && env -u OCEAN_JOB_DIR CC_CLUSTER=nibi DRYRUN=1 bash "$ROOT/jobs/submit_gpu.sh" jobs/run.sh 4 --time=6:00:00 -- --config=x --stop_days=3 2>&1)"
+[[ "$out" == *"--output=$ext/logs/%x_%j.out --export=ALL,OCEAN_HPC_ROOT=$ROOT --time=6:00:00 jobs/run.sh --config=x --stop_days=3" && ! -d "$ext/logs" ]] && ok=1 || ok=0
+report "$ok" "submit_gpu.sh: another repository's script, options after --, OCEAN_HPC_ROOT exported" "$out"
+out="$(cd "$ext" && CC_CLUSTER=trillium SCRATCH=/scratch/u DRYRUN=1 bash "$ROOT/jobs/submit_gpu.sh" jobs/run.sh 4 -- --config=x 2>&1)"
+[[ "$out" == *"--output=/scratch/u/MySims/logs/%x_%j.out --export=ALL,OCEAN_HPC_ROOT=$ROOT jobs/run.sh --config=x" ]] && ok=1 || ok=0
+report "$ok" "submit_gpu.sh on trillium: another repository's logs in \$SCRATCH/<repository>/logs" "$out"
+out="$(CC_CLUSTER=trillium DRYRUN=1 bash jobs/submit_gpu.sh jobs/checks.sh 4 2>&1)"
+[[ "$out" == *"--output=$OCEAN_JOB_DIR/logs/%x_%j.out"* ]] && ok=1 || ok=0
+report "$ok" "submit_gpu.sh on trillium: this repository's logs in \$OCEAN_JOB_DIR/logs" "$out"
+out="$(CC_CLUSTER=fir DRYRUN=1 bash jobs/submit_gpu.sh jobs/checks.sh 2 --export=ALL,SIZE=64 2>&1)"
+[[ "$out" == *"--export=ALL,SIZE=64,OCEAN_HPC_ROOT=$ROOT jobs/checks.sh"* && "$out" != *"--export=ALL,OCEAN_HPC_ROOT"* ]] && ok=1 || ok=0
+report "$ok" "submit_gpu.sh: OCEAN_HPC_ROOT added to the caller's --export" "$out"
+out="$(CC_CLUSTER=fir DRYRUN=1 bash jobs/submit_gpu.sh jobs/checks.sh 2 --export=NONE 2>&1)"
+[[ "$out" == *"--export=NONE jobs/checks.sh"* ]] && ok=1 || ok=0
+report "$ok" "submit_gpu.sh: --export=NONE left alone" "$out"
+# inside the job (env/drac.sh): the same folder, worked out from SLURM_SUBMIT_DIR
+inj="$(cd "$ext" && CC_CLUSTER=trillium SCRATCH=/scratch/u bash -c 'source "$OCEAN_HPC_ROOT/jobs/gpu_request.sh" 2>/dev/null; job_logs_dir "$PWD"')"
+[[ "$inj" == /scratch/u/MySims/logs ]] && ok=1 || ok=0
+report "$ok" "job_logs_dir in the job agrees with submit_gpu.sh (trillium)" "$inj"
+rm -rf "$(dirname "$ext")"
+
 # tools/run_tests.sh: the platform-test job, Slurm options from jobs/gpu_request.sh on every cluster
 rt() {   # cluster gpus must-contain...
     local cluster="$1" g="$2"; shift 2
@@ -87,6 +112,39 @@ rt trillium "1"   --nodes=1 --ntasks-per-node=1 --gpus-per-node=1 '!--mem'
 out="$(CC_CLUSTER=fir DRYRUN=1 bash tools/run_tests.sh --gpus "1 8" 2>&1)" && ok=0 || ok=1
 [[ "$out" == *"at most 4 GPUs"* ]] || ok=0
 report "$ok" "run_tests.sh on fir refuses 8 GPUs (one node only)" "$out"
+
+# tools/run_local.sh (pelee/rondeau): runs started together with the same name get separate logs
+lt="$(mktemp -d)"; mkdir -p "$lt/bin" "$lt/proj"; touch "$lt/proj/Project.toml" "$lt/proj/run.jl"
+printf '#!/bin/bash\necho "julia $*"\n' > "$lt/bin/julia"; chmod +x "$lt/bin/julia"
+for i in 1 2 3; do
+    (cd "$lt/proj" && PATH="$lt/bin:$PATH" bash "$ROOT/tools/run_local.sh" -n 0 -j same --wait run.jl --i=$i >/dev/null 2>&1) &
+done; wait
+out="$(cat "$lt"/proj/logs/same_*.out 2>/dev/null)"
+[[ $(ls "$lt"/proj/logs/same_*.out 2>/dev/null | wc -l) -eq 3 && "$out" == *--i=1* && "$out" == *--i=2* && "$out" == *--i=3* ]] && ok=1 || ok=0
+report "$ok" "run_local.sh: three runs started together with the same name get three logs" "$(ls "$lt"/proj/logs 2>&1)"
+
+# run_local.sh: long and short option names give the same command (the log line has the time, so it
+# is left out); `--name=value` works; mistakes stop with a message
+printf '#!/bin/bash\nexit 0\n' > "$lt/bin/nvidia-smi"; chmod +x "$lt/bin/nvidia-smi"
+mkdir -p "$lt/other"; touch "$lt/other/Project.toml"
+rl() { (cd "$lt/proj" && PATH="$lt/bin:$PATH" bash "$ROOT/tools/run_local.sh" --dry-run "$@" 2>&1) | grep -v '^log:'; }
+short="$(rl -n 2 -g 1,3 -p ../other -j myrun run.jl --x=1)"
+for long in "--gpus 2 --gpu-ids 1,3 --project ../other --job-name myrun" \
+            "--gpus=2 --gpu-ids=1,3 --project=../other --job-name=myrun"; do
+    # shellcheck disable=SC2086  # $long is several options on purpose
+    out="$(rl $long run.jl --x=1)"
+    [[ "$out" == "$short" && "$out" == *"GPUs:     1,3"* && "$out" == *"mpiexec -n 2"* && "$out" == *"--x=1"* ]] && ok=1 || ok=0
+    report "$ok" "run_local.sh: $long gives the same command as -n 2 -g 1,3 -p ../other -j myrun" "$out
+--- short form:
+$short"
+done
+for bad in "--gpus" "--gpus two" "--gpus --wait" "--wait=1" "--gpu 2"; do
+    # shellcheck disable=SC2086
+    out="$(cd "$lt/proj" && PATH="$lt/bin:$PATH" bash "$ROOT/tools/run_local.sh" --dry-run $bad run.jl 2>&1)" && ok=0 || ok=1
+    [[ "$out" == *"(dry run"* ]] && ok=0
+    report "$ok" "run_local.sh refuses '$bad'" "$out"
+done
+rm -rf "$lt"
 
 rm -rf "$OCEAN_JOB_DIR"
 echo "$fails failure(s)"

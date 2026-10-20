@@ -21,7 +21,7 @@ Constraints of the distributed solvers: no split in z; Ny divisible by the numbe
 ```bash
 cd $OCEAN_HPC_ROOT
 for n in 1 2 4; do
-    bash tools/run_local.sh --wait -n $n -j nh_fft_${n}gpu benchmarks/nonhydrostatic_box.jl --solver=FFT || break
+    bash tools/run_local.sh --wait --gpus $n --job-name nh_fft_${n}gpu benchmarks/nonhydrostatic_box.jl --solver=FFT || break
 done
 grep -h "^RESULT" logs/nh_fft_*gpu_*.out
 ```
@@ -46,7 +46,7 @@ machine). On rondeau, NCCL made the pressure solve ~26% faster on 4 GPUs but ~5%
 ```bash
 cd $OCEAN_HPC_ROOT
 for c in MPI NCCL; do
-    bash tools/run_local.sh --wait -n 4 -p envs/nccl -j nh_FT_${c}_4gpu benchmarks/nonhydrostatic_box.jl \
+    bash tools/run_local.sh --wait --gpus 4 --project envs/nccl --job-name nh_FT_${c}_4gpu benchmarks/nonhydrostatic_box.jl \
         --solver=FourierTridiagonal --comm=$c --parts=true --windows=3 || break
 done
 grep -ah "^RESULT nh" logs/nh_FT_*_4gpu_*.out
@@ -63,7 +63,7 @@ and 2 GPUs shows whether the lost time is in the distributed Poisson solver or i
 cd $OCEAN_HPC_ROOT
 for n in 1 2; do
     for s in FFT FourierTridiagonal; do
-        bash tools/run_local.sh --wait -n $n -j nhparts_${s}_${n}gpu benchmarks/nonhydrostatic_box.jl --solver=$s --parts=true --windows=3 || break 2
+        bash tools/run_local.sh --wait --gpus $n --job-name nhparts_${s}_${n}gpu benchmarks/nonhydrostatic_box.jl --solver=$s --parts=true --windows=3 || break 2
     done
 done
 grep -ah "^RESULT nhparts" logs/nhparts_*.out
@@ -125,9 +125,9 @@ bash setup/setup_nccl_env.sh                  # ~10 min (downloads NCCL, precomp
 # on each other machine sharing the folder (e.g. rondeau), once, before multi-GPU runs:
 #   bash setup/setup_nccl_env.sh --this-machine
 S="--solver=FourierTridiagonal"
-bash tools/run_local.sh --wait -n 1 -p envs/nccl -j poisson_FT_1gpu      benchmarks/poisson_solver.jl $S
-bash tools/run_local.sh --wait -n 2 -p envs/nccl -j poisson_FT_MPI_2gpu  benchmarks/poisson_solver.jl $S --comm=MPI
-bash tools/run_local.sh --wait -n 2 -p envs/nccl -j poisson_FT_NCCL_2gpu benchmarks/poisson_solver.jl $S --comm=NCCL
+bash tools/run_local.sh --wait --gpus 1 --project envs/nccl --job-name poisson_FT_1gpu      benchmarks/poisson_solver.jl $S
+bash tools/run_local.sh --wait --gpus 2 --project envs/nccl --job-name poisson_FT_MPI_2gpu  benchmarks/poisson_solver.jl $S --comm=MPI
+bash tools/run_local.sh --wait --gpus 2 --project envs/nccl --job-name poisson_FT_NCCL_2gpu benchmarks/poisson_solver.jl $S --comm=NCCL
 grep -ah "^RESULT poisson" logs/poisson_FT_*.out
 ```
 
@@ -169,8 +169,8 @@ does (2 per pressure solve with an x-split, 3 solves per RK3 step), at the same 
 
 ```bash
 cd $OCEAN_HPC_ROOT
-bash tools/run_local.sh --wait -n 2 -j a2a_2gpu_own benchmarks/alltoall_bandwidth.jl
-bash tools/run_local.sh --wait -n 2 --all-visible -j a2a_2gpu_all benchmarks/alltoall_bandwidth.jl
+bash tools/run_local.sh --wait --gpus 2 --job-name a2a_2gpu_own benchmarks/alltoall_bandwidth.jl
+bash tools/run_local.sh --wait --gpus 2 --all-visible --job-name a2a_2gpu_all benchmarks/alltoall_bandwidth.jl
 grep -h "^RESULT" logs/a2a_*.out
 ```
 

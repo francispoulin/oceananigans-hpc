@@ -93,7 +93,7 @@ Oceananigans Discussions (https://github.com/CliMA/Oceananigans.jl/discussions/6
 | `benchmarks/` | Nonhydrostatic box benchmark, 1 to many GPUs (`benchmarks/README.md`) |
 | `tests/` | Platform tests (1 and 4 GPUs by default); run all with `tools/run_tests.sh` (`tests/README.md`) |
 | `results/` | Scaling and benchmark results; platform test summaries in `results/tests/` |
-| `docs/` | Overview, machine guides (`drac.md`, `fluidsgpu.md`) and the list of scripts (`scripts.md`) |
+| `docs/` | Overview, machine guides (`drac.md`, `fluidsgpu.md`), the list of scripts (`scripts.md`), and using this from a simulation repository (`simulation_repos.md`) |
 
 `LocalPreferences.toml` is written by `setup/setup.sh` on each machine and is not under
 version control. `Project.toml` and `Manifest.toml` record the tested package versions.
@@ -117,7 +117,7 @@ julia --project=$OCEAN_HPC_ROOT/viz scripts/make_movies.jl      # plots, with vi
 ```
 
 Plotting jobs on the Alliance: `sbatch $OCEAN_HPC_ROOT/jobs/viz.sh scripts/make_movies.jl`.
-On pelee and rondeau: `bash $OCEAN_HPC_ROOT/tools/run_local.sh -n 0 --viz scripts/make_movies.jl`.
+On pelee and rondeau: `bash $OCEAN_HPC_ROOT/tools/run_local.sh --gpus 0 --viz scripts/make_movies.jl`.
 
 ## Contributing
 

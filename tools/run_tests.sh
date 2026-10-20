@@ -105,7 +105,7 @@ run_step() {
         status=$?
     else
         local out runlog
-        out=$(bash "$ROOT/tools/run_local.sh" --wait -n "$n" -p "$proj" -j "tests_${name}" "$script" 2>&1)
+        out=$(bash "$ROOT/tools/run_local.sh" --wait --gpus "$n" --project "$proj" --job-name "tests_${name}" "$script" 2>&1)
         status=$?
         runlog=$(sed -n 's/^log: *//p' <<<"$out")
         if [[ -n "$runlog" && -f "$runlog" ]]; then mv "$runlog" "$log"; else echo "$out" > "$log"; fi

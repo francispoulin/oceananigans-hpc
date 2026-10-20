@@ -6,7 +6,7 @@ configuration, plotting environment, launcher, checks, platform tests and benchm
 repositories depend on it by convention, not as a Julia package, and dependencies point one way:
 this repository never depends on a simulation repository.
 
-Boxes are ticked in the pull request that does the work. Last updated: October 17, 2026 (v0.1.0).
+Boxes are ticked in the pull request that does the work. Last updated: October 19, 2026 (v0.2.0).
 Versions: see [CONTRIBUTING.md](CONTRIBUTING.md#versions-and-releases).
 
 ## Phase 1: finish and stabilize
@@ -20,9 +20,9 @@ Versions: see [CONTRIBUTING.md](CONTRIBUTING.md#versions-and-releases).
       Rorqual, Oct 16)
 - [x] How changes are made: [CONTRIBUTING.md](CONTRIBUTING.md)
 - [x] Every script listed in [docs/scripts.md](docs/scripts.md), with its usage printed by `-h`
-- [ ] Platform tests rerun with the Oct 15–16 settings (all but Nibi done)
+- [x] Platform tests rerun with the Oct 15–16 settings
   - [x] rondeau (Oct 16: 21 passed, same answers as Oct 13)
-  - [ ] Nibi (queued; added in v0.1.1)
+  - [x] Nibi (Oct 19, in v0.2.0)
   - [x] Fir (Oct 17)
   - [x] Rorqual (Oct 16)
   - [x] Trillium (Oct 17)
@@ -32,33 +32,48 @@ Versions: see [CONTRIBUTING.md](CONTRIBUTING.md#versions-and-releases).
 - [x] Automatic checks on every pull request (`tests/ci/`): shell syntax, `shellcheck`, submit
       scripts' Slurm options for each cluster, links in the docs
 - [x] Repository renamed oceananigans-hpc (was Oceananigans-DRAC); `OCEAN_HPC_ROOT` replaces
-      `OCEANANIGANS_DRAC_ROOT`, which is still exported until v0.3.0
+      `OCEANANIGANS_DRAC_ROOT`, which is still exported until v0.4.0
 - [x] Every clone's remote points to the new name (`git remote set-url`)
 - [x] Each cluster fact in one place: `jobs/gpu_request.sh` (GPUs per node, memory, Trillium's
       rules), used by every script; the docs' tables are checked against it automatically
-- [x] Release **v0.1.0** (Oct 17): tested on Fir, Rorqual, Trillium and rondeau; Nibi in v0.1.1
+- [x] Release **v0.1.0** (Oct 17): tested on Fir, Rorqual, Trillium and rondeau
+- [x] Release **v0.2.0** (Oct 19): contract for simulation repositories (Phase 3), Julia 1.10.10 everywhere,
+      tested on every machine including Nibi
+- [x] Release **v0.3.0** (Oct 19): long option names for `tools/run_local.sh`; tested on rondeau
 
 ## Phase 2: complete the switch of pelee and rondeau to this setup
 
-- [ ] `setup/configure_mpi.sh` on the simulation project folders; one run each with the new setup,
-      compared with the old one
-- [ ] Remove the old module-based setup (login files, the old `~/.julia` depot; move downloaded
-      ocean data out of it first)
-- [ ] `OCEAN_DATA_DIR` and `OCEAN_RESULTS_ROOT` in every env file and in the contract
-      (`env/README.md`), including how they relate to Trillium's `OCEAN_JOB_DIR`
+- [x] `setup/configure_mpi.sh` on the simulation project folders (BeaufortGyreSimulations,
+      Gulf-Stream-Asymmetry); one regression run each with the new setup: norms bitwise identical
+      to the old setup (Oct 14)
+- [x] Old module-based setup removed: module block out of `~/.profile`, ocean data (ECCO, EN4,
+      ETOPO; 136 files) copied to the shared drive, old `~/.julia` depot deleted (Oct 18)
+- [x] `OCEAN_DATA_DIR` in every env file and in the contract (`env/README.md`), with how it relates
+      to `OCEAN_JOB_DIR`
+- [x] One Julia on every machine: 1.10.10 on pelee/rondeau too (`setup/install_julia.sh`; the
+      modules there stop at 1.10.8); setup and platform tests rerun on pelee and rondeau (Oct 18: 21 passed on each)
 
 ## Phase 3: serve the simulation repositories (platform side only)
 
-- [ ] Contract for a simulation repository: its own `Project.toml` without Makie; plotting in `viz/`
-- [ ] Slurm job template that sources `env/ocean_setup.sh` (with the Trillium variant);
-      `tools/run_local.sh` documented for pelee/rondeau
+- [x] Contract for a simulation repository ([docs/simulation_repos.md](docs/simulation_repos.md)):
+      its own `Project.toml` without Makie; plotting in `viz/`; what it can rely on
+- [x] `OCEAN_RESULTS_ROOT` set by the environment: `$SCRATCH/results` (Alliance),
+      `/mnt/autofs/bow.math/scratch/$USER/results` (pelee/rondeau, shared); repositories write under
+      `$OCEAN_RESULTS_ROOT/<repository>/`
+- [x] A job script for simulation repositories, submitted with `jobs/submit_gpu.sh` (which now takes
+      other repositories' scripts, and script options after `--`); `tools/run_local.sh` on pelee/rondeau
 - [x] Platform tests that simulation repositories rely on (their own regression tests live in
       those repositories)
-- [ ] Nonhydrostatic benchmark repeated with real simulation configurations
-- [ ] Simulation repositories use `OCEAN_HPC_ROOT`; then drop `OCEANANIGANS_DRAC_ROOT` (v0.3.0)
+- [x] Long option names for `tools/run_local.sh` (`--gpus`, `--gpu-ids`, `--project`, `--job-name`;
+      `--name=value` too), asked for by BalancedFlows; the short forms (`-n`, `-g`, `-p`, `-j`) still work
+- [ ] BalancedFlows uses the contract: `OCEAN_HPC_ROOT`, `submit_gpu.sh` for multi-GPU runs on the
+      Alliance, `$OCEAN_RESULTS_ROOT/BalancedFlows/` (in that repository)
+- [ ] Then drop `OCEANANIGANS_DRAC_ROOT` (v0.4.0; v0.3.0 added long option names instead)
 - [ ] Trillium job folder renamed `$SCRATCH/oceananigans-hpc` (kept as `oceananigans-drac` while
       jobs submitted before the rename are queued)
-- [ ] v1.0.0 when the contract for simulation repositories is settled
+- [ ] Nonhydrostatic benchmark repeated with a real BalancedFlows configuration (needs its
+      nonhydrostatic option)
+- [ ] v1.0.0 when the contract has been used by BalancedFlows on every machine
 
 ## Phase 4: a workflow for updating libraries
 
@@ -91,6 +106,8 @@ modules and the plotting stack all change independently.
 - [ ] Shared depot for the group on pelee/rondeau, once several people use it
 - [ ] GPU tests on every pull request (a self-hosted runner on pelee)
 - [ ] Download script for the ocean data sets
+- [ ] `run_local.sh`: reserve the GPUs it hands out for a few minutes, so runs started together
+      without `-g` cannot pick the same GPU (documented for now; fix if it bites)
 - [ ] Contribute multi-GPU nonhydrostatic cases to the Oceananigans benchmark suite
 - [ ] MPI between nodes with GPUDirect RDMA
 - [ ] Faster local work in the distributed pressure solve (the 1 → 2 GPU cost)
