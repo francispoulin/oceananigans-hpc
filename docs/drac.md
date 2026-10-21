@@ -91,7 +91,10 @@ bash setup/setup.sh
 **Julia: our own install, not the module.** `setup/install_julia.sh` downloads the official
 release that `Manifest.toml` was made with (`julia_version`), checks it against julialang.org's
 checksums, and unpacks it in a folder `software` next to the depot (for example
-`/project/<group>/<user>/software/julia-1.10.10`; set `OCEAN_SOFTWARE_DIR` to put it elsewhere).
+`/project/<group>/<user>/software/julia-1.10.10`; set `OCEAN_SOFTWARE_DIR` to put it elsewhere), then
+adapts it with the Alliance's `setrpaths.sh`: the programs then use the software stack's own loader
+(as the module's Julia does), without which the cluster's `libmpi` fails to load
+(`libze_loader.so.1: cannot open shared object file`). The code is unchanged.
 `env/drac.sh` then puts it on `PATH`. Every machine, Alliance or not, runs the same binary, and a new
 Julia version is a new Manifest and one command, not a wait for a module. Until it is installed,
 `env/drac.sh` loads the `julia` module of the same version and says so; `tools/check_env.sh` shows

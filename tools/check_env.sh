@@ -28,6 +28,13 @@ if command -v julia >/dev/null 2>&1; then
     if [[ -n "${OCEAN_SOFTWARE_DIR:-}" && "$(command -v julia)" != "$OCEAN_SOFTWARE_DIR/"* ]]; then
         warn "julia is the machine's module, not our own install in $OCEAN_SOFTWARE_DIR"
         info "Install it once (login node): bash \$OCEAN_HPC_ROOT/setup/install_julia.sh, then source ocean_setup again"
+    elif [[ -n "${CC_CLUSTER:-}" ]] && command -v readelf >/dev/null; then
+        # Alliance: our julia must use the software stack's loader, or the system libmpi fails to load
+        interp="$(readelf -l "$(command -v julia)" 2>/dev/null | sed -n 's/.*program interpreter: \(.*\)\]/\1/p')"
+        if [[ "$interp" != /cvmfs/* ]]; then
+            warn "julia uses the system loader ($interp), not the Alliance stack's: MPI will not load"
+            info "Adapt it: bash \$OCEAN_HPC_ROOT/setup/install_julia.sh (it runs setrpaths.sh on the existing install)"
+        fi
     fi
     # One Julia on every machine: the version the platform's Manifest was made with
     pv="$(sed -n 's/^julia_version = "\(.*\)"$/\1/p' "$OCEAN_HPC_ROOT/Manifest.toml" 2>/dev/null)"
