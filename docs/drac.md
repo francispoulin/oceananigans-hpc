@@ -410,7 +410,7 @@ versions, are in [results/tests/](../results/tests/).
 | --- | --- | --- | --- | --- | --- |
 | Nibi | 2026-10-19 | e386059 | 21 passed | H100 80GB | 1.10.10 |
 | Fir | 2026-10-19 | e386059 | 21 passed | H100 80GB | 1.10.10 |
-| Rorqual | 2026-10-18 | e386059 | 21 passed | H100 80GB | 1.10.10 |
+| Rorqual | 2026-10-21 | 7b1915f | 21 passed | H100 80GB | 1.10.10 |
 | Trillium | 2026-10-21 | 51e032e | 21 passed | H100 80GB | 1.10.10 |
 | pelee | 2026-10-20 | 51e032e | 21 passed | A100 40GB | 1.10.10 |
 | rondeau | 2026-10-19 | 86b6e02 | 21 passed (1 and 2 GPUs) | A100 40GB | 1.10.10 |
@@ -424,7 +424,8 @@ retested on pelee at 56c36df. v0.3.0 changes only how `tools/run_local.sh` reads
 rondeau), retested on rondeau at 86b6e02 on 1 and 2 GPUs (two of its GPUs were in use). v0.4.0 changes the
 environment files (the old variable `OCEANANIGANS_DRAC_ROOT` removed; Trillium's job folder renamed
 `$SCRATCH/oceananigans-hpc`), retested on Trillium and pelee at b24a028, and again at 51e032e with
-`tools/test_branch.sh` (pelee also by Buildkite at 68cc309); the other rows are unchanged from v0.2.0. Its new
+`tools/test_branch.sh` (pelee also by Buildkite at 68cc309), and on Rorqual at 7b1915f (the same
+environment files as b24a028); the other rows are unchanged from v0.2.0. Its new
 tools (`tools/test_branch.sh`, `tools/publish_summary.sh`, Buildkite) don't change the environment. Every result is the same as with v0.1.0 on each machine, and
 the same on pelee and rondeau with Julia 1.10.8 and 1.10.10. Which machines are retested for a
 release: [CONTRIBUTING.md](../CONTRIBUTING.md#versions-and-releases).
