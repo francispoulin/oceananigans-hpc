@@ -9,8 +9,8 @@
 #     bash tools/publish_summary.sh --if-clean --latest   # only if nothing failed or was skipped
 #
 # --latest looks in the test worktree (<clone>-test/results/tests, from tools/test_branch.sh) and in
-# $OCEAN_JOB_DIR/results/tests (Trillium: $SCRATCH/oceananigans-hpc), shows the summary's first
-# lines, and publishes it. Run it on a login node or pelee/rondeau (it needs GitHub; compute nodes
+# $OCEAN_JOB_DIR/results/tests (Trillium: $SCRATCH/oceananigans-hpc) for the newest summary that is
+# not already part of the repository, shows its first lines, and publishes it. Run it on a login node or pelee/rondeau (it needs GitHub; compute nodes
 # usually can't reach it). Needs git's user.name and user.email (git config --global ...).
 
 [[ "${1:-}" == -h || "${1:-}" == --help ]] && { sed -n '2,/^[^#]/{/^#SBATCH/d;/^# *shellcheck/d;s/^# \{0,1\}//p;}' "$0"; exit 0; }   # -h: usage
@@ -30,7 +30,13 @@ if [[ "$1" == --latest ]]; then
     [[ "${CC_CLUSTER:-}" == trillium && -n "${SCRATCH:-}" ]] && dirs+=("$SCRATCH/oceananigans-hpc/results/tests")
     found=()
     shopt -s nullglob
-    for d in "${dirs[@]}"; do found+=("$d"/*.md); done
+    for d in "${dirs[@]}"; do
+        for f in "$d"/*.md; do
+            # Skip summaries that are part of the repository (checked out in the worktree): checking
+            # out a commit gives them a new time, so they would look newer than the test just run.
+            git -C "$d" ls-files --error-unmatch "$f" >/dev/null 2>&1 || found+=("$f")
+        done
+    done
     shopt -u nullglob
     file=""
     [[ ${#found[@]} -gt 0 ]] && file="$(ls -t "${found[@]}" | head -1)"
