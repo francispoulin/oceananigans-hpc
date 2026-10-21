@@ -97,8 +97,15 @@ environment). Oceananigans, a package, tests ranges of versions; this repository
 - [ ] `tools/run_tests.sh --project envs/candidate` (and `tools/test_branch.sh`) to test it
 - [ ] `tools/versions.sh`: the versions of every environment (main, `viz`, `envs/nccl`, the benchmark suite)
 - [ ] `setup/setup_benchmark_suite.sh <commit>`: the suite follows the Oceananigans version
-- [ ] Automatic GPU tests on rondeau for pull requests (a GitHub Actions runner there; information
-      gathered first, then permission asked)
+- [ ] Automatic GPU tests on pelee/rondeau for every pull request, with Buildkite as Oceananigans
+      does ([docs/ci.md](docs/ci.md); decided Oct 20: a GitHub Actions runner is advised against for
+      public repositories, a poller gives no check on the pull request)
+  - [x] Pipeline (`.buildkite/pipeline.yml`) and `tools/ci_platform_tests.sh`
+  - [ ] Trial: agent on pelee under a personal account; first green build
+  - [ ] Agreed with the servers' administrators: a dedicated account, the agent as a service
+  - [ ] rondeau; then BalancedFlows on the same agents
+  - [ ] Later, if the cluster's staff agree: one Alliance cluster (Slurm jobs started from Buildkite,
+        as CliMA's slurm-buildkite does)
 
 - [ ] One upgrade at a time, in a separate environment (`envs/candidate`), never in the main one;
       read the release notes first

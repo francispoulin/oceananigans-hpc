@@ -26,6 +26,8 @@
 # One test at a time per machine: a lock in the worktree (the running process, or the queued job)
 # stops a second test from switching the worktree under the first. pelee and rondeau share one
 # clone, and so one worktree.
+# Exit status 75 means nothing was run because the GPUs or the worktree were busy: try again later
+# (tools/ci_platform_tests.sh waits and retries on it). Any other non-zero status is a real failure.
 
 [[ "${1:-}" == -h || "${1:-}" == --help ]] && { sed -n '2,/^[^#]/{/^#SBATCH/d;/^# *shellcheck/d;s/^# \{0,1\}//p;}' "$0"; exit 0; }   # -h: usage
 set -o pipefail
@@ -73,7 +75,7 @@ if [[ $clean -eq 1 ]]; then
     exit $?
 fi
 [[ -n "$ref" ]] || { echo "usage: test_branch.sh <branch> [--gpus \"1 2\"] [--no-publish] [--dry-run]   (or --clean)"; exit 1; }
-[[ -z "$busy" ]] || { echo "Another test is using $WT: $busy. Wait for it to end."; exit 1; }
+[[ -z "$busy" ]] || { echo "Another test is using $WT: $busy. Wait for it to end."; exit 75; }
 
 echo "== Fetching ($CLONE)"
 git -C "$CLONE" fetch --quiet origin || { echo "git fetch failed"; exit 1; }
@@ -116,7 +118,7 @@ if [[ -z "${CC_CLUSTER:-}" ]] && command -v nvidia-smi >/dev/null; then
     if (( nfree < want )); then
         echo "Only $nfree free GPU(s) on $(hostname -s); the tests need $want. Nothing run."
         echo "Try later, on the other server, or with fewer GPUs (--gpus \"1 2\")."
-        exit 1
+        exit 75
     fi
 fi
 

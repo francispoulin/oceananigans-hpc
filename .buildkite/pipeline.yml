@@ -1,0 +1,13 @@
+# Buildkite pipeline for oceananigans-hpc (docs/ci.md): the platform tests on pelee or rondeau for
+# every pull request and every push to main, run by a Buildkite agent on that server.
+# The pipeline's own settings in Buildkite upload this file ("buildkite-agent pipeline upload").
+steps:
+  - label: ":julia: Platform tests (1 and 4 GPUs)"
+    command: bash tools/ci_platform_tests.sh
+    agents:
+      queue: fluidsgpu            # the agents on pelee and rondeau
+    # pelee and rondeau share one clone and one test worktree: one test at a time on both.
+    concurrency: 1
+    concurrency_group: oceananigans-hpc/fluidsgpu-tests
+    # Up to 2 hours waiting for free GPUs, then about 15 minutes of tests.
+    timeout_in_minutes: 180

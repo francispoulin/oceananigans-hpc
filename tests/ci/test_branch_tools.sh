@@ -6,9 +6,10 @@
 #     bash tests/ci/test_branch_tools.sh
 #
 # Checked: the worktree is created at the branch and the clone stays on main, untouched; a lock
-# held by a live process stops a second test, a stale one does not; --latest publishes only the
-# summary file, on top of main, as results/<name>, without changing the clone; publishing twice
-# does nothing; a file that is not a summary is refused; --clean removes the worktree.
+# held by a live process stops a second test, a stale one does not; too few free GPUs stop the
+# tests (both "busy" cases exit with 75, "try later"); --latest publishes only the summary file, on
+# top of main, as results/<name>, without changing the clone; publishing twice does nothing; a file
+# that is not a summary is refused; --clean removes the worktree.
 
 [[ "${1:-}" == -h || "${1:-}" == --help ]] && { sed -n '2,/^[^#]/{/^#SBATCH/d;/^# *shellcheck/d;s/^# \{0,1\}//p;}' "$0"; exit 0; }   # -h: usage
 set -o pipefail
@@ -44,8 +45,8 @@ report $ok "test_branch.sh: worktree at the branch, clone still on main and clea
 
 # 2. a live lock (this shell, this machine) stops a second test; 3. a stale one does not
 echo "pid $$ $(hostname -s)" > "$WT/.test_branch.lock"
-out="$(bash "$t/clone/tools/test_branch.sh" claude/feature --dry-run 2>&1)" && ok=0 || ok=1
-[[ "$out" == *"Another test"* ]] || ok=0
+out="$(bash "$t/clone/tools/test_branch.sh" claude/feature --dry-run 2>&1)"; rc=$?
+[[ $rc -eq 75 && "$out" == *"Another test"* ]] && ok=1 || ok=0
 report $ok "test_branch.sh: refuses while another test holds the lock" "$out"
 ( exit 0 ) & dead=$!; wait $dead
 echo "pid $dead $(hostname -s)" > "$WT/.test_branch.lock"
@@ -60,8 +61,8 @@ cat > "$t/bin/nvidia-smi" <<'SMI'
 case "$*" in *query-compute-apps*) printf 'GPU-a\nGPU-b\n' ;; *) printf '0, GPU-a\n1, GPU-b\n' ;; esac
 SMI
 chmod +x "$t/bin/nvidia-smi"
-out="$(PATH="$t/bin:$PATH" CC_CLUSTER='' bash "$t/clone/tools/test_branch.sh" claude/feature 2>&1)" && ok=0 || ok=1
-[[ "$out" == *"Only 0 free GPU(s)"*"Nothing run"* && ! -f "$WT/.test_branch.lock" ]] || ok=0
+out="$(PATH="$t/bin:$PATH" CC_CLUSTER='' bash "$t/clone/tools/test_branch.sh" claude/feature 2>&1)"; rc=$?
+[[ $rc -eq 75 && "$out" == *"Only 0 free GPU(s)"*"Nothing run"* && ! -f "$WT/.test_branch.lock" ]] && ok=1 || ok=0
 report $ok "test_branch.sh: stops before the tests when too few GPUs are free" "$out"
 
 # 3c. --if-clean refuses a summary with skipped steps (and publishes nothing)
