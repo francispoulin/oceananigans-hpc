@@ -85,7 +85,7 @@ Versions: see [CONTRIBUTING.md](CONTRIBUTING.md#versions-and-releases).
   - [ ] Our own Julia 1.10.10 on the Alliance clusters too (`setup/install_julia.sh`, `env/drac.sh`
         without the `julia` module), the same version, so 1.0.0 starts on the setup we keep
     - [x] `env/julia.sh`, one place for every machine: our install next to the depot, else the module
-    - [ ] Installed and tested on Rorqual and Trillium (worktree), then the other machines
+    - [ ] Installed and tested on Rorqual (Oct 21, 6bf3999, 21 of 21) and Trillium (worktree), then the other machines
   - [ ] Folders renamed on Nibi and Fir (item above)
   - [ ] Platform tests on every machine at one commit; BalancedFlows has used the contract on each
 
