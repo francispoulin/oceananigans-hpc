@@ -27,8 +27,9 @@
 # everything (the summary appears when it ends). Trillium: whole-GPU scheduling (1 or 4 GPUs), and
 # jobs can't write to $HOME/$PROJECT, so logs and the summary go to $OCEAN_JOB_DIR (on $SCRATCH);
 # copy the summary into results/tests/ to commit it (the job prints the command).
-# Output: results/tests/<machine>_<date-time>.md (commit it: the record of what was tested, with
-# which versions), and one log per step in logs/.
+# Output: results/tests/<machine>_<date-time>.md (publish it with tools/publish_summary.sh: the
+# record of what was tested, with which versions), and one log per step in logs/. To test a branch
+# without switching the clone: tools/test_branch.sh.
 
 [[ "${1:-}" == -h || "${1:-}" == --help ]] && { sed -n '2,/^[^#]/{/^#SBATCH/d;/^# *shellcheck/d;s/^# \{0,1\}//p;}' "$0"; exit 0; }   # -h: usage
 set -o pipefail
@@ -170,6 +171,6 @@ if [[ $status -eq 0 ]]; then record viz CPU PASS "$secs" "$detail" "$log"; else 
 echo
 echo "$npass passed, $nfail failed, $nskip skipped/warnings. Summary: $OUT/$summary"
 if [[ "$OUT" != "$ROOT" ]]; then
-    echo "To commit it, from a login node: cp $OUT/$summary $ROOT/results/tests/"
+    echo "To publish it, from a login node: bash $ROOT/tools/publish_summary.sh $OUT/$summary"
 fi
 [[ $nfail -eq 0 ]]

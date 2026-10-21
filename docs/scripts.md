@@ -37,10 +37,13 @@ they export.
 
 | Script | What it does | Where | Example |
 | --- | --- | --- | --- |
+| `tools/test_branch.sh` | The platform tests of a branch, in a worktree next to the clone (which stays on `main`); publishes the summary | login, server | `bash tools/test_branch.sh claude/some-change` |
+| `tools/publish_summary.sh` | Pushes one test summary as a `results/<machine>_<date>` branch, without touching the clone | login, server | `bash tools/publish_summary.sh --latest` |
 | `tools/run_tests.sh` | The platform tests (21 on 1 and 4 GPUs, ~10 min); submits one job on the Alliance, runs directly on pelee/rondeau; writes `results/tests/<machine>_<date>.md` | login, server | `bash tools/run_tests.sh` |
 | `jobs/checks.sh` | Four multi-GPU checks (one MPI, CUDA-aware MPI, distributed vs one GPU, output) on any number of GPUs | job | `bash jobs/submit_gpu.sh jobs/checks.sh 16` |
 | `jobs/hello_cpu.sh`, `jobs/hello_gpu.sh` | A first Oceananigans run on a CPU node and on one GPU | job | `sbatch jobs/hello_gpu.sh` |
 | `tests/ci/run_all.sh` | The checks GitHub runs on every pull request (no GPUs or Slurm needed) | any | `bash tests/ci/run_all.sh` |
+| `tests/ci/test_branch_tools.sh` | Part of `run_all.sh`: `test_branch.sh` and `publish_summary.sh` against a throwaway local repository | any | `bash tests/ci/test_branch_tools.sh` |
 | `tests/ci/test_submit_scripts.sh` | Part of `run_all.sh`: the Slurm options of the submit scripts on each cluster | any | `bash tests/ci/test_submit_scripts.sh` |
 
 `tests/ci/` also holds `check_links.py`, `check_cluster_facts.py`, `check_scripts_documented.py` and

@@ -8,9 +8,11 @@ can always be traced to the code that produced it. It applies to everyone, maint
 
 1. **Every change goes through a branch and a pull request.** Nothing is committed directly to
    `main` (GitHub enforces this).
-2. **Clones on the clusters only pull.** Never edit files in a cluster clone. To try a change there,
-   check out its branch, run, and switch back (see "Testing a branch" below). Experiments that are not meant to be committed go in `local/`
-   (ignored by git), not among the tracked files.
+2. **Clones on the machines only pull, and stay on `main`.** Never edit files in a machine's clone.
+   A branch is tested in a separate worktree with `tools/test_branch.sh` (see "Testing a branch"
+   below), so the clone never switches. The one thing a machine pushes is a test summary, with
+   `tools/publish_summary.sh`, on its own `results/...` branch. Experiments that are not meant to be
+   committed go in `local/` (ignored by git), not among the tracked files.
 3. **Clones refuse to merge on pull.** Set once on every machine:
    `git config --global pull.ff only`. A clone that has drifted then stops with an error instead of
    quietly creating a merge commit, so the drift is noticed and fixed.
@@ -32,8 +34,8 @@ committed on a branch and pushed before it runs anywhere else.
 | Kind of change | Test on | How |
 | --- | --- | --- |
 | Shell syntax, Slurm options of submit scripts, docs links | Anywhere (also run automatically on every pull request) | `bash tests/ci/run_all.sh` |
-| Julia code, environment files, 1–4 GPU behaviour | rondeau or pelee (4 GPUs, no queue) | `bash tools/run_tests.sh` or `tools/run_local.sh` |
-| Slurm jobs, more than one node, cluster-specific settings | The cluster concerned | `bash jobs/submit_gpu.sh ...` with the branch checked out |
+| Julia code, environment files, 1–4 GPU behaviour | rondeau or pelee (4 GPUs, no queue) | `bash tools/test_branch.sh <branch>` |
+| Slurm jobs, more than one node, cluster-specific settings | The cluster concerned | `bash tools/test_branch.sh <branch>`, or jobs submitted from its worktree |
 | Package or module upgrades | rondeau first, then one cluster | `ROADMAP.md`, Phase 4 |
 
 ## Step by step
@@ -53,18 +55,21 @@ git commit                       # message: see below
 git push -u origin fjp/submit-gpu-memory
 ```
 
-**Testing a branch on another machine** (a cluster, or rondeau):
+**Testing a branch on a machine** (a cluster, or pelee/rondeau), one command, from anywhere:
 
 ```bash
-cd "$OCEAN_HPC_ROOT"
-git fetch
-git switch fjp/submit-gpu-memory # the branch, read-only here: never commit on a cluster
-# ... run the test, look at the log ...
-git switch main                  # back to main afterwards
+bash /path/to/oceananigans-hpc/tools/test_branch.sh fjp/submit-gpu-memory
 ```
 
-Jobs read the scripts when they start, so keep the branch checked out until a test job has started
-(or finished, for scripts read again later in the job).
+It checks the branch out in a git worktree next to the clone (`<clone>-test`), copies the clone's
+machine-specific `LocalPreferences.toml` into it, and runs the platform tests there with the
+worktree's own environment. The clone stays on `main`, so jobs already queued from it are never
+affected. On pelee/rondeau the tests run at once and the summary is published at the end; on a
+cluster one job is submitted, and once it has ended, `bash tools/publish_summary.sh --latest`
+publishes the summary. One test at a time per machine: a lock in the worktree stops a second one.
+Other runs of a branch (a benchmark, a job of your own) are started from the worktree in the same
+way: `source <clone>-test/env/ocean_setup.sh`, then the usual command. `test_branch.sh --clean`
+removes the worktree.
 
 **Merging:** on the pull request page, check the diff and that the automatic checks pass, then
 *Merge*. Delete the branch (GitHub offers a button). Then on every machine:
@@ -80,17 +85,17 @@ discard them (`git reset --hard origin/main`, after checking they are not needed
 ## Results produced on a machine
 
 Test summaries (`results/tests/`) and benchmark results are written on the machine that ran them.
-They are the one kind of file committed from a cluster or server, and only on a branch:
+A test summary is the one file a machine pushes, with one command:
 
 ```bash
-git switch -c fjp/results-tests-nibi-2026-10
-git add results/tests/nibi_20261016-2022.md
-git commit -m "Platform test summary: Nibi, Oct 16 (21 passed)"
-git push -u origin fjp/results-tests-nibi-2026-10
-git switch main
+bash tools/publish_summary.sh results/tests/nibi_20261016-2022.md    # or --latest
 ```
 
-Every summary records the commit it was run with, so a result always points to its code.
+It commits that file alone on top of `origin/main`, as a new branch `results/nibi_20261016-2022`,
+and pushes it, without touching the clone (no checkout, no local commit, so nothing blocks the next
+`git pull`). The branch is then merged into the pull request that needs it, and deleted. Benchmark
+tables are pasted into a pull request as before. Every summary records the commit it was run with,
+so a result always points to its code.
 
 ## Commit messages
 

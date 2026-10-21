@@ -26,6 +26,9 @@ fi
 echo "== Submit scripts: Slurm options per cluster"
 bash tests/ci/test_submit_scripts.sh || status=1
 
+echo "== Testing a branch: worktree and summary publishing (local throwaway repository)"
+bash tests/ci/test_branch_tools.sh || status=1
+
 echo "== Cluster facts: docs tables vs jobs/gpu_request.sh, no --gpus-per-task"
 python3 tests/ci/check_cluster_facts.py || status=1
 
