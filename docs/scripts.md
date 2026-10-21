@@ -19,14 +19,15 @@ anywhere with bash after `ocean_setup`.
 | `tools/check_env.sh` | Checks the environment and a project folder, and says what looks wrong | any | `bash $OCEAN_HPC_ROOT/tools/check_env.sh` |
 
 `env/ocean_setup.sh` picks one of `env/drac.sh` (Alliance) or `env/fluidsgpu.sh` (pelee/rondeau);
-those two are not run or sourced directly. [env/README.md](../env/README.md) lists the variables
+both take Julia from `env/julia.sh` (our own install of the Manifest's version, else the machine's
+module). These three are not run or sourced directly. [env/README.md](../env/README.md) lists the variables
 they export.
 
 ## Setting up a machine (once)
 
 | Script | What it does | Where | Example |
 | --- | --- | --- | --- |
-| `setup/install_julia.sh` | Installs the official Julia release the platform's Manifest was made with, where the modules lack it (pelee/rondeau; once per version) | server | `bash setup/install_julia.sh` |
+| `setup/install_julia.sh` | Installs the official Julia release the platform's Manifest was made with, next to the depot; every machine runs it instead of a module (once per machine and version) | login, server | `bash setup/install_julia.sh` |
 | `setup/setup.sh` | Installs the packages and points MPI.jl and OpenMPI_jll at the system MPI | login, server | `bash setup/setup.sh` |
 | `setup/setup_viz.sh` | Sets up `viz/`, the plotting environment (CairoMakie, NCDatasets) | login, server | `bash setup/setup_viz.sh` |
 | `setup/configure_mpi.sh` | The MPI part of the setup, for your own project folder | login, server | `bash setup/configure_mpi.sh /path/to/project` |
