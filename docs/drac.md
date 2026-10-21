@@ -441,6 +441,11 @@ Trillium (run by SciNet) uses the same software stack, so `env/drac.sh` works un
   GPU jobs are submitted from the **GPU login node**, `trig-login01`, reached through the CPU
   login node (`ssh -J <user>@trillium.alliancecan.ca <user>@trig-login01`, or a `ProxyJump`
   entry in `~/.ssh/config`). Cloning from GitHub over SSH needs a key on Trillium added to GitHub.
+- **GPU jobs live on the GPU side:** submit, check and cancel them (`sbatch`, `squeue`, `sacct`,
+  `scancel`) from `trig-login01`. The CPU login nodes (`tri-login…`) see the CPU side's queue and
+  history, with their own job numbers: there `squeue -u $USER` is empty while your GPU job waits, and
+  `sacct -j <number>` can show an unrelated CPU job with the same number (Oct 20, 2026: a job from
+  March). `ocean_setup` reminds you when it is sourced on a CPU login node.
 - **GPUs:** 4 × H100 per node; a job gets exactly **1 GPU or whole nodes** (`--gpus-per-node=1`
   or `--gpus-per-node=4`, with `--ntasks-per-node` to match). `--mem` is ignored (1 GPU = 1/4 node,
   188 GiB). Don't name a partition: the scheduler picks `debug` or `compute`.

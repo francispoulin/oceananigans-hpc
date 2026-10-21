@@ -74,14 +74,40 @@ Versions: see [CONTRIBUTING.md](CONTRIBUTING.md#versions-and-releases).
 - [x] Trillium job folder `$SCRATCH/oceananigans-hpc` (was `oceananigans-drac`) in `env/drac.sh`
 - [ ] Folders renamed on every machine: clones `Oceananigans-DRAC` → `oceananigans-hpc` (README), and on
       Trillium `$SCRATCH/oceananigans-drac` → `oceananigans-hpc`; Nibi and Fir once their queued jobs end
-- [ ] Nonhydrostatic benchmark repeated with a real BalancedFlows configuration (needs its
-      nonhydrostatic option)
-- [ ] v1.0.0 when the contract has been used by BalancedFlows on every machine
+- [x] Nonhydrostatic benchmark: Oceananigans' own nonhydrostatic box (`benchmarks/nonhydrostatic_box.jl`,
+      results in `results/nonhydrostatic_rondeau.md`), as for the hydrostatic model (`earth_ocean`). No
+      BalancedFlows configuration (decided Oct 20: benchmarks use Oceananigans' cases; a harness for its own
+      configurations is on BalancedFlows' wish list)
+- [ ] v1.0.0: a stable baseline before any library changes (Phase 4), in this order (agreed Oct 20):
+  - [x] Test a branch without switching the clone (`tools/test_branch.sh`, a worktree), and publish
+        test summaries from the machines (`tools/publish_summary.sh`)
+  - [ ] Our own Julia 1.10.10 on the Alliance clusters too (`setup/install_julia.sh`, `env/drac.sh`
+        without the `julia` module), the same version, so 1.0.0 starts on the setup we keep
+  - [ ] Folders renamed on Nibi and Fir (item above)
+  - [ ] Platform tests on every machine at one commit; BalancedFlows has used the contract on each
 
 ## Phase 4: a workflow for updating libraries
 
 Oceananigans, Julia, the GPU stack (CUDA.jl, GPUCompiler, LLVM), MPI.jl/OpenMPI_jll, NCCL, cluster
-modules and the plotting stack all change independently.
+modules and the plotting stack all change independently. Libraries change only after v1.0.0; the
+scripts below are built and tried on pelee/rondeau before then (they never touch the main
+environment). Oceananigans, a package, tests ranges of versions; this repository pins exact ones
+(`Manifest.toml`), so an upgrade is a deliberate change of pins, tested on the machines.
+
+- [ ] `setup/make_candidate.sh <package>@<version>`: `envs/candidate` from the main environment with one
+      package upgraded, MPI configured, precompiled
+- [ ] `tools/run_tests.sh --project envs/candidate` (and `tools/test_branch.sh`) to test it
+- [ ] `tools/versions.sh`: the versions of every environment (main, `viz`, `envs/nccl`, the benchmark suite)
+- [ ] `setup/setup_benchmark_suite.sh <commit>`: the suite follows the Oceananigans version
+- [ ] Automatic GPU tests on pelee/rondeau for every pull request, with Buildkite as Oceananigans
+      does ([docs/ci.md](docs/ci.md); decided Oct 20: a GitHub Actions runner is advised against for
+      public repositories, a poller gives no check on the pull request)
+  - [x] Pipeline (`.buildkite/pipeline.yml`) and `tools/ci_platform_tests.sh`
+  - [ ] Trial: agent on pelee under a personal account; first green build
+  - [ ] Agreed with the servers' administrators: a dedicated account, the agent as a service
+  - [ ] rondeau; then BalancedFlows on the same agents
+  - [ ] Later, if the cluster's staff agree: one Alliance cluster (Slurm jobs started from Buildkite,
+        as CliMA's slurm-buildkite does)
 
 - [ ] One upgrade at a time, in a separate environment (`envs/candidate`), never in the main one;
       read the release notes first
@@ -90,7 +116,12 @@ modules and the plotting stack all change independently.
 - [ ] Adopt in one pull request listing the versions, then setup and tests on every machine and a
       new release tag; or write down why not and what to wait for
 - [ ] Record the versions of every environment, including `envs/nccl` (not under version control)
-- [ ] First use: Oceananigans 0.114, Julia 1.11
+- [ ] Benchmarks: the suite is pinned (`setup/setup_benchmark_suite.sh`, commit 8743c40d0) and its
+      `benchmarking/` in 0.113.5 has only `earth_ocean`; `benchmarks/nonhydrostatic_box.jl` ports the newer
+      suite's nonhydrostatic case. On an upgrade, re-pin the suite and check whether its nonhydrostatic
+      case can replace the port (same configuration, so results stay comparable)
+- [ ] First uses, after v1.0.0: Oceananigans 0.114 (released Oct 2026; Julia 1.10 still supported), then
+      Julia 1.13 (Oceananigans tests with it; our own install, as on pelee/rondeau)
 
 ## Phase 5: scaling numbers
 
