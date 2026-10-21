@@ -450,7 +450,11 @@ Trillium (run by SciNet) uses the same software stack, so `env/drac.sh` works un
   March). `ocean_setup` reminds you when it is sourced on a CPU login node.
 - **GPUs:** 4 × H100 per node; a job gets exactly **1 GPU or whole nodes** (`--gpus-per-node=1`
   or `--gpus-per-node=4`, with `--ntasks-per-node` to match). `--mem` is ignored (1 GPU = 1/4 node,
-  188 GiB). Don't name a partition: the scheduler picks `debug` or `compute`.
+  188 GiB). The scheduler puts jobs in `compute` (1 GPU) or `compute_full_node`, never in the
+  debug partitions by itself. Short tests belong in **`debug_full_node`** (whole nodes) or `debug`
+  (1 GPU), 1 hour at most: `tools/run_tests.sh` asks for them, and they start far sooner (Oct 21, 2026:
+  a test estimated for the next afternoon moved about a day earlier). A job already waiting can be
+  moved: `scontrol update JobId=<n> Partition=debug_full_node TimeLimit=0:20:00`.
 - **Files:** `$HOME` and `$PROJECT` are **read-only on compute nodes**. Keep the repository and the
   Julia depot in project space (install and precompile on the login node). Jobs may be submitted
   from the repository, but everything they write must go to `$SCRATCH`: `jobs/submit_gpu.sh` puts
