@@ -27,6 +27,8 @@ g clone -q "$t/remote.git" "$t/seed" 2>/dev/null
 mkdir -p "$t/seed/tools" "$t/seed/results/tests"
 cp "$ROOT/tools/test_branch.sh" "$ROOT/tools/publish_summary.sh" "$t/seed/tools/"
 echo "seed" > "$t/seed/README.md"; touch "$t/seed/results/tests/.keep"
+printf '# Platform tests on old, 2026-10-01 00:00:00\n\n**21 passed, 0 failed, 0 skipped or warnings.**\n' \
+    > "$t/seed/results/tests/old_20261001-0000.md"            # a summary already in the repository
 ( cd "$t/seed" && g add -A && g commit -qm "main" && g push -q origin HEAD:main &&
   g switch -qc claude/feature && echo "feature" > feature.txt && g add feature.txt &&
   g commit -qm "feature" && g push -q origin claude/feature ) || { echo "setup failed"; exit 1; }
@@ -78,13 +80,14 @@ report $ok "publish_summary.sh --if-clean: refuses a summary with skipped steps"
 mkdir -p "$WT/results/tests"
 printf '# Platform tests on ci, 2026-10-20 12:00:00\n\noceananigans-hpc v0 (abc test). GPUs: 1 4.\n**21 passed, 0 failed, 0 skipped or warnings.**\n' \
     > "$WT/results/tests/ci_20261020-1200.md"
+touch -d '+1 minute' "$WT/results/tests/old_20261001-0000.md"   # as after a checkout: looks newest
 out="$(bash "$t/clone/tools/publish_summary.sh" --if-clean --latest 2>&1)"; rc=$?
 b=results/ci_20261020-1200
 pub="$(git -C "$t/remote.git" rev-parse -q --verify "$b" 2>/dev/null)"
 [[ $rc -eq 0 && -n "$pub" && "$(git -C "$t/remote.git" rev-parse "$b^")" == "$main0" &&
    "$(git -C "$t/remote.git" diff --name-status "$main0" "$b")" == "A	results/tests/ci_20261020-1200.md" &&
    "$(git -C "$t/clone" rev-parse HEAD)" == "$main0" && -z "$(git -C "$t/clone" status --porcelain)" ]] && ok=1 || ok=0
-report $ok "publish_summary.sh --latest: one file on top of main, as $b; clone unchanged" "$out"
+report $ok "publish_summary.sh --latest: the new summary (not a newer-looking one in the repository), on top of main, as $b; clone unchanged" "$out"
 
 # 5. publishing twice does nothing; 6. not a summary is refused
 out="$(bash "$t/clone/tools/publish_summary.sh" "$WT/results/tests/ci_20261020-1200.md" 2>&1)"; rc=$?
