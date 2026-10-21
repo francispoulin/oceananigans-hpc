@@ -9,7 +9,8 @@
 # held by a live process stops a second test, a stale one does not; too few free GPUs stop the
 # tests (both "busy" cases exit with 75, "try later"); --latest publishes only the summary file, on
 # top of main, as results/<name>, without changing the clone; publishing twice does nothing; a file
-# that is not a summary is refused; --clean removes the worktree.
+# that is not a summary is refused; an earlier summary left in the worktree does not block switching
+# to a commit that contains it; --clean removes the worktree.
 
 [[ "${1:-}" == -h || "${1:-}" == --help ]] && { sed -n '2,/^[^#]/{/^#SBATCH/d;/^# *shellcheck/d;s/^# \{0,1\}//p;}' "$0"; exit 0; }   # -h: usage
 set -o pipefail
@@ -92,6 +93,13 @@ report $ok "publish_summary.sh: a second publish does nothing" "$out"
 echo "not a summary" > "$t/other.md"
 out="$(bash "$t/clone/tools/publish_summary.sh" "$t/other.md" 2>&1)" && ok=0 || ok=1
 report $ok "publish_summary.sh: refuses a file that is not a summary" "$out"
+
+# 6b. the worktree still holds that summary, untracked, and the next commit contains it (as after a
+# merge): switching is not blocked, and the earlier copy is kept in local/old_summaries/
+out="$(bash "$t/clone/tools/test_branch.sh" "$b" --dry-run 2>&1)"; rc=$?
+[[ $rc -eq 0 && "$(git -C "$WT" rev-parse HEAD)" == "$pub" &&
+   -f "$WT/local/old_summaries/ci_20261020-1200.md" && -z "$(git -C "$WT" status --porcelain --untracked-files=no)" ]] && ok=1 || ok=0
+report $ok "test_branch.sh: an earlier summary left in the worktree does not block the next commit" "$out"
 
 # 7. --clean removes the worktree
 out="$(bash "$t/clone/tools/test_branch.sh" --clean 2>&1)"; rc=$?

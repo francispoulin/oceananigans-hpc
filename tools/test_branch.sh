@@ -17,7 +17,8 @@
 #
 # What it does: git fetch; the worktree is created (or moved) to origin/<branch>, detached, so the
 # same branch can also be checked out elsewhere; the clone's machine-specific LocalPreferences.toml
-# files (MPI setup, not under version control) are copied into it; then tools/run_tests.sh runs
+# files (MPI setup, not under version control) are copied into it (earlier summaries left in the
+# worktree are moved to its local/old_summaries/); then tools/run_tests.sh runs
 # there with the worktree's own environment (OCEAN_HPC_ROOT = the worktree).
 #   pelee/rondeau: the tests run now (about 10 min) if enough GPUs are free (otherwise nothing runs);
 #   at the end the summary is published if nothing failed or was skipped.
@@ -88,6 +89,12 @@ git -C "$CLONE" worktree prune
 if [[ -d "$WT/.git" || -f "$WT/.git" ]]; then
     [[ -z "$(git -C "$WT" status --porcelain --untracked-files=no)" ]] ||
         { echo "$WT has local changes to tracked files; not touching it (git -C $WT status)"; exit 1; }
+    # Summaries written here by earlier tests are untracked; once one has been merged, checking out
+    # a newer commit would refuse to overwrite it. Keep them in local/ (ignored by git), never delete.
+    while IFS= read -r f; do
+        mkdir -p "$WT/local/old_summaries" && mv "$WT/$f" "$WT/local/old_summaries/" &&
+            echo "   (moved the earlier summary $f to local/old_summaries/)"
+    done < <(git -C "$WT" ls-files --others --exclude-standard -- results/tests)
     git -C "$WT" checkout --quiet --detach "$target" || exit 1
 else
     [[ ! -e "$WT" ]] || { echo "$WT exists but is not a worktree of $CLONE; move it away first"; exit 1; }
