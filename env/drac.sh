@@ -27,6 +27,11 @@ export OCEAN_MACHINE="${CC_CLUSTER:-alliance}"
 # purged, and the depot only needs to be written from the login node.
 if [[ "$CC_CLUSTER" == trillium ]]; then
     export OCEAN_JOB_DIR="${OCEAN_JOB_DIR:-$SCRATCH/oceananigans-hpc}"
+    # GPU jobs are submitted and checked on the GPU side (trig-login01); the CPU login nodes
+    # (tri-login...) have a separate queue and job numbers (docs/drac.md, section 11).
+    if [[ -z "$SLURM_JOB_ID" && "$(hostname -s 2>/dev/null)" == tri-login* ]]; then
+        echo "ocean_setup: $(hostname -s) is a Trillium CPU login node: submit and check GPU jobs from trig-login01" >&2
+    fi
 fi
 
 # Inside a job, use the compute node's own Slurm commands. sbatch --export=ALL (as our submit
