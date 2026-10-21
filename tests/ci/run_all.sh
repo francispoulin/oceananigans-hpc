@@ -35,7 +35,7 @@ python3 tests/ci/check_cluster_facts.py || status=1
 echo "== Every script documented: docs/scripts.md, usage header, -h"
 python3 tests/ci/check_scripts_documented.py || status=1
 
-echo "== One Julia version: Manifests and env/drac.sh agree"
+echo "== One Julia version: Manifests, env/julia.sh, every machine file"
 python3 tests/ci/check_julia_version.py || status=1
 
 echo "== Links in the docs"

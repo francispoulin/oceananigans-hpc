@@ -26,9 +26,10 @@ Scripts in `setup/`, `jobs/` and `tools/` rely only on these, so a new machine n
 | `OCEAN_DATA_DIR` | downloaded input data (ECCO, EN4, ETOPO, ...); also `NUMERICALEARTH_DATA_DIRECTORY` |
 | `OCEAN_RESULTS_ROOT` | simulation output: `$SCRATCH/results` on the Alliance, `/mnt/autofs/bow.math/scratch/$USER/results` on pelee/rondeau; repositories write under `$OCEAN_RESULTS_ROOT/<repository>/` |
 
-plus `julia` and the system `mpiexec` on `PATH`: from modules, except Julia on pelee/rondeau, which
-comes from `$OCEAN_SOFTWARE_DIR/julia-<version>` (installed by `setup/install_julia.sh`; default
-`/mnt/autofs/bow.math/scratch/$USER/software`). Every machine runs the Julia version of
+plus `julia` and the system `mpiexec` on `PATH`. `mpiexec` comes from a module; `julia` from
+`$OCEAN_SOFTWARE_DIR/julia-<version>` on every machine (`env/julia.sh`; installed once by
+`setup/install_julia.sh`; default: a folder `software` next to the Julia depot), or, until that is
+installed, from the machine's julia module with a warning. `OCEAN_JULIA_VERSION` is the version. Every machine runs the Julia version of
 `Manifest.toml` (checked by `tools/check_env.sh` and `tests/ci/check_julia_version.py`).
 
 Optional: `OCEAN_JOB_DIR`, where scripts write logs and results from inside jobs when the

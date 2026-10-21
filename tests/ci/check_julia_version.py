@@ -1,6 +1,7 @@
-"""Check that every machine gets the same Julia: the julia_version of Manifest.toml and
-viz/Manifest.toml, and the julia module loaded by env/drac.sh (the Alliance clusters), all agree.
-pelee and rondeau read the version from Manifest.toml (env/fluidsgpu.sh, setup/install_julia.sh).
+"""Check that every machine gets the same Julia: Manifest.toml and viz/Manifest.toml were made with
+the same julia_version; env/julia.sh reads that version from Manifest.toml; both machine files
+(env/drac.sh, env/fluidsgpu.sh) take Julia from env/julia.sh; and env/drac.sh loads no julia module
+of its own (a fixed version there would drift from the Manifest).
 
 Runs on every pull request (.github/workflows/checks.yml) and anywhere with Python 3:
     python3 tests/ci/check_julia_version.py
@@ -17,10 +18,13 @@ found = {}
 for manifest in ["Manifest.toml", "viz/Manifest.toml"]:
     m = re.search(r'^julia_version = "([^"]+)"$', (root / manifest).read_text(), re.M)
     found[manifest] = m.group(1) if m else None
-m = re.search(r"^module load julia/(\S+)", (root / "env/drac.sh").read_text(), re.M)
-found["env/drac.sh (julia module)"] = m.group(1) if m else None
-m = re.search(r"Manifest\.toml", (root / "env/fluidsgpu.sh").read_text())
-found["env/fluidsgpu.sh reads Manifest.toml"] = found["Manifest.toml"] if m else None
+julia_sh = (root / "env/julia.sh").read_text()
+found["env/julia.sh reads Manifest.toml"] = found["Manifest.toml"] if "Manifest.toml" in julia_sh else None
+for env in ["env/drac.sh", "env/fluidsgpu.sh"]:
+    text = (root / env).read_text()
+    found[f"{env} sources env/julia.sh"] = found["Manifest.toml"] if re.search(r"^source .*env/julia\.sh", text, re.M) else None
+m = re.search(r"^\s*module load julia\S*", (root / "env/drac.sh").read_text(), re.M)
+found["env/drac.sh loads no julia module itself"] = None if m else found["Manifest.toml"]
 
 want = found["Manifest.toml"]
 fails = 0

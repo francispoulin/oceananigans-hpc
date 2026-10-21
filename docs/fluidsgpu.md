@@ -11,7 +11,7 @@ MACHINE-SPECIFIC block.
 | --- | --- | --- |
 | Environment | `env/drac.sh` | `env/fluidsgpu.sh` |
 | MPI | `openmpi/4.1.5` | `openmpi/4.1.7-with-cuda` (CUDA-aware, built for the group) |
-| Julia | 1.10.10 (module) | 1.10.10, installed by hand on the shared drive (`setup/install_julia.sh`) |
+| Julia | 1.10.10, our own install in `/project` (`setup/install_julia.sh`) | 1.10.10, our own install on the shared drive (`setup/install_julia.sh`) |
 | Running | `sbatch` | `tools/run_local.sh` |
 | GPUs | given by Slurm | shared: `run_local.sh` picks free ones |
 | Internet | login nodes only | yes |

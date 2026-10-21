@@ -6,7 +6,7 @@
 # Used by setup/setup.sh and by every job script, so that setup and jobs always see the
 # same modules and the same Julia depot.
 
-# Remember the depot chosen by the user (first entry only) BEFORE loading modules. The julia
+# Remember the depot chosen by the user (first entry only) BEFORE loading modules. A julia
 # module appends empty entries to JULIA_DEPOT_PATH ("...::"), and Julia expands empty entries
 # to its default depots, including ~/.julia in $HOME. Setting the depot cleanly afterwards
 # keeps Julia to exactly one depot.
@@ -17,7 +17,8 @@ module load StdEnv/2023
 module load gcc/12.3
 module load openmpi/4.1.5
 module load cuda/12.6
-module load julia/1.10.10
+# Julia: not a module. The official release of Manifest.toml's julia_version, installed once with
+# setup/install_julia.sh and put on PATH by env/julia.sh (below), the same binary as on pelee/rondeau.
 
 export OCEAN_MACHINE="${CC_CLUSTER:-alliance}"
 
@@ -67,6 +68,10 @@ export OCEAN_HPC_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 export JULIA_DEPOT_PATH="${_drac_depot:-$HOME/julia_depot}"
 
 unset _drac_depot
+
+# Julia on PATH (env/julia.sh): $OCEAN_SOFTWARE_DIR/julia-<version>, by default in a folder "software"
+# next to the depot. Until it is installed, the Alliance's julia module of the same version.
+source "$OCEAN_HPC_ROOT/env/julia.sh"
 
 # Trillium jobs: the depot is read-only on compute nodes, and Julia 1.10 fails when it can't update
 # the timestamp of a precompiled file it loads ("SystemError: futimes: Permission denied"). So jobs
