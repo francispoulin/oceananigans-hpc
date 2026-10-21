@@ -53,11 +53,30 @@ out="$(bash "$t/clone/tools/test_branch.sh" claude/feature --dry-run 2>&1)" && o
 report $ok "test_branch.sh: ignores a stale lock (process gone)" "$out"
 rm -f "$WT/.test_branch.lock"
 
+# 3b. not enough free GPUs (a stand-in nvidia-smi: 2 GPUs, both busy): nothing runs, no lock left
+mkdir -p "$t/bin"
+cat > "$t/bin/nvidia-smi" <<'SMI'
+#!/bin/bash
+case "$*" in *query-compute-apps*) printf 'GPU-a\nGPU-b\n' ;; *) printf '0, GPU-a\n1, GPU-b\n' ;; esac
+SMI
+chmod +x "$t/bin/nvidia-smi"
+out="$(PATH="$t/bin:$PATH" CC_CLUSTER='' bash "$t/clone/tools/test_branch.sh" claude/feature 2>&1)" && ok=0 || ok=1
+[[ "$out" == *"Only 0 free GPU(s)"*"Nothing run"* && ! -f "$WT/.test_branch.lock" ]] || ok=0
+report $ok "test_branch.sh: stops before the tests when too few GPUs are free" "$out"
+
+# 3c. --if-clean refuses a summary with skipped steps (and publishes nothing)
+mkdir -p "$WT/results/tests"
+printf '# Platform tests on ci, 2026-10-20 11:00:00\n\noceananigans-hpc v0 (abc test). GPUs: 1 4.\n**2 passed, 0 failed, 2 skipped or warnings.**\n' \
+    > "$t/skipped.md"
+out="$(bash "$t/clone/tools/publish_summary.sh" --if-clean "$t/skipped.md" 2>&1)" && ok=0 || ok=1
+[[ "$out" == *"Not published"* && -z "$(git -C "$t/remote.git" for-each-ref refs/heads/results)" ]] || ok=0
+report $ok "publish_summary.sh --if-clean: refuses a summary with skipped steps" "$out"
+
 # 4. publish --latest: only the summary, on top of main, clone unchanged
 mkdir -p "$WT/results/tests"
 printf '# Platform tests on ci, 2026-10-20 12:00:00\n\noceananigans-hpc v0 (abc test). GPUs: 1 4.\n**21 passed, 0 failed, 0 skipped or warnings.**\n' \
     > "$WT/results/tests/ci_20261020-1200.md"
-out="$(bash "$t/clone/tools/publish_summary.sh" --latest 2>&1)"; rc=$?
+out="$(bash "$t/clone/tools/publish_summary.sh" --if-clean --latest 2>&1)"; rc=$?
 b=results/ci_20261020-1200
 pub="$(git -C "$t/remote.git" rev-parse -q --verify "$b" 2>/dev/null)"
 [[ $rc -eq 0 && -n "$pub" && "$(git -C "$t/remote.git" rev-parse "$b^")" == "$main0" &&

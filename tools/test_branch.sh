@@ -19,9 +19,10 @@
 # same branch can also be checked out elsewhere; the clone's machine-specific LocalPreferences.toml
 # files (MPI setup, not under version control) are copied into it; then tools/run_tests.sh runs
 # there with the worktree's own environment (OCEAN_HPC_ROOT = the worktree).
-#   pelee/rondeau: the tests run now (about 10 min); at the end the summary is published.
+#   pelee/rondeau: the tests run now (about 10 min) if enough GPUs are free (otherwise nothing runs);
+#   at the end the summary is published if nothing failed or was skipped.
 #   Alliance: run_tests.sh submits one job and this script stops; when the job has ended, publish
-#   the summary with:  bash /path/to/oceananigans-hpc/tools/publish_summary.sh --latest
+#   the summary with:  bash /path/to/oceananigans-hpc/tools/publish_summary.sh --if-clean --latest
 # One test at a time per machine: a lock in the worktree (the running process, or the queued job)
 # stops a second test from switching the worktree under the first. pelee and rondeau share one
 # clone, and so one worktree.
@@ -90,19 +91,33 @@ else
     [[ ! -e "$WT" ]] || { echo "$WT exists but is not a worktree of $CLONE; move it away first"; exit 1; }
     git -C "$CLONE" worktree add --quiet --detach "$WT" "$target" || exit 1
 fi
-for f in LocalPreferences.toml viz/LocalPreferences.toml; do
-    if [[ -f "$CLONE/$f" ]]; then cp "$CLONE/$f" "$WT/$f"
-    else echo "   (no $f in the clone: run setup/setup.sh there first if the tests need it)"; fi
-done
+if [[ -f "$CLONE/LocalPreferences.toml" ]]; then cp "$CLONE/LocalPreferences.toml" "$WT/"
+else echo "   (no LocalPreferences.toml in the clone: run setup/setup.sh there first)"; fi
+[[ -f "$CLONE/viz/LocalPreferences.toml" ]] && cp "$CLONE/viz/LocalPreferences.toml" "$WT/viz/"   # usually none
 echo "   $(git -C "$WT" describe --tags --always) ($(git -C "$WT" log -1 --format='%h %s'))"
 
 cmd=(bash "$WT/tools/run_tests.sh" "${gpus[@]}")
+
 if [[ $dry -eq 1 ]]; then
     echo "== Would run, with the worktree's environment (source $WT/env/ocean_setup.sh):"
     echo "   ${cmd[*]}"
-    [[ $publish -eq 1 ]] && echo "   then: bash $here/publish_summary.sh <summary>"
+    [[ $publish -eq 1 ]] && echo "   then: bash $here/publish_summary.sh --if-clean <summary>"
     echo "(dry run: no tests run)"
     exit 0
+fi
+
+# pelee/rondeau: enough free GPUs now? Otherwise stop here rather than skip every GPU test.
+if [[ -z "${CC_CLUSTER:-}" ]] && command -v nvidia-smi >/dev/null; then
+    want=$(tr ' ' '\n' <<<"${gpus[1]:-1 4}" | sort -n | tail -1)
+    busy_uuids="$(nvidia-smi --query-compute-apps=gpu_uuid --format=csv,noheader | sort -u)"
+    nfree=0
+    while IFS=', ' read -r _ uuid; do grep -q "$uuid" <<<"$busy_uuids" || nfree=$((nfree + 1)); done \
+        < <(nvidia-smi --query-gpu=index,uuid --format=csv,noheader)
+    if (( nfree < want )); then
+        echo "Only $nfree free GPU(s) on $(hostname -s); the tests need $want. Nothing run."
+        echo "Try later, on the other server, or with fewer GPUs (--gpus \"1 2\")."
+        exit 1
+    fi
 fi
 
 echo "== Platform tests"
@@ -120,12 +135,12 @@ if [[ -n "$job" ]]; then                               # Alliance: the tests run
     echo
     echo "Job $job runs the tests of $target from $WT (the clone is untouched)."
     echo "When it has ended (squeue -u \$USER is empty of it), publish the summary with:"
-    echo "    bash $here/publish_summary.sh --latest"
+    echo "    bash $here/publish_summary.sh --if-clean --latest"
     exit 0
 fi
 rm -f "$LOCK"
 [[ -n "$summary" && -f "$summary" ]] || { echo "No summary found (see the output above)"; exit 1; }
 if [[ $publish -eq 1 ]]; then
-    bash "$here/publish_summary.sh" "$summary" || echo "Publishing failed; the summary is in $summary"
+    bash "$here/publish_summary.sh" --if-clean "$summary" || echo "Not published; the summary is in $summary"
 fi
 exit "$status"

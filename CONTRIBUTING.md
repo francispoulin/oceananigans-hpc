@@ -64,9 +64,10 @@ bash /path/to/oceananigans-hpc/tools/test_branch.sh fjp/submit-gpu-memory
 It checks the branch out in a git worktree next to the clone (`<clone>-test`), copies the clone's
 machine-specific `LocalPreferences.toml` into it, and runs the platform tests there with the
 worktree's own environment. The clone stays on `main`, so jobs already queued from it are never
-affected. On pelee/rondeau the tests run at once and the summary is published at the end; on a
-cluster one job is submitted, and once it has ended, `bash tools/publish_summary.sh --latest`
-publishes the summary. One test at a time per machine: a lock in the worktree stops a second one.
+affected. On pelee/rondeau the tests run at once if enough GPUs are free (otherwise nothing runs),
+and the summary is published at the end if nothing failed or was skipped; on a cluster one job is
+submitted, and once it has ended, `bash tools/publish_summary.sh --if-clean --latest` publishes the
+summary. One test at a time per machine: a lock in the worktree stops a second one.
 Other runs of a branch (a benchmark, a job of your own) are started from the worktree in the same
 way: `source <clone>-test/env/ocean_setup.sh`, then the usual command. `test_branch.sh --clean`
 removes the worktree.

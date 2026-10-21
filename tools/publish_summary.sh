@@ -6,6 +6,7 @@
 #
 #     bash tools/publish_summary.sh results/tests/pelee_20261020-1904.md
 #     bash tools/publish_summary.sh --latest     # the newest summary written by a test on this machine
+#     bash tools/publish_summary.sh --if-clean --latest   # only if nothing failed or was skipped
 #
 # --latest looks in the test worktree (<clone>-test/results/tests, from tools/test_branch.sh) and in
 # $OCEAN_JOB_DIR/results/tests (Trillium: $SCRATCH/oceananigans-hpc), shows the summary's first
@@ -20,7 +21,9 @@ common="$(git -C "$here" rev-parse --path-format=absolute --git-common-dir 2>/de
 CLONE="$(dirname "$common")"
 WT="${TEST_WORKTREE:-$CLONE-test}"
 
-[[ $# -eq 1 ]] || { echo "usage: publish_summary.sh <summary.md> | --latest"; exit 1; }
+if_clean=0
+[[ "${1:-}" == --if-clean ]] && { if_clean=1; shift; }
+[[ $# -eq 1 ]] || { echo "usage: publish_summary.sh [--if-clean] <summary.md> | --latest"; exit 1; }
 if [[ "$1" == --latest ]]; then
     dirs=("$WT/results/tests")
     [[ -n "${OCEAN_JOB_DIR:-}" ]] && dirs+=("$OCEAN_JOB_DIR/results/tests")
@@ -40,6 +43,11 @@ head -1 "$file" | grep -q '^# Platform tests on ' || { echo "$file is not a test
 name="$(basename "$file")"
 echo "Summary: $file"
 sed -n '1p;3,4p' "$file" | sed 's/^/    /'
+if [[ $if_clean -eq 1 ]] && ! grep -qE '^\*\*[0-9]+ passed, 0 failed, 0 skipped or warnings\.\*\*$' "$file"; then
+    echo "Not published: some steps failed, were skipped or warned (--if-clean)."
+    echo "To publish it anyway (e.g. a deliberate partial run): bash $here/publish_summary.sh $file"
+    exit 1
+fi
 
 for key in user.name user.email; do
     [[ -n "$(git -C "$CLONE" config "$key")" ]] || { echo "git $key is not set: git config --global $key \"...\""; exit 1; }
