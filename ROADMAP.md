@@ -72,8 +72,10 @@ Versions: see [CONTRIBUTING.md](CONTRIBUTING.md#versions-and-releases).
 - [x] Trillium job folder `$SCRATCH/oceananigans-hpc` (was `oceananigans-drac`) in `env/drac.sh`
 - [ ] Folders renamed on every machine: clones `Oceananigans-DRAC` → `oceananigans-hpc` (README), and on
       Trillium `$SCRATCH/oceananigans-drac` → `oceananigans-hpc`; Nibi and Fir once their queued jobs end
-- [ ] Nonhydrostatic benchmark repeated with a real BalancedFlows configuration (needs its
-      nonhydrostatic option)
+- [x] Nonhydrostatic benchmark: Oceananigans' own nonhydrostatic box (`benchmarks/nonhydrostatic_box.jl`,
+      results in `results/nonhydrostatic_rondeau.md`), as for the hydrostatic model (`earth_ocean`). No
+      BalancedFlows configuration (decided Oct 20: benchmarks use Oceananigans' cases; a harness for its own
+      configurations is on BalancedFlows' wish list)
 - [ ] v1.0.0 when the contract has been used by BalancedFlows on every machine
 
 ## Phase 4: a workflow for updating libraries
@@ -88,6 +90,10 @@ modules and the plotting stack all change independently.
 - [ ] Adopt in one pull request listing the versions, then setup and tests on every machine and a
       new release tag; or write down why not and what to wait for
 - [ ] Record the versions of every environment, including `envs/nccl` (not under version control)
+- [ ] Benchmarks: the suite is pinned (`setup/setup_benchmark_suite.sh`, commit 8743c40d0) and its
+      `benchmarking/` in 0.113.5 has only `earth_ocean`; `benchmarks/nonhydrostatic_box.jl` ports the newer
+      suite's nonhydrostatic case. On an upgrade, re-pin the suite and check whether its nonhydrostatic
+      case can replace the port (same configuration, so results stay comparable)
 - [ ] First use: Oceananigans 0.114, Julia 1.11
 
 ## Phase 5: scaling numbers
