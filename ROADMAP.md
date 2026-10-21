@@ -40,7 +40,8 @@ Versions: see [CONTRIBUTING.md](CONTRIBUTING.md#versions-and-releases).
 - [x] Release **v0.2.0** (Oct 19): contract for simulation repositories (Phase 3), Julia 1.10.10 everywhere,
       tested on every machine including Nibi
 - [x] Release **v0.3.0** (Oct 19): long option names for `tools/run_local.sh`; tested on rondeau
-- [x] Release **v0.4.0** (Oct 20): `OCEANANIGANS_DRAC_ROOT` removed, Trillium job folder renamed; tested on
+- [x] Release **v0.4.0** (Oct 20): `OCEANANIGANS_DRAC_ROOT` removed, Trillium job folder renamed; branches
+      tested in a worktree, summaries published from the machines, Buildkite on pelee; tested on
       Trillium and pelee
 
 ## Phase 2: complete the switch of pelee and rondeau to this setup
