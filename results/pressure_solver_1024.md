@@ -5,7 +5,7 @@ solve transposes the full 3-D field between GPUs. This page times it alone
 (`benchmarks/poisson_solver.jl`), with MPI and with NCCL, after the two GPU-to-GPU settings of
 `docs/drac.md` step 7.
 
-**Status (Oct 22): draft.** Nibi's 8-GPU MPI run (one node) is in; its NCCL run is queued (*pending*).
+**Status (Oct 22): complete** for 1–8 GPUs on Nibi, Trillium and Rorqual.
 
 ## Setup
 
@@ -26,10 +26,11 @@ solve transposes the full 3-D field between GPUs. This page times it alone
 | 1 | 78.5 | – | 78.3 | – | 79.0 | – |
 | 2 | 143.7 (34.6) | 141.2 (34.4) | 163.9 (56.9) | 163.6 (57.1) | 164.1 (57.0) | 166.6 (57.4) |
 | 4 | 77.6 (25.0) | 72.2 (19.5) | 71.8 (19.0) | 74.0 (21.3) | 71.7 (19.0) | 74.2 (21.4) |
-| 8 | 43.3 (16.5), 1 node | pending, 1 node | 179.7 (164.5), 2 nodes | 83.1 (55.9), 2 nodes | 336.0 (313.0), 2 nodes | 206–246 (180–225), 2 nodes |
+| 8 | 43.3 (16.5), 1 node | 37.1 (10.5), 1 node | 179.7 (164.5), 2 nodes | 83.1 (55.9), 2 nodes | 336.0 (313.0), 2 nodes | 206–246 (180–225), 2 nodes |
 
 Efficiency from 2 to 4 GPUs: Nibi 93% (MPI) and 98% (NCCL); Trillium and Rorqual 110–114%. From 4 to
-8 GPUs within one Nibi node (NVSwitch): 90% with MPI (43.3 ms, transposes 16.5 ms); across two nodes
+8 GPUs within one Nibi node (NVSwitch): 90% with MPI (43.3 ms, transposes 16.5 ms) and 97% with NCCL
+(37.1 ms, transposes 10.5 ms), the fastest solve measured; across two nodes
 on Trillium and Rorqual the solve is 1.1 to 4.7 times slower than on 4 GPUs. GPU
 memory per GPU (MPI): 41.0 GiB on 1 GPU, 37.5 on 2, 19.4 on 4, 10.4 on 8; NCCL needs 0.6–2.7 GiB more.
 
