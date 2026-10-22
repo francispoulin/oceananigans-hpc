@@ -142,6 +142,13 @@ environment). Oceananigans, a package, tests ranges of versions; this repository
 
 ## Later
 
+- [ ] **Re-evaluate the tests, here and in BalancedFlows** (Francis, Oct 21): what each test checks,
+      how long it runs, and where (pelee by Buildkite, Trillium's debug queue: 1 h, 2 nodes, one job at
+      a time), so most testing needs no long queue. Record each job's actual run time next to its
+      results (e.g. an elapsed column in `tools/summarize_benchmarks.py`) and set time requests from it
+      (about 2 to 3 times the run time); lower the job scripts' defaults (benchmarks ask 45–80 min and
+      run 8–16, Oct 21); let `jobs/submit_gpu.sh` use Trillium's debug queue for jobs that fit
+
 - [ ] Point the Waterloo Fluids Computing Handbook's Oceananigans pages to this workflow
 - [ ] Shared depot for the group on pelee/rondeau, once several people use it
 - [ ] GPU tests on every pull request (a self-hosted runner on pelee)
