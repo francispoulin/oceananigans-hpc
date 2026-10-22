@@ -31,6 +31,23 @@ test_job_request() {
     fi
 }
 
+# CPU cores per rank: a job needs several per rank. With one (--cpus-per-task=1 or not given), a run
+# can become CPU-bound: on an HPE Cray EX Grace-Hopper system it never got past its first iteration
+# in 26 minutes, the single core at 97% (Oceananigans Discussion #6248, Oct 2026); on Rorqual it
+# cost under 3%. Our job scripts ask for --cpus-per-task=8; Trillium gives every GPU 24 cores.
+# Inside a job, prints a warning (once, from rank 0) when the node has fewer than 2 cores per rank.
+#
+#     check_cores_per_rank     (env/drac.sh calls it in every job)
+check_cores_per_rank() {
+    [[ -n "${SLURM_JOB_ID:-}" && "${SLURM_PROCID:-0}" == 0 ]] || return 0
+    local cores="${SLURM_CPUS_ON_NODE:-}" ranks="${SLURM_NTASKS_PER_NODE:-${SLURM_TASKS_PER_NODE%%[(,]*}}"
+    [[ "$cores" =~ ^[0-9]+$ && "$ranks" =~ ^[0-9]+$ ]] && (( ranks > 0 )) || return 0
+    if (( cores < 2 * ranks )); then
+        echo "WARNING: $cores CPU core(s) for $ranks rank(s) on this node: give each rank several, e.g. --cpus-per-task=8" >&2
+        echo "         (one core per rank can make a GPU run CPU-bound; docs/drac.md, step 7)" >&2
+    fi
+}
+
 default_gpus_per_node() { [[ "$CC_CLUSTER" == nibi ]] && echo 8 || echo 4; }
 
 gpu_request() {

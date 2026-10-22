@@ -347,6 +347,20 @@ and 9 times faster on 4 (700 → 78 ms). Across nodes the network sets the limit
 within one node where possible (8 GPUs on Nibi), and use NCCL when it must cross nodes; the
 hydrostatic model exchanges only halos and scales well across nodes.
 
+### CPU cores per rank: a third setting
+
+**Give every rank several CPU cores: `--cpus-per-task=8`.** Our job scripts ask for it (Trillium gives
+every GPU 24 cores by itself). How much it matters depends on the machine:
+
+- On Rorqual (x86, OpenMPI/UCX, `JULIA_NUM_THREADS=1`), one core per rank cost almost nothing:
+  0.2640 vs 0.2635 s per step on 4 GPUs, 0.1487 vs 0.1483 on 8 GPUs over 2 nodes (1/4°
+  `earth_ocean`; with one core the median was about 2.5% slower and the timings less steady).
+- On an HPE Cray EX Grace-Hopper system, the same kind of run with one core per rank never got past
+  its first iteration in 26 minutes, the core at 97%: completely CPU-bound
+  ([Oceananigans Discussion #6248](https://github.com/CliMA/Oceananigans.jl/discussions/6248)).
+
+`env/drac.sh` prints a warning at the start of a job when a node has fewer than 2 cores per rank.
+
 ## 8. Scaling
 
 Measured in October 2026 with the two GPU-to-GPU settings of step 7, on H100s. Full tables, setup and

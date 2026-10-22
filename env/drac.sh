@@ -96,6 +96,7 @@ fi
 if [[ -n "$SLURM_JOB_ID" && -n "$SLURM_SUBMIT_DIR" ]]; then
     source "$OCEAN_HPC_ROOT/jobs/gpu_request.sh"
     export OCEAN_JOB_LOGS="$(job_logs_dir "$SLURM_SUBMIT_DIR")"
+    check_cores_per_rank                   # warns if each rank has fewer than 2 CPU cores
     mkdir -p "$OCEAN_JOB_LOGS" 2>/dev/null || true
 fi
 
