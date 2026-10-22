@@ -388,8 +388,8 @@ Strong-scaling efficiency against each cluster's 1-GPU run (about 1.05 s per ste
   GPU) the GPUs run out of work, and efficiency falls to 59%.
 - Larger grids scale further. Before the settings (Oct 2–5, [results/nibi_scaling.md](../results/nibi_scaling.md)),
   1/8° kept 80% on 32 GPUs and 1/16° 93%; with the work per GPU held fixed (weak scaling), 16 GPUs on
-  2 nodes cost under 4% and 64 GPUs on 8 nodes 15%. Weak scaling with the settings: 98% on 4 GPUs so
-  far (16 and 64 queued).
+  2 nodes cost under 4% and 64 GPUs on 8 nodes 15%. Weak scaling with the settings: 98% on 4 GPUs and
+  97% on 16 (2 nodes, 1/16°); 64 queued.
 - The settings matter across nodes: on Nibi they make 2 nodes 5% faster and 4 nodes 20% faster, with
   much steadier timings; within a node they cost 1.5–3.5% (the memory pool is off).
 - NCCL gains 1–7% over MPI across nodes and nothing within a node.
