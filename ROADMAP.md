@@ -157,6 +157,14 @@ environment). Oceananigans, a package, tests ranges of versions; this repository
 
 ## Later
 
+- [ ] pelee/rondeau: MPI moves GPU buffers at half NCCL's speed within the node (1024³ transposes 71 vs
+      36 ms, Oct 22; OpenMPI 4.1.7 with `smcuda`, no UCX). Try `smcuda` settings (CUDA IPC), or ask for
+      an OpenMPI built with UCX; meanwhile NCCL for nonhydrostatic runs there
+- [ ] pelee/rondeau, before Oceananigans 0.114: the `cuda/12.3.2` module puts its libraries on
+      `LD_LIBRARY_PATH`, and the newer CUDA.jl loads `libcusparse`/`libnvJitLink` 12.3 from there
+      instead of its own (warning seen with Oceananigans PR #6314's branch, Oct 22). Test removing the
+      module's `lib64` from `LD_LIBRARY_PATH` after loading OpenMPI in `env/fluidsgpu.sh`
+
 - [ ] **Re-evaluate the tests, here and in BalancedFlows** (Francis, Oct 21): what each test checks,
       how long it runs, and where (pelee by Buildkite, Trillium's debug queue: 1 h, 2 nodes, one job at
       a time), so most testing needs no long queue. Record each job's actual run time next to its
