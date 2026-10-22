@@ -5,7 +5,8 @@
 # and anywhere with bash:  bash tests/ci/test_submit_scripts.sh
 #
 # Cluster facts tested: Nibi has 8 GPUs per node, Fir and Rorqual 4, Trillium 4 with only 1 GPU or
-# whole nodes and no --mem; --mem=0 only for a full node; never --gpus-per-task.
+# whole nodes and no --mem; --mem=0 only for a full node; never --gpus-per-task; a job warns when
+# its ranks have fewer than 2 CPU cores each.
 
 [[ "${1:-}" == -h || "${1:-}" == --help ]] && { sed -n '2,/^[^#]/{/^#SBATCH/d;/^# *shellcheck/d;s/^# \{0,1\}//p;}' "$0"; exit 0; }   # -h: usage
 set -o pipefail
@@ -112,6 +113,21 @@ rt trillium "1"   --nodes=1 --ntasks-per-node=1 --gpus-per-node=1 --time=0:20:00
 out="$(CC_CLUSTER=fir DRYRUN=1 bash tools/run_tests.sh --gpus "1 8" 2>&1)" && ok=0 || ok=1
 [[ "$out" == *"at most 4 GPUs"* ]] || ok=0
 report "$ok" "run_tests.sh on fir refuses 8 GPUs (one node only)" "$out"
+
+# check_cores_per_rank (jobs/gpu_request.sh, called by env/drac.sh in every job)
+ccr() { env "$@" bash -c 'source jobs/gpu_request.sh; check_cores_per_rank' 2>&1; }
+out="$(ccr SLURM_JOB_ID=1 SLURM_PROCID=0 SLURM_CPUS_ON_NODE=4 SLURM_NTASKS_PER_NODE=4)"
+[[ "$out" == *"WARNING: 4 CPU core(s) for 4 rank(s)"* ]] && ok=1 || ok=0
+report "$ok" "check_cores_per_rank: warns with 1 core per rank" "$out"
+out="$(ccr SLURM_JOB_ID=1 SLURM_PROCID=0 SLURM_CPUS_ON_NODE=32 SLURM_TASKS_PER_NODE='4(x2)')"
+[[ -z "$out" ]] && ok=1 || ok=0
+report "$ok" "check_cores_per_rank: quiet with 8 cores per rank (ranks from SLURM_TASKS_PER_NODE)" "$out"
+out="$(ccr SLURM_JOB_ID=1 SLURM_PROCID=3 SLURM_CPUS_ON_NODE=4 SLURM_NTASKS_PER_NODE=4)"
+[[ -z "$out" ]] && ok=1 || ok=0
+report "$ok" "check_cores_per_rank: only rank 0 warns" "$out"
+out="$(ccr SLURM_CPUS_ON_NODE=4 SLURM_NTASKS_PER_NODE=4)"
+[[ -z "$out" ]] && ok=1 || ok=0
+report "$ok" "check_cores_per_rank: quiet outside a job" "$out"
 
 # tools/run_local.sh (pelee/rondeau): runs started together with the same name get separate logs
 lt="$(mktemp -d)"; mkdir -p "$lt/bin" "$lt/proj"; touch "$lt/proj/Project.toml" "$lt/proj/run.jl"
