@@ -57,8 +57,8 @@ The commands below assume this is set; otherwise add `--account=def-yourpi` to e
 ## 2. Environment and Julia depot
 
 Every step uses `env/drac.sh`, which loads the modules (`StdEnv/2023`, `gcc/12.3`,
-`openmpi/4.1.5`, `cuda/12.6`, `julia/1.10.10`) and sets the Julia depot: the folder where
-packages and compiled code are stored.  It is `$HOME/julia_depot` unless you set `JULIA_DEPOT_PATH` before sourcing the file. It starts with `module --force purge`, so modules loaded at login (including "sticky" ones) don't leak into jobs.
+`openmpi/4.1.5`, `cuda/12.6`), puts our own Julia on `PATH` (below) and sets the Julia depot: the
+folder where packages and compiled code are stored.  It is `$HOME/julia_depot` unless you set `JULIA_DEPOT_PATH` before sourcing the file. It starts with `module --force purge`, so modules loaded at login (including "sticky" ones) don't leak into jobs.
 
 **Where to put the depot.** A depot with Oceananigans, CUDA and MPI is about 2 GB and
 12,000 files. If your group has project space, put it there:
@@ -74,8 +74,8 @@ export JULIA_DEPOT_PATH=/project/<group>/<user>/julia_depot
 ```
 Log in again (or run `source ~/.bashrc`) before step 3, and check with `echo $JULIA_DEPOT_PATH`.
 
-**Why the order matters.** The `julia` module runs `append_path("JULIA_DEPOT_PATH", ":")`,
-so every time it is loaded it adds a colon to the depot path. Julia reads empty entries in
+**Why the order matters.** The `julia` module (used until our own Julia is installed, step 3) runs
+`append_path("JULIA_DEPOT_PATH", ":")`, so every time it is loaded it adds a colon to the depot path. Julia reads empty entries in
 the depot path as "add the default depots here", and those include `~/.julia` in your home
 directory. Packages can then come from, or be written to, an unexpected place. Setting the
 variable after loading modules replaces whatever the module added, and `env/drac.sh` strips
@@ -84,8 +84,21 @@ it in jobs.
 ## 3. One-time setup (login node)
 
 ```bash
+bash setup/install_julia.sh     # our own Julia 1.10.10, about 1 GB, next to the depot
 bash setup/setup.sh
 ```
+
+**Julia: our own install, not the module.** `setup/install_julia.sh` downloads the official
+release that `Manifest.toml` was made with (`julia_version`), checks it against julialang.org's
+checksums, and unpacks it in a folder `software` next to the depot (for example
+`/project/<group>/<user>/software/julia-1.10.10`; set `OCEAN_SOFTWARE_DIR` to put it elsewhere), then
+adapts it with the Alliance's `setrpaths.sh`: the programs then use the software stack's own loader
+(as the module's Julia does), without which the cluster's `libmpi` fails to load
+(`libze_loader.so.1: cannot open shared object file`). The code is unchanged.
+`env/drac.sh` then puts it on `PATH`. Every machine, Alliance or not, runs the same binary, and a new
+Julia version is a new Manifest and one command, not a wait for a module. Until it is installed,
+`env/drac.sh` loads the `julia` module of the same version and says so; `tools/check_env.sh` shows
+which one is used. Trillium jobs read it from `/project` like the depot.
 
 The first run downloads and precompiles everything; allow 20 to 30 minutes. It does four
 things:

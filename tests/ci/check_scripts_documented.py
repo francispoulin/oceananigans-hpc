@@ -18,7 +18,7 @@ patterns = ["env/*.sh", "jobs/*.sh", "setup/*.sh", "tools/*.sh", "tools/*.py", "
             "tests/ci/*.sh", "tests/ci/*.py"]
 scripts = subprocess.run(["git", "ls-files", *patterns], cwd=root, capture_output=True,
                          text=True).stdout.split()
-sourced = {"env/ocean_setup.sh", "env/drac.sh", "env/fluidsgpu.sh", "jobs/gpu_request.sh"}
+sourced = {"env/ocean_setup.sh", "env/drac.sh", "env/fluidsgpu.sh", "env/julia.sh", "jobs/gpu_request.sh"}
 page = (root / "docs/scripts.md").read_text()
 usage = re.compile(r"^(#|\s|\"\"\"|    )*.*\b(bash|sbatch|source|python3|julia)\s+\S", re.M)
 fails = []
