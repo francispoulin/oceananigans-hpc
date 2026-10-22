@@ -31,11 +31,18 @@ can always be traced to the code that produced it. It applies to everyone, maint
 Edit wherever is convenient (a laptop, or a clone on pelee/rondeau), as long as the change is
 committed on a branch and pushed before it runs anywhere else.
 
+Tests go where they are quick. pelee is tested on every pull request by itself (Buildkite,
+[docs/ci.md](docs/ci.md)); Trillium's debug queue starts a test in about 10 minutes
+(`tools/run_tests.sh` uses it); Rorqual, Nibi and Fir can wait hours to a day, so they are tested
+at releases and for changes aimed at them, not for every pull request.
+
 | Kind of change | Test on | How |
 | --- | --- | --- |
 | Shell syntax, Slurm options of submit scripts, docs links | Anywhere (also run automatically on every pull request) | `bash tests/ci/run_all.sh` |
-| Julia code, environment files, 1–4 GPU behaviour | rondeau or pelee (4 GPUs, no queue) | `bash tools/test_branch.sh <branch>` |
-| Slurm jobs, more than one node, cluster-specific settings | The cluster concerned | `bash tools/test_branch.sh <branch>`, or jobs submitted from its worktree |
+| Anything (every pull request) | pelee, automatically | Buildkite: the check on the pull request |
+| Julia code, environment files, 1–4 GPU behaviour | pelee (automatic) or rondeau | `bash tools/test_branch.sh <branch>` |
+| The Alliance setup (`env/drac.sh`, `env/julia.sh`, `setup/`, `jobs/`, Slurm options) | **Trillium** (debug queue, ~10 min wait) | `bash tools/test_branch.sh <branch>` on trig-login01 |
+| What only runs off Trillium (`--mem`, `h100` GPUs, Nibi's 8 GPUs per node, a cluster's own fix) | The cluster concerned | `bash tools/test_branch.sh <branch>` there |
 | Package or module upgrades | rondeau first, then one cluster | `ROADMAP.md`, Phase 4 |
 
 ## Step by step
@@ -138,8 +145,10 @@ and removed in v0.4.0).
      cluster, any of Nibi, Fir, Rorqual and Trillium.
    - **The setup can change** (`env/`, `setup/`, `jobs/`, `tools/run_tests.sh`, Slurm options):
      **two** clusters, one of them Trillium, which differs most (no writing to `/project` in jobs,
-     a clean job environment, 1 GPU or whole nodes). A change aimed at one cluster (for example
-     Nibi's 8 GPUs per node or its Slurm path) is tested on that cluster.
+     a clean job environment, 1 GPU or whole nodes), the other usually Rorqual. A change aimed at one
+     cluster (for example Nibi's 8 GPUs per node or its Slurm path) is tested on that cluster. This is
+     where Rorqual (or Nibi, Fir) is tested "every so often": pull requests merge on pelee and
+     Trillium, and a release catches what only shows elsewhere before anyone depends on it.
    - **pelee or rondeau** as well, when `env/fluidsgpu.sh`, `tools/run_local.sh` or anything else
      they use changed (no queue there).
    - **Every machine** for 1.0.0 and for upgrades of Julia, Oceananigans or the GPU stack
