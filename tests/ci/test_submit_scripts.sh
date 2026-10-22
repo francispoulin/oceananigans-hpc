@@ -104,11 +104,11 @@ rt() {   # cluster gpus must-contain...
     [[ "$out" == *--gpus-per-task* ]] && ok=0
     report "$ok" "run_tests.sh on $cluster, GPUs \"$g\"" "$out"
 }
-rt nibi "1 4"     --nodes=1 --ntasks-per-node=4 --gpus-per-node=h100:4 --mem=128G
-rt fir "1 4"      --nodes=1 --ntasks-per-node=4 --gpus-per-node=h100:4 --mem=0
-rt rorqual "1 4"  --nodes=1 --ntasks-per-node=4 --gpus-per-node=h100:4 --mem=0
-rt trillium "1 4" --nodes=1 --ntasks-per-node=4 --gpus-per-node=4 --time=0:30:00 '!--mem'
-rt trillium "1"   --nodes=1 --ntasks-per-node=1 --gpus-per-node=1 '!--mem'
+rt nibi "1 4"     --nodes=1 --ntasks-per-node=4 --gpus-per-node=h100:4 --mem=128G --time=0:20:00 '!--partition'
+rt fir "1 4"      --nodes=1 --ntasks-per-node=4 --gpus-per-node=h100:4 --mem=0 --time=0:20:00 '!--partition'
+rt rorqual "1 4"  --nodes=1 --ntasks-per-node=4 --gpus-per-node=h100:4 --mem=0 --time=0:20:00 '!--partition'
+rt trillium "1 4" --nodes=1 --ntasks-per-node=4 --gpus-per-node=4 --time=0:20:00 --partition=debug_full_node '!--mem'
+rt trillium "1"   --nodes=1 --ntasks-per-node=1 --gpus-per-node=1 --time=0:20:00 '--partition=debug ' '!--mem'
 out="$(CC_CLUSTER=fir DRYRUN=1 bash tools/run_tests.sh --gpus "1 8" 2>&1)" && ok=0 || ok=1
 [[ "$out" == *"at most 4 GPUs"* ]] || ok=0
 report "$ok" "run_tests.sh on fir refuses 8 GPUs (one node only)" "$out"
