@@ -72,6 +72,21 @@ cells per GPU) it falls to 59%: the model exchanges only thin halos, so the netw
 for the nonhydrostatic pressure solve ([pressure_solver_1024.md](pressure_solver_1024.md)). NCCL
 gains 1–4% once the run crosses nodes and is the same as MPI within a node.
 
+## Strong scaling at 1/8° on Rorqual (2880 × 1440 × 200, 829 million cells)
+
+The grid is too large for one GPU, so efficiency is against 4 GPUs on one node:
+efficiency = 4 × time on 4 GPUs / (N × time on N GPUs). Δt = 30 s. Jobs `b8_{MPI,NCCL}_{4,8,16}gpu`,
+Oct 21–23 (`--cpus-per-task=8`, both GPU settings).
+
+| GPUs | Nodes | Cells per GPU | MPI (s/step) | NCCL (s/step) | GPU memory per rank (GiB) |
+| --- | --- | --- | --- | --- | --- |
+| 4 | 1 | 207 M | 1.0683 | 1.0685 | 48–49 |
+| 8 | 2 | 104 M | 0.5417 (99%) | 0.5414 (99%) | 26 |
+| 16 | 4 | 52 M | 0.2845 (94%) | 0.2849 (94%) | 15 |
+
+With 4 times the cells per GPU of the 1/4° grid, crossing nodes costs little: 94% on 4 nodes, against
+76% (MPI) and 82% (NCCL) for 1/4° on the same 16 GPUs. MPI and NCCL are the same.
+
 ## Weak scaling on Nibi (about 207 million cells per GPU)
 
 Each step doubles the resolution in both horizontal directions and multiplies the GPUs by 4; the
