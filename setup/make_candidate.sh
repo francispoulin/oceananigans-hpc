@@ -102,30 +102,36 @@ for p in "${pkgs[@]}"; do adds+="Pkg.add(PackageSpec(name=\"${p%@*}\", version=\
 # resolve, the Manifest is the new Julia's.
 # The registry is updated first, in a process of its own.
 "$J" --startup-file=no -e 'using Pkg; Pkg.Registry.update()' || exit 1
-# Resolve (Pkg.add resolves) and instantiate in separate processes. With Julia 1.13.2 the resolve
-# writes the new Manifest and then fails while installing ("Unknown package: ChunkCodecLibZstd",
-# whose dependency Zstd_jll became part of Julia), whereas instantiate in a new process works
-# (Oct 24). So an error from the resolve step is reported but not fatal: the new process's
-# instantiate decides, and the requested versions are checked in the Manifest afterwards.
+# Resolve (Pkg.add resolves), check, and instantiate, each in a new process. Julia 1.13.2's Pkg
+# sometimes fails in the same process as a resolve that changes its own dependencies or Julia's
+# standard libraries ("Unknown package: ChunkCodecLibZstd" after the resolve; a viz/ update that
+# did not write its Manifest, then compiled NetCDF against the wrong library versions), while the
+# same step in a new process works (Oct 24). So the resolve step may fail without stopping the
+# script, is tried a second time if its result is not in the Manifest, and is checked: the
+# packages at the versions asked for, and julia_version.
+manifest_ok() {   # manifest_ok <environment>: the resolve step's result is in its Manifest
+    local m="$1/Manifest.toml" p
+    if [[ -n "$julia_v" ]]; then grep -q "^julia_version = \"$julia_v\"$" "$m" || return 1; fi
+    [[ "$1" == "$WT" ]] || return 0
+    for p in "${pkgs[@]}"; do
+        "$J" --startup-file=no -e 'using TOML; m = TOML.parsefile(ARGS[1])["deps"];
+            exit(haskey(m, ARGS[2]) && m[ARGS[2]][1]["version"] == ARGS[3] ? 0 : 1)' "$m" "${p%@*}" "${p#*@}" || return 1
+    done
+}
 for env in "$WT" ${julia_v:+"$WT/viz"}; do
     # The packages asked for; for viz/ (plotting only) with a new Julia, everything it holds moves to
     # the newest compatible versions: a plain resolve keeps the old Julia's standard-library
     # versions, which the new Julia refuses ("Statistics ... restricted to versions 1.10.0", Oct 24).
     if [[ "$env" == "$WT" && -n "$adds" ]]; then step="$adds"; else step="Pkg.update()"; fi
-    "$J" --startup-file=no -e "using Pkg; Pkg.activate(ARGS[1]); $step" "$env" ||
-        echo "   (the resolve step ended with an error; continuing with instantiate in a new process)"
+    for attempt in 1 2; do
+        "$J" --startup-file=no -e "using Pkg; Pkg.activate(ARGS[1]); $step" "$env" ||
+            echo "   (the resolve step ended with an error; checking its result)"
+        manifest_ok "$env" && break
+        [[ $attempt -eq 2 ]] && { echo "$env/Manifest.toml does not have what was asked for (packages or julia_version)"; exit 1; }
+        echo "   (not in the Manifest yet: trying the resolve step once more, in a new process)"
+    done
     "$J" --startup-file=no -e 'using Pkg; Pkg.activate(ARGS[1]); Pkg.instantiate()' "$env" || exit 1
 done
-for p in "${pkgs[@]}"; do
-    "$J" --startup-file=no -e 'using TOML; m = TOML.parsefile(ARGS[1])["deps"];
-        haskey(m, ARGS[2]) && m[ARGS[2]][1]["version"] == ARGS[3] || (println("$(ARGS[2]) is not at $(ARGS[3]) in the Manifest"); exit(1))' \
-        "$WT/Manifest.toml" "${p%@*}" "${p#*@}" || exit 1
-done
-if [[ -n "$julia_v" ]]; then
-    for m in "$WT/Manifest.toml" "$WT/viz/Manifest.toml"; do
-        grep -q "^julia_version = \"$julia_v\"$" "$m" || { echo "$m is not for Julia $julia_v"; exit 1; }
-    done
-fi
 
 echo "== MPI for this machine, then precompile (with the candidate's own environment)"
 bash "$WT/setup/configure_mpi.sh" "$WT" > "$WT/.candidate_mpi.log" 2>&1 ||
