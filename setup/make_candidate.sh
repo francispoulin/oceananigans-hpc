@@ -99,6 +99,9 @@ for p in "${pkgs[@]}"; do adds+="Pkg.add(PackageSpec(name=\"${p%@*}\", version=\
 # Julia active, a newer Julia cannot use its own precompiled standard libraries (their dependencies
 # differ) and recompiles them (Julia 1.13.2: Markdown overflows the stack, Oct 24). After the
 # resolve, the Manifest is the new Julia's.
+# The registry is updated in a process of its own first: updated in the middle of the next step,
+# resolve and instantiate saw different registries ("Unknown package: ChunkCodecLibZstd", Oct 24).
+"$J" --startup-file=no -e 'using Pkg; Pkg.Registry.update()' || exit 1
 "$J" --startup-file=no -e "using Pkg; Pkg.activate(ARGS[1]); $adds Pkg.resolve(); Pkg.instantiate()" "$WT" || exit 1
 if [[ -n "$julia_v" ]]; then
     "$J" --startup-file=no -e 'using Pkg; Pkg.activate(ARGS[1]); Pkg.resolve(); Pkg.instantiate()' "$WT/viz" || exit 1
