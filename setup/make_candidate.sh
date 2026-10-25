@@ -99,17 +99,29 @@ for p in "${pkgs[@]}"; do adds+="Pkg.add(PackageSpec(name=\"${p%@*}\", version=\
 # Julia active, a newer Julia cannot use its own precompiled standard libraries (their dependencies
 # differ) and recompiles them (Julia 1.13.2: Markdown overflows the stack, Oct 24). After the
 # resolve, the Manifest is the new Julia's.
-# The registry is updated in a process of its own first: updated in the middle of the next step,
-# resolve and instantiate saw different registries ("Unknown package: ChunkCodecLibZstd", Oct 24).
+# The registry is updated first, in a process of its own.
 "$J" --startup-file=no -e 'using Pkg; Pkg.Registry.update()' || exit 1
-# Resolve (Pkg.add resolves) and instantiate in separate processes: in one process, Julia 1.13.2's
-# instantiate failed right after the resolve ("Unknown package: ChunkCodecLibZstd", whose dependency
-# Zstd_jll became part of Julia), while instantiate alone in a new process worked (Oct 24).
+# Resolve (Pkg.add resolves) and instantiate in separate processes. With Julia 1.13.2 the resolve
+# writes the new Manifest and then fails while installing ("Unknown package: ChunkCodecLibZstd",
+# whose dependency Zstd_jll became part of Julia), whereas instantiate in a new process works
+# (Oct 24). So an error from the resolve step is reported but not fatal: the new process's
+# instantiate decides, and the requested versions are checked in the Manifest afterwards.
 for env in "$WT" ${julia_v:+"$WT/viz"}; do
     if [[ "$env" == "$WT" && -n "$adds" ]]; then step="$adds"; else step="Pkg.resolve()"; fi
-    "$J" --startup-file=no -e "using Pkg; Pkg.activate(ARGS[1]); $step" "$env" || exit 1
+    "$J" --startup-file=no -e "using Pkg; Pkg.activate(ARGS[1]); $step" "$env" ||
+        echo "   (the resolve step ended with an error; continuing with instantiate in a new process)"
     "$J" --startup-file=no -e 'using Pkg; Pkg.activate(ARGS[1]); Pkg.instantiate()' "$env" || exit 1
 done
+for p in "${pkgs[@]}"; do
+    "$J" --startup-file=no -e 'using TOML; m = TOML.parsefile(ARGS[1])["deps"];
+        haskey(m, ARGS[2]) && m[ARGS[2]][1]["version"] == ARGS[3] || (println("$(ARGS[2]) is not at $(ARGS[3]) in the Manifest"); exit(1))' \
+        "$WT/Manifest.toml" "${p%@*}" "${p#*@}" || exit 1
+done
+if [[ -n "$julia_v" ]]; then
+    for m in "$WT/Manifest.toml" "$WT/viz/Manifest.toml"; do
+        grep -q "^julia_version = \"$julia_v\"$" "$m" || { echo "$m is not for Julia $julia_v"; exit 1; }
+    done
+fi
 
 echo "== MPI for this machine, then precompile (with the candidate's own environment)"
 bash "$WT/setup/configure_mpi.sh" "$WT" > "$WT/.candidate_mpi.log" 2>&1 ||
