@@ -175,7 +175,8 @@ for title, kinds in sections:
 if ts and busy:
     ga, gb = (sum(v[i] for v in busy.values()) for i in (0, 1))
     print("**GPU busy (kernels + memory operations) per solve: A %.1f of %.1f ms, B %.1f of %.1f ms.** "
-          "The rest of the time per solve the GPU waits: for MPI, the CPU, or a synchronization." % (ga, ts[0], gb, ts[1]))
+          "Busy well below the time per solve means the GPU waits (for MPI, the CPU, a synchronization); "
+          "above it, operations overlap (e.g. copies between GPUs during kernels)." % (ga, ts[0], gb, ts[1]))
 PY
 }
 
