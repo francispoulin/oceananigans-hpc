@@ -107,6 +107,18 @@ may drop. If `nsys stats` rejects a report name, `nsys stats --help-reports` lis
 in that version. Most useful: the kernel summary (total GPU time per kernel, 1 vs 2 GPUs) and the
 CUDA API summary (time the host spends waiting in `cuStreamSynchronize`/`cuCtxSynchronize`).
 
+## `tridiagonal_kernel.jl`: one kernel, the batched tridiagonal solve, on one GPU
+
+Times `Oceananigans.Solvers.BatchedTridiagonalSolver` in z alone, on complex numbers (as in the
+Fourier-tridiagonal pressure solver) and on real numbers (as in vertically implicit diffusion, e.g.
+CATKE), with the versions of Julia, Oceananigans, KernelAbstractions and CUDA. About two minutes.
+Run it in each worktree to compare versions (`tools/compare_speed.sh --profile` found this kernel
+3.8 times slower with Julia 1.13.2 and Oceananigans 0.116.1, Oct 25):
+
+```bash
+CUDA_VISIBLE_DEVICES=0 julia --project=. benchmarks/tridiagonal_kernel.jl     # default 512x512x1024, Float32
+```
+
 ## `poisson_solver.jl`: the pressure solver alone, MPI or NCCL
 
 Times `solve_for_pressure!` (source term + distributed Poisson solve, built exactly as
