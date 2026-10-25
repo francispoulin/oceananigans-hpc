@@ -27,6 +27,7 @@ they export.
 
 | Script | What it does | Where | Example |
 | --- | --- | --- | --- |
+| `setup/make_candidate.sh` | A candidate environment for a library upgrade, in a worktree next to the clone (`<clone>-candidate`): packages at new versions (and a newer Julia with `--julia`), MPI set up, precompiled; `--push` makes it a branch | server, login | `bash setup/make_candidate.sh Oceananigans@0.116.1` |
 | `setup/install_julia.sh` | Installs the official Julia release the platform's Manifest was made with, next to the depot; every machine runs it instead of a module (once per machine and version) | login, server | `bash setup/install_julia.sh` |
 | `setup/setup.sh` | Installs the packages and points MPI.jl and OpenMPI_jll at the system MPI | login, server | `bash setup/setup.sh` |
 | `setup/setup_viz.sh` | Sets up `viz/`, the plotting environment (CairoMakie, NCDatasets) | login, server | `bash setup/setup_viz.sh` |

@@ -98,11 +98,6 @@ scripts below are built and tried on pelee/rondeau before then (they never touch
 environment). Oceananigans, a package, tests ranges of versions; this repository pins exact ones
 (`Manifest.toml`), so an upgrade is a deliberate change of pins, tested on the machines.
 
-- [ ] `setup/make_candidate.sh <package>@<version>`: `envs/candidate` from the main environment with one
-      package upgraded, MPI configured, precompiled
-- [ ] `tools/run_tests.sh --project envs/candidate` (and `tools/test_branch.sh`) to test it
-- [ ] `tools/versions.sh`: the versions of every environment (main, `viz`, `envs/nccl`, the benchmark suite)
-- [ ] `setup/setup_benchmark_suite.sh <commit>`: the suite follows the Oceananigans version
 - [ ] Automatic GPU tests on pelee/rondeau for every pull request, with Buildkite as Oceananigans
       does ([docs/ci.md](docs/ci.md); decided Oct 20: a GitHub Actions runner is advised against for
       public repositories, a poller gives no check on the pull request)
@@ -113,19 +108,49 @@ environment). Oceananigans, a package, tests ranges of versions; this repository
   - [ ] Later, if the cluster's staff agree: one Alliance cluster (Slurm jobs started from Buildkite,
         as CliMA's slurm-buildkite does)
 
-- [ ] One upgrade at a time, in a separate environment (`envs/candidate`), never in the main one;
-      read the release notes first
-- [ ] Test on rondeau first (platform tests, benchmarks, one short run of each simulation
-      repository), then on one cluster; compare with the stored summaries
-- [ ] Adopt in one pull request listing the versions, then setup and tests on every machine and a
-      new release tag; or write down why not and what to wait for
-- [ ] Record the versions of every environment, including `envs/nccl` (not under version control)
-- [ ] Benchmarks: the suite is pinned (`setup/setup_benchmark_suite.sh`, commit 8743c40d0) and its
-      `benchmarking/` in 0.113.5 has only `earth_ocean`; `benchmarks/nonhydrostatic_box.jl` ports the newer
-      suite's nonhydrostatic case. On an upgrade, re-pin the suite and check whether its nonhydrostatic
-      case can replace the port (same configuration, so results stay comparable)
-- [ ] First uses, after v1.0.0: Oceananigans 0.114 (released Oct 2026; Julia 1.10 still supported), then
-      Julia 1.13 (Oceananigans tests with it; our own install, as on pelee/rondeau)
+**How a library upgrade is done (agreed Oct 24).** Upgrades are rounds, each ending in one release:
+
+- **When:** a new minor Oceananigans release (0.116 → 0.117) is worth a round; patch releases
+  (0.116.1 → 0.116.2) wait for the next one. Julia changes when Oceananigans or a package needs it.
+- **Released versions only**, pinned in `Manifest.toml`; never Oceananigans' `main`.
+- **Read the release notes of every version skipped, then go straight to the latest.** Step back
+  version by version only if something breaks (cheap: on pelee).
+- **Both knobs in one round** (Oceananigans and Julia) to save cluster tests; split the round only if
+  it fails, and learn from experience how often that happens.
+- **pelee does the work, Trillium confirms:** pelee has no queue, Trillium's debug queue starts in
+  minutes. Other machines are updated with a pull and `install_julia.sh`, and tested under the
+  normal release rule (CONTRIBUTING.md).
+- **The main environment is untouched until adoption:** the candidate is a separate worktree.
+- **Version number:** an upgrade is a MINOR release (simulation repositories pin their own
+  Oceananigans in their own `Manifest.toml`, so they are not changed by it).
+- **Simulation repositories upgrade afterwards, on their own schedule** (BalancedFlows: its own
+  candidate on pelee and its full tier).
+
+Tools:
+- [ ] `setup/make_candidate.sh [--julia X.Y.Z] Package@version`: `<clone>-candidate` worktree from
+      `origin/main`, packages upgraded, MPI set up, precompiled, versions that changed printed;
+      `--push <branch>` makes it a branch for `tools/test_branch.sh` (draft on `claude/library-upgrade`)
+- [ ] `tools/test_branch.sh` installs a branch's Julia and packages first (an upgrade branch)
+- [ ] `setup/install_julia.sh <version>`: another Julia than the Manifest's
+- [ ] `setup/setup_benchmark_suite.sh <commit>`: the suite follows the Oceananigans version
+- [ ] `tools/versions.sh`: the versions of every environment (main, `viz`, `envs/nccl`, the benchmark suite)
+
+**First round, after v1.0.0: Oceananigans 0.113.5 → 0.116.1 and Julia 1.10.10 → 1.13.2**
+(0.116.1 still allows Julia 1.10; Oceananigans' own tests run on 1.13.2 and pin `CUDA_Runtime_jll` 12.9):
+- [ ] 0. Before: pelee's `cuda/12.3.2` module and `LD_LIBRARY_PATH` (item in *Later*); read the
+      release notes of 0.114, 0.115 and 0.116 (breaking changes for `tests/platform.jl`,
+      `benchmarks/*.jl`, `src/`)
+- [ ] 1. pelee: `bash setup/make_candidate.sh --julia 1.13.2 Oceananigans@0.116.1`
+- [ ] 2. pelee: platform tests in the candidate (21 steps, ~10 min)
+- [ ] 3. pelee: does the physics change? BalancedFlows' quick tier with the candidate against its
+      references (not necessarily bitwise across versions; small and explained by the release notes)
+- [ ] 4. pelee: speed: `benchmarks/poisson_solver.jl` 1024³ on 4 GPUs against Oct 22 (MPI 158.9 ms,
+      NCCL 124.1 ms) and one hydrostatic run
+- [ ] 5. `--push upgrade/oceananigans-0.116.1-julia-1.13.2`; Claude adds the notes (what changed, from
+      the release notes and the version list) and re-pins the benchmark suite; pull request
+- [ ] 6. The pull request on pelee and in Trillium's debug queue (`tools/test_branch.sh <branch>`)
+- [ ] 7. Merge; release v1.1.0; the other machines pull and run `setup/install_julia.sh`
+- [ ] 8. BalancedFlows: its own round
 
 ## Phase 5: scaling numbers
 

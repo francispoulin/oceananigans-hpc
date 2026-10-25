@@ -127,7 +127,7 @@ to (`env/ocean_setup.sh`, `src/drac_mpi.jl`, `viz/`), and the package versions i
 | --- | --- | --- |
 | PATCH (0.1.0 → 0.1.1) | Fixes and docs; nobody needs to change anything | A clearer error message; a docs correction |
 | MINOR (0.1.x → 0.2.0) | New things; the old usage still works | A new script or benchmark; a new cluster; a new optional variable |
-| MAJOR (1.x → 2.0.0) | Something users rely on changes or disappears | Renaming a script or a contract variable; a required argument; an Oceananigans upgrade that breaks user code |
+| MAJOR (1.x → 2.0.0) | Something users rely on changes or disappears | Renaming a script or a contract variable; a required argument |
 
 Before 1.0 (`0.y.z`, while the interface is still settling) a breaking change bumps the minor number
 and everything else the patch number. 1.0.0 comes once the contract for simulation repositories is
@@ -135,6 +135,10 @@ settled (`ROADMAP.md`, Phase 3). A breaking change keeps the old way working for
 where it can, with a note saying when it goes (for example `OCEANANIGANS_DRAC_ROOT`, the variable's
 name before the repository was renamed, was exported alongside `OCEAN_HPC_ROOT` from v0.1.0 to v0.3.0
 and removed in v0.4.0).
+
+A library upgrade (Oceananigans, Julia, the GPU stack) is a MINOR release: simulation repositories
+pin their own versions in their own `Manifest.toml`, so the upgrade does not change them; each adopts
+it on its own schedule.
 
 **Making a release:**
 
@@ -151,8 +155,11 @@ and removed in v0.4.0).
      Trillium, and a release catches what only shows elsewhere before anyone depends on it.
    - **pelee or rondeau** as well, when `env/fluidsgpu.sh`, `tools/run_local.sh` or anything else
      they use changed (no queue there).
-   - **Every machine** for 1.0.0 and for upgrades of Julia, Oceananigans or the GPU stack
-     (ROADMAP.md, Phase 4).
+   - **Every machine** for 1.0.0.
+   - **Library upgrades** (Julia, Oceananigans, the GPU stack): **pelee and Trillium** (ROADMAP.md,
+     Phase 4: the candidate is tried on pelee, the pull request confirmed in Trillium's debug queue);
+     the other machines are updated with a pull and `setup/install_julia.sh` and keep their last
+     summary until a release that requires them.
 
    Machines not retested keep their last summary; the "Tested with" table says which version it was.
    The automatic checks (`tests/ci/`) cover the Slurm options of every cluster on every pull request.
