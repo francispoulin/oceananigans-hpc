@@ -95,9 +95,13 @@ fi
 echo "== Packages ($J)"
 adds=""
 for p in "${pkgs[@]}"; do adds+="Pkg.add(PackageSpec(name=\"${p%@*}\", version=\"${p#*@}\")); "; done
-"$J" --project="$WT" -e "using Pkg; $adds Pkg.resolve(); Pkg.instantiate()" || exit 1
+# Pkg is loaded outside the project, then the project activated: with a Manifest made by an older
+# Julia active, a newer Julia cannot use its own precompiled standard libraries (their dependencies
+# differ) and recompiles them (Julia 1.13.2: Markdown overflows the stack, Oct 24). After the
+# resolve, the Manifest is the new Julia's.
+"$J" --startup-file=no -e "using Pkg; Pkg.activate(ARGS[1]); $adds Pkg.resolve(); Pkg.instantiate()" "$WT" || exit 1
 if [[ -n "$julia_v" ]]; then
-    "$J" --project="$WT/viz" -e 'using Pkg; Pkg.resolve(); Pkg.instantiate()' || exit 1
+    "$J" --startup-file=no -e 'using Pkg; Pkg.activate(ARGS[1]); Pkg.resolve(); Pkg.instantiate()' "$WT/viz" || exit 1
 fi
 
 echo "== MPI for this machine, then precompile (with the candidate's own environment)"
