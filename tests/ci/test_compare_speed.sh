@@ -8,7 +8,8 @@
 # Checked: --report on two logs (a 20% slowdown is flagged with exit status 1; the same speed passes;
 # a different p_std is flagged); a full --wait run uses each worktree's own environment and script,
 # passes the options on, saves the summary in B and names both versions; --b-script replaces B's
-# script; bad arguments are refused before anything runs.
+# script; --profile runs both under nsys and adds the per-kernel tables (--profile-report redoes
+# them from the CSV files); bad arguments are refused before anything runs.
 
 [[ "${1:-}" == -h || "${1:-}" == --help ]] && { sed -n '2,/^[^#]/{/^#SBATCH/d;/^# *shellcheck/d;s/^# \{0,1\}//p;}' "$0"; exit 0; }   # -h: usage
 set -o pipefail
@@ -59,6 +60,21 @@ echo "log:      logs/run.out"
 { echo "# \$*"; echo "$(line "$([[ $w == A ]] && echo 100.0 || echo 110.0)" 9.4e-02)"; } > logs/run.out
 EOF
 done
+# compare_speed.sh uses its own run_local.sh; here, the worktree's fake one (it runs in the worktree)
+printf '#!/bin/bash\nexec bash "$PWD/tools/run_local.sh" "$@"\n' > "$t/run_local.sh"
+export COMPARE_SPEED_RUN_LOCAL="$t/run_local.sh"
+# fake nsys: "nsys stats ... --output PREFIX report" writes the three CSV files (B: the tridiagonal
+# kernel twice as long, three times as many synchronizations)
+cat > "$t/bin/nsys" <<'EOF'
+#!/bin/bash
+[[ "$1" == stats ]] || exit 0
+while [[ $# -gt 0 ]]; do [[ "$1" == --output ]] && o="$2"; shift; done
+k=30000000; s=300; [[ "$o" == */B ]] && { k=60000000; s=900; }
+printf '"Time (%%)","Total Time (ns)","Instances","Avg (ns)","Name"\n50,%s,3,1,"gpu_solve_batched_tridiagonal_system_kernel_(CompilerMetadata<A, B>, Float32)"\n50,90000000,6,1,"regular_fft<float2, 2>"\n' "$k" > "${o}_cuda_gpu_kern_sum.csv"
+printf '"Time (%%)","Total Time (ns)","Count","Avg (ns)","Operation"\n100,3000000,6,1,"[CUDA memcpy Device-to-Host]"\n' > "${o}_cuda_gpu_mem_time_sum.csv"
+printf '"Time (%%)","Total Time (ns)","Num Calls","Avg (ns)","Name"\n100,%s,%s,1,"cuStreamSynchronize"\n' "$((s * 100000))" "$s" > "${o}_cuda_api_sum.csv"
+EOF
+chmod +x "$t/bin/nsys"
 echo "" > "$t/variant.jl"
 out="$(PATH="$t/bin:$PATH" bash "$CS" --a "$t/A" --b "$t/B" --wait --gpus=4 --tolerance 15 2>&1)"; rc=$?
 ok=1
@@ -71,6 +87,19 @@ report $ok "--wait: each worktree's own environment, options passed on, summary 
 out="$(PATH="$t/bin:$PATH" bash "$CS" --a "$t/A" --b "$t/B" --wait --b-script "$t/variant.jl" 2>&1)"; rc=$?
 grep -q "tree=B .*$t/variant.jl --size" "$t/B/logs/args.txt" && [[ $rc -eq 1 && "$out" == *"CHECK: B is 10.0% slower"* ]] && ok=1 || ok=0
 report $ok "--b-script: B runs the given file; 10% over the default 5% tolerance is flagged" "$out"
+out="$(PATH="$t/bin:$PATH" bash "$CS" --a "$t/A" --b "$t/B" --wait --profile --tolerance 15 2>&1)"; rc=$?
+ok=1
+grep -q -- "--prefix nsys profile .*-o $t/B/logs/speed_profile_[0-9-]*/B_rank%q{OMPI_COMM_WORLD_RANK}" "$t/B/logs/args.txt" || ok=0
+grep -q -- "--profile=true" "$t/B/logs/args.txt" || ok=0
+[[ $rc -eq 0 && "$out" == *'| `gpu_solve_batched_tridiagonal_system_kernel_` | 10.00 | 20.00 | +10.00 | 1 | 1 |'* ]] || ok=0
+[[ "$out" == *'| `cuStreamSynchronize` | 10.00 | 30.00 | +20.00 | 100 | 300 |'* ]] || ok=0
+[[ "$out" == *"GPU busy (kernels + memory operations) per solve: A 41.0 of 100.0 ms, B 51.0 of 110.0 ms"* ]] || ok=0
+s="$(ls -t "$t"/B/results/tests/speed_*.md | head -1)"; grep -q "## Profile, rank 0" "$s" || ok=0
+report $ok "--profile: both under nsys; per kernel, memory operation and API call; GPU busy; in the summary" "$out"
+d="$(ls -d "$t"/B/logs/speed_profile_* | head -1)"
+out="$(bash "$CS" --profile-report "$d/A" "$d/B")" && [[ "$out" == *"+10.00"* ]] && ok=1 || ok=0
+report $ok "--profile-report: the same tables from the CSV files" "$out"
+unset COMPARE_SPEED_RUN_LOCAL
 
 # 3. refused before anything runs
 rm -f "$t/A/logs/args.txt"

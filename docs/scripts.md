@@ -39,7 +39,7 @@ they export.
 
 | Script | What it does | Where | Example |
 | --- | --- | --- | --- |
-| `tools/compare_speed.sh` | The speed of an upgrade: the 1024³ pressure-solver benchmark in the clone and in `<clone>-candidate`, one after the other on the same GPUs, in one table with a verdict (5% tolerance, `p_std` must agree); in the background; `--report` compares two logs | server | `bash tools/compare_speed.sh` |
+| `tools/compare_speed.sh` | The speed of an upgrade: the 1024³ pressure-solver benchmark in the clone and in `<clone>-candidate`, one after the other on the same GPUs, in one table with a verdict (5% tolerance, `p_std` must agree); in the background; `--profile` adds the GPU time per kernel, A vs B (Nsight Systems); `--report` compares two logs | server | `bash tools/compare_speed.sh` |
 | `tools/test_branch.sh` | The platform tests of a branch, in a worktree next to the clone (which stays on `main`); publishes the summary | login, server | `bash tools/test_branch.sh claude/some-change` |
 | `tools/publish_summary.sh` | Pushes one test summary as a `results/<machine>_<date>` branch, without touching the clone | login, server | `bash tools/publish_summary.sh --latest` |
 | `tools/ci_platform_tests.sh` | The platform tests of one commit, run by the Buildkite agent on pelee/rondeau ([ci.md](ci.md)); waits for free GPUs, shows the summary on the build page | server | `bash tools/ci_platform_tests.sh <commit>` |

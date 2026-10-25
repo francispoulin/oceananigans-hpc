@@ -131,7 +131,8 @@ Tools:
       `origin/main`, packages upgraded, MPI set up, precompiled, versions that changed printed;
       `--push <branch>` makes it a branch for `tools/test_branch.sh` (draft on `claude/library-upgrade`)
 - [ ] `tools/compare_speed.sh`: the pressure-solver benchmark in the clone and the candidate, back to
-      back, one table and a verdict (`--b-script` for an experiment, `--report` for two logs)
+      back, one table and a verdict (`--b-script` for an experiment, `--profile` for time per kernel,
+      `--report` for two logs)
 - [ ] `tools/test_branch.sh` installs a branch's Julia and packages first (an upgrade branch)
 - [ ] `setup/install_julia.sh <version>`: another Julia than the Manifest's
 - [ ] `setup/setup_benchmark_suite.sh <commit>`: the suite follows the Oceananigans version
@@ -149,7 +150,9 @@ Tools:
 - [ ] 4. pelee: speed: `bash tools/compare_speed.sh` (1024³ on 4 GPUs, MPI; main reproduced Oct 22's
       158.9 ms). Oct 25: **B 20% slower** (191.9 ms; transposes the same, the rest +32 ms; `p_std`
       agrees); suspected cause: Oceananigans #6161 adds `x .-= mean(x)` to every distributed
-      Fourier-tridiagonal solve (#6189 removed the same from the 1-GPU solver); being checked
+      Fourier-tridiagonal solve (#6189 removed the same from the 1-GPU solver): undoing it gives 186.5 ms
+      and main's `p_std` bitwise, so #6161 costs 5.5 ms; the other 27 ms (same arithmetic) are being
+      profiled (`compare_speed.sh --b-script ... --profile`)
 - [ ] 5. `--push upgrade/oceananigans-0.116.1-julia-1.13.2`; Claude adds the notes (what changed, from
       the release notes and the version list) and re-pins the benchmark suite; pull request
 - [ ] 6. The pull request on pelee and in Trillium's debug queue (`tools/test_branch.sh <branch>`)
