@@ -8,6 +8,7 @@
 #     bash setup/make_candidate.sh --julia 1.13.2 Oceananigans@0.116.1   # and a newer Julia
 #     bash setup/make_candidate.sh --push upgrade/oceananigans-0.116.1   # after its tests passed
 #     bash setup/make_candidate.sh --clean                               # remove the worktree
+#     bash setup/make_candidate.sh --base origin/<branch> ...            # start from a branch, not main
 #
 # Then test it where it is, with the candidate's own environment (about 10 minutes on pelee):
 #
@@ -28,12 +29,13 @@ CLONE="$(dirname "$common")"
 WT="${CANDIDATE_WORKTREE:-$CLONE-candidate}"
 files=(Manifest.toml Project.toml viz/Manifest.toml viz/Project.toml)
 
-julia_v=""; push=""; clean=0; pkgs=()
+julia_v=""; push=""; clean=0; pkgs=(); base="origin/main"
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --julia) julia_v="${2:-}"; shift 2 ;;
         --push) push="${2:-}"; shift 2 ;;
         --clean) clean=1; shift ;;
+        --base) base="${2:-}"; shift 2 ;;
         *@*) pkgs+=("$1"); shift ;;
         *) echo "unknown argument '$1' (packages are Name@version; try --help)"; exit 1 ;;
     esac
@@ -62,15 +64,16 @@ fi
 
 [[ ${#pkgs[@]} -gt 0 || -n "$julia_v" ]] || { echo "usage: make_candidate.sh [--julia X.Y.Z] Package@version ...   (or --push <branch>, --clean)"; exit 1; }
 
-echo "== Worktree $WT -> origin/main"
+echo "== Worktree $WT -> $base"
 git -C "$CLONE" fetch --quiet origin || { echo "git fetch failed"; exit 1; }
+git -C "$CLONE" rev-parse -q --verify "$base^{commit}" >/dev/null || { echo "no commit '$base' (after git fetch)"; exit 1; }
 git -C "$CLONE" worktree prune
 if [[ -e "$WT" ]]; then
     [[ -z "$(git -C "$WT" status --porcelain --untracked-files=no)" ]] ||
         { echo "$WT has an earlier candidate (changed files). Push it or remove it first: bash $0 --clean"; exit 1; }
-    git -C "$WT" checkout --quiet --detach origin/main || exit 1
+    git -C "$WT" checkout --quiet --detach "$base" || exit 1
 else
-    git -C "$CLONE" worktree add --quiet --detach "$WT" origin/main || exit 1
+    git -C "$CLONE" worktree add --quiet --detach "$WT" "$base" || exit 1
 fi
 echo "   $(git -C "$WT" describe --tags --always) ($(git -C "$WT" log -1 --format='%h %s'))"
 
