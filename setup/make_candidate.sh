@@ -150,4 +150,5 @@ tail -n +2 "$WT/.candidate"
 echo
 echo "Test it here (about 10 minutes on pelee):"
 echo "    (source $WT/env/ocean_setup.sh && bash $WT/tools/run_tests.sh)"
-echo "If it passes: bash $0 --push upgrade/<name>"
+echo "Then its speed against main (about 25 minutes, in the background): bash $CLONE/tools/compare_speed.sh"
+echo "If both pass: bash $0 --push upgrade/<name>"

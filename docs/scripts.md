@@ -39,6 +39,7 @@ they export.
 
 | Script | What it does | Where | Example |
 | --- | --- | --- | --- |
+| `tools/compare_speed.sh` | The speed of an upgrade: the 1024³ pressure-solver benchmark in the clone and in `<clone>-candidate`, one after the other on the same GPUs, in one table with a verdict (5% tolerance, `p_std` must agree); in the background; `--report` compares two logs | server | `bash tools/compare_speed.sh` |
 | `tools/test_branch.sh` | The platform tests of a branch, in a worktree next to the clone (which stays on `main`); publishes the summary | login, server | `bash tools/test_branch.sh claude/some-change` |
 | `tools/publish_summary.sh` | Pushes one test summary as a `results/<machine>_<date>` branch, without touching the clone | login, server | `bash tools/publish_summary.sh --latest` |
 | `tools/ci_platform_tests.sh` | The platform tests of one commit, run by the Buildkite agent on pelee/rondeau ([ci.md](ci.md)); waits for free GPUs, shows the summary on the build page | server | `bash tools/ci_platform_tests.sh <commit>` |
@@ -47,6 +48,7 @@ they export.
 | `jobs/hello_cpu.sh`, `jobs/hello_gpu.sh` | A first Oceananigans run on a CPU node and on one GPU | job | `sbatch jobs/hello_gpu.sh` |
 | `tests/ci/run_all.sh` | The checks GitHub runs on every pull request (no GPUs or Slurm needed) | any | `bash tests/ci/run_all.sh` |
 | `tests/ci/test_branch_tools.sh` | Part of `run_all.sh`: `test_branch.sh` and `publish_summary.sh` against a throwaway local repository | any | `bash tests/ci/test_branch_tools.sh` |
+| `tests/ci/test_compare_speed.sh` | Part of `run_all.sh`: `tools/compare_speed.sh` with fake worktrees and a fake `nvidia-smi` | any | `bash tests/ci/test_compare_speed.sh` |
 | `tests/ci/test_submit_scripts.sh` | Part of `run_all.sh`: the Slurm options of the submit scripts on each cluster | any | `bash tests/ci/test_submit_scripts.sh` |
 
 `tests/ci/` also holds `check_links.py`, `check_cluster_facts.py`, `check_scripts_documented.py` and

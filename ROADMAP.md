@@ -130,6 +130,8 @@ Tools:
 - [ ] `setup/make_candidate.sh [--julia X.Y.Z] Package@version`: `<clone>-candidate` worktree from
       `origin/main`, packages upgraded, MPI set up, precompiled, versions that changed printed;
       `--push <branch>` makes it a branch for `tools/test_branch.sh` (draft on `claude/library-upgrade`)
+- [ ] `tools/compare_speed.sh`: the pressure-solver benchmark in the clone and the candidate, back to
+      back, one table and a verdict (`--b-script` for an experiment, `--report` for two logs)
 - [ ] `tools/test_branch.sh` installs a branch's Julia and packages first (an upgrade branch)
 - [ ] `setup/install_julia.sh <version>`: another Julia than the Manifest's
 - [ ] `setup/setup_benchmark_suite.sh <commit>`: the suite follows the Oceananigans version
@@ -144,8 +146,10 @@ Tools:
 - [ ] 2. pelee: platform tests in the candidate (21 steps, ~10 min)
 - [ ] 3. pelee: does the physics change? BalancedFlows' quick tier with the candidate against its
       references (not necessarily bitwise across versions; small and explained by the release notes)
-- [ ] 4. pelee: speed: `benchmarks/poisson_solver.jl` 1024³ on 4 GPUs against Oct 22 (MPI 158.9 ms,
-      NCCL 124.1 ms) and one hydrostatic run
+- [ ] 4. pelee: speed: `bash tools/compare_speed.sh` (1024³ on 4 GPUs, MPI; main reproduced Oct 22's
+      158.9 ms). Oct 25: **B 20% slower** (191.9 ms; transposes the same, the rest +32 ms; `p_std`
+      agrees); suspected cause: Oceananigans #6161 adds `x .-= mean(x)` to every distributed
+      Fourier-tridiagonal solve (#6189 removed the same from the 1-GPU solver); being checked
 - [ ] 5. `--push upgrade/oceananigans-0.116.1-julia-1.13.2`; Claude adds the notes (what changed, from
       the release notes and the version list) and re-pins the benchmark suite; pull request
 - [ ] 6. The pull request on pelee and in Trillium's debug queue (`tools/test_branch.sh <branch>`)
