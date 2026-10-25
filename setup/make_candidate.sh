@@ -14,8 +14,9 @@
 #
 #     (source ../oceananigans-hpc-candidate/env/ocean_setup.sh && bash ../oceananigans-hpc-candidate/tools/run_tests.sh)
 #
-# Only Manifest.toml changes (and, with --julia, viz/Manifest.toml for its julia_version); the
-# script prints every package whose version changed. --push commits those files in the candidate
+# Only Manifest.toml changes, with the packages named and what they need; with --julia also
+# viz/Manifest.toml, whose plotting packages move to their newest compatible versions. The script
+# prints every package whose version changed in Manifest.toml. --push commits those files in the candidate
 # worktree and pushes them as a branch, so the same upgrade can be tested elsewhere
 # (tools/test_branch.sh <branch>, e.g. in Trillium's debug queue) and opened as a pull request.
 # Each new candidate starts again from origin/main; one candidate at a time.
@@ -107,7 +108,10 @@ for p in "${pkgs[@]}"; do adds+="Pkg.add(PackageSpec(name=\"${p%@*}\", version=\
 # (Oct 24). So an error from the resolve step is reported but not fatal: the new process's
 # instantiate decides, and the requested versions are checked in the Manifest afterwards.
 for env in "$WT" ${julia_v:+"$WT/viz"}; do
-    if [[ "$env" == "$WT" && -n "$adds" ]]; then step="$adds"; else step="Pkg.resolve()"; fi
+    # The packages asked for; for viz/ (plotting only) with a new Julia, everything it holds moves to
+    # the newest compatible versions: a plain resolve keeps the old Julia's standard-library
+    # versions, which the new Julia refuses ("Statistics ... restricted to versions 1.10.0", Oct 24).
+    if [[ "$env" == "$WT" && -n "$adds" ]]; then step="$adds"; else step="Pkg.update()"; fi
     "$J" --startup-file=no -e "using Pkg; Pkg.activate(ARGS[1]); $step" "$env" ||
         echo "   (the resolve step ended with an error; continuing with instantiate in a new process)"
     "$J" --startup-file=no -e 'using Pkg; Pkg.activate(ARGS[1]); Pkg.instantiate()' "$env" || exit 1
