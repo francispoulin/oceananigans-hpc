@@ -102,10 +102,14 @@ for p in "${pkgs[@]}"; do adds+="Pkg.add(PackageSpec(name=\"${p%@*}\", version=\
 # The registry is updated in a process of its own first: updated in the middle of the next step,
 # resolve and instantiate saw different registries ("Unknown package: ChunkCodecLibZstd", Oct 24).
 "$J" --startup-file=no -e 'using Pkg; Pkg.Registry.update()' || exit 1
-"$J" --startup-file=no -e "using Pkg; Pkg.activate(ARGS[1]); $adds Pkg.resolve(); Pkg.instantiate()" "$WT" || exit 1
-if [[ -n "$julia_v" ]]; then
-    "$J" --startup-file=no -e 'using Pkg; Pkg.activate(ARGS[1]); Pkg.resolve(); Pkg.instantiate()' "$WT/viz" || exit 1
-fi
+# Resolve (Pkg.add resolves) and instantiate in separate processes: in one process, Julia 1.13.2's
+# instantiate failed right after the resolve ("Unknown package: ChunkCodecLibZstd", whose dependency
+# Zstd_jll became part of Julia), while instantiate alone in a new process worked (Oct 24).
+for env in "$WT" ${julia_v:+"$WT/viz"}; do
+    if [[ "$env" == "$WT" && -n "$adds" ]]; then step="$adds"; else step="Pkg.resolve()"; fi
+    "$J" --startup-file=no -e "using Pkg; Pkg.activate(ARGS[1]); $step" "$env" || exit 1
+    "$J" --startup-file=no -e 'using Pkg; Pkg.activate(ARGS[1]); Pkg.instantiate()' "$env" || exit 1
+done
 
 echo "== MPI for this machine, then precompile (with the candidate's own environment)"
 bash "$WT/setup/configure_mpi.sh" "$WT" > "$WT/.candidate_mpi.log" 2>&1 ||
