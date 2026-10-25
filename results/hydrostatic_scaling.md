@@ -4,9 +4,9 @@ The current numbers, measured with both GPU-to-GPU settings of `docs/drac.md` st
 (`--gpus-per-node`, CUDA.jl memory pool off). The earlier Nibi runs (Oct 2–14, without them) are in
 [nibi_scaling.md](nibi_scaling.md).
 
-**Status (Oct 27).** Trillium and Rorqual are complete. Nibi: strong scaling on 1–32 GPUs with MPI, and
-with NCCL on 8 and 32; weak scaling on 1–64 GPUs, on 64 also with a 2-D split. Still to run: Nibi NCCL
-on 16 GPUs (the row says *pending*).
+**Status (Oct 27): complete.** Trillium and Rorqual up to 16 GPUs; Nibi: strong scaling on 1–32 GPUs
+with MPI, and with NCCL on 8–32 (16 GPUs: job 24167390, Oct 24); weak scaling on 1–64 GPUs, on 64 also
+with a 2-D split. Rorqual also at 1/8° on 4–16 GPUs.
 
 ## Setup
 
@@ -36,7 +36,7 @@ The figure is made from this table: `python3 tools/plot_scaling.py` (after editi
 | 2 | | | | | | | 1 | 0.5352 (98%) | |
 | 4 | 1 | 0.2638 (99%) | 0.2622 (100%) | 1 | 0.264 (100%) | 0.263 (100%) | 1 | 0.2633 (99%) | |
 | 8 | 2 | 0.1429 (91%) | 0.1413 (93%) | 2 | 0.148 (88%) | 0.142 (93%) | 1 | 0.1419 (92%) | 0.1404 (93%) |
-| 16 | 4 | 0.0819 (80%) | 0.0791 (83%) | 4 | 0.0866 (76%) | 0.0797 (82%) | 2 | 0.0805 (81%) | pending |
+| 16 | 4 | 0.0819 (80%) | 0.0791 (83%) | 4 | 0.0866 (76%) | 0.0797 (82%) | 2 | 0.0805 (81%) | 0.0785 (83%) |
 | 32 | | | | | | | 4 | 0.0550 (59%) | 0.0511 (64%) |
 
 GPU memory per rank on Trillium: 46.6 GiB on 1 GPU, 13.5–14.4 on 4, 7.8–8.2 on 8, 4.9–5.4 on 16
