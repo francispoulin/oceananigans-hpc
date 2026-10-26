@@ -457,9 +457,9 @@ tools (`tools/test_branch.sh`, `tools/publish_summary.sh`, Buildkite) don't chan
 the same on pelee and rondeau with Julia 1.10.8 and 1.10.10. Which machines are retested for a
 release: [CONTRIBUTING.md](../CONTRIBUTING.md#versions-and-releases).
 
-What the tests show on every machine: 4 GPUs against 1 GPU agree bitwise for the hydrostatic model
-and to 5e-14 for the nonhydrostatic pressure solvers; checkpoint restarts are bitwise; every rank
-sees all of its node's GPUs and uses its own (`cuda_aware`, "4 visible per rank").
+What the tests show on every machine: 4 GPUs against 1 GPU agree to round-off, ~1e-14 (the hydrostatic
+model was bitwise up to Oceananigans 0.113.5: [tests/README.md](../tests/README.md#what-is-tested));
+checkpoint restarts are bitwise; every rank sees all of its node's GPUs and uses its own (`cuda_aware`, "4 visible per rank").
 
 ## 11. Trillium
 

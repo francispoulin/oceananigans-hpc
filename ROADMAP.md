@@ -149,6 +149,10 @@ environment). Oceananigans, a package, tests ranges of versions; this repository
       (about 2 to 3 times the run time); lower the job scripts' defaults (benchmarks ask 45–80 min and
       run 8–16, Oct 21); let `jobs/submit_gpu.sh` use Trillium's debug queue for jobs that fit
 
+- [ ] **Hydrostatic multi-GPU no longer bitwise** (Oceananigans 0.116.1, Oct 26): 4 vs 1 GPU differs by
+      ~5e-14 after 30 steps and grows like a one-rounding-unit change of the initial state, so it is
+      round-off (tests/README.md). Revisit if it ever grows faster than that, or to find the release
+      that changed it (0.114, 0.115 or 0.116.0) if the Oceananigans developers want to know.
 - [ ] Point the Waterloo Fluids Computing Handbook's Oceananigans pages to this workflow
 - [ ] Shared depot for the group on pelee/rondeau, once several people use it
 - [ ] GPU tests on every pull request (a self-hosted runner on pelee)
