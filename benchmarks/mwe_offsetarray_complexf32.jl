@@ -37,7 +37,8 @@ end
 @inline float_eltype(::AbstractArray{<:Complex{T}}) where T <: AbstractFloat = T
 
 # mul = masked_multiply (Oceananigans) or * (no masking); check = Val(true): keep the old value where
-# the pivot is tiny (Oceananigans), Val(false): don't (both compiled separately, as constants)
+# the pivot is tiny, by reading it (Oceananigans); Val(:store): the same by storing only where it is not;
+# Val(false): no check. Each is compiled separately (constants).
 @kernel function oceananigans_tridiagonal_z!(ϕ, a, b, c, f, t, Nz, mul, check)
     i, j = @index(Global, NTuple)
     @inbounds begin
@@ -52,7 +53,13 @@ end
             fᵏ = f[i, j, k]
             definitely_diagonally_dominant = abs(β) > 10 * eps(float_eltype(ϕ))
             ϕ★ = (fᵏ - mul(aᵏ⁻¹, ϕ[i, j, k-1])) / β
-            ϕ[i, j, k] = check isa Val{true} ? ifelse(definitely_diagonally_dominant, ϕ★, ϕ[i, j, k]) : ϕ★
+            if check isa Val{true}       # Oceananigans: read the old value, store one or the other
+                ϕ[i, j, k] = ifelse(definitely_diagonally_dominant, ϕ★, ϕ[i, j, k])
+            elseif check isa Val{:store} # same result without reading the old value: store only if dominant
+                definitely_diagonally_dominant && (ϕ[i, j, k] = ϕ★)
+            else                         # no check
+                ϕ[i, j, k] = ϕ★
+            end
         end
         for k = Nz-1:-1:1
             ϕ[i, j, k] -= mul(t[i, j, k+1], ϕ[i, j, k+1])
@@ -72,14 +79,15 @@ println("julia ", VERSION, ", CUDA.jl ", pkgversion(CUDA), ", KernelAbstractions
 timed_ms(k!, args...) = (k!(args...); CUDA.synchronize();                       # compile, then time
                          round(minimum(1e3 * CUDA.@elapsed(k!(args...)) for _ in 1:10), digits = 2))
 
-println(rpad("", 28), " simple  Oceananigans  no-mask  no-check")
+println(rpad("", 28), " simple  Oceananigans  no-mask  no-check  if-store")
 for T in (ComplexF32, Float32, ComplexF64)
     f = CUDA.rand(T, Nx, Ny, Nz)
     for (name, ϕ) in (("CuArray", similar(f)), ("OffsetArray", OffsetArray(similar(f), 0, 0, 0)))
         ms = (timed_ms(simple!, ϕ, a, b, f, t, Nz),
               timed_ms(oceananigans!, ϕ, a, b, a, f, t, Nz, masked_multiply, Val(true)),    # Oceananigans' loop
               timed_ms(oceananigans!, ϕ, a, b, a, f, t, Nz, *, Val(true)),                  # without masking
-              timed_ms(oceananigans!, ϕ, a, b, a, f, t, Nz, masked_multiply, Val(false)))   # without the check
-        println(rpad("$T, ϕ::$name", 28), join(lpad.(ms, (7, 13, 9, 10))), "  ms")
+              timed_ms(oceananigans!, ϕ, a, b, a, f, t, Nz, masked_multiply, Val(false)),   # without the check
+              timed_ms(oceananigans!, ϕ, a, b, a, f, t, Nz, masked_multiply, Val(:store)))  # check by a conditional store
+        println(rpad("$T, ϕ::$name", 28), join(lpad.(ms, (7, 13, 9, 10, 10))), "  ms")
     end
 end
