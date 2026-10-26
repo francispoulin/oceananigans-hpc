@@ -82,7 +82,8 @@ timed_ms(k!, args...) = (k!(args...); CUDA.synchronize();                       
 println(rpad("", 28), " simple  Oceananigans  no-mask  no-check  if-store")
 for T in (ComplexF32, Float32, ComplexF64)
     f = CUDA.rand(T, Nx, Ny, Nz)
-    for (name, ϕ) in (("CuArray", similar(f)), ("OffsetArray", OffsetArray(similar(f), 0, 0, 0)))
+    ϕ_array = similar(f)                       # the same memory, as a CuArray and as an OffsetArray
+    for (name, ϕ) in (("CuArray", ϕ_array), ("OffsetArray", OffsetArray(ϕ_array, 0, 0, 0)))
         ms = (timed_ms(simple!, ϕ, a, b, f, t, Nz),
               timed_ms(oceananigans!, ϕ, a, b, a, f, t, Nz, masked_multiply, Val(true)),    # Oceananigans' loop
               timed_ms(oceananigans!, ϕ, a, b, a, f, t, Nz, *, Val(true)),                  # without masking
@@ -90,4 +91,5 @@ for T in (ComplexF32, Float32, ComplexF64)
               timed_ms(oceananigans!, ϕ, a, b, a, f, t, Nz, masked_multiply, Val(:store)))  # check by a conditional store
         println(rpad("$T, ϕ::$name", 28), join(lpad.(ms, (7, 13, 9, 10, 10))), "  ms")
     end
+    CUDA.unsafe_free!(f); CUDA.unsafe_free!(ϕ_array)   # free before the next type (ComplexF64: 4 GiB each)
 end
