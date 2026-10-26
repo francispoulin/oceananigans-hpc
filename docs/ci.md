@@ -55,6 +55,8 @@ skipping steps, and the build passes only if the summary is clean.
    - **Allow builds from third-party forked repositories**: **off** (check this one);
    - branch filtering: `main` (pull request branches are built through their pull requests);
    - commit statuses: on (this puts the check on the pull request).
+   - *Settings → Builds*: **Skip intermediate builds** on (only the newest commit of a branch is built;
+     otherwise every push queues its own ~17-minute build holding all four GPUs).
 6. Optional: making the pipeline public lets anyone read the build pages without a Buildkite login
    (as Oceananigans' are). Logs show paths on the server; nothing else.
 

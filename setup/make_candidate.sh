@@ -142,7 +142,8 @@ bash "$WT/setup/configure_mpi.sh" "$WT" > "$WT/.candidate_mpi.log" 2>&1 ||
 
 "$J" --startup-file=no -e "$listing" "$WT/Manifest.toml" > "$new" || exit 1
 { echo "${pkgs[*]}${julia_v:+ julia@$julia_v}"
-  join -a1 -a2 -e '(none)' -o 0,1.2,2.2 <(sort "$old") <(sort "$new") | awk '$2 != $3 {print "  " $1 ": " $2 " -> " $3}'
+  # join needs both lists sorted in its own collation: LC_ALL=C on sort and join alike
+  LC_ALL=C join -a1 -a2 -e '(none)' -o 0,1.2,2.2 <(LC_ALL=C sort "$old") <(LC_ALL=C sort "$new") | awk '$2 != $3 {print "  " $1 ": " $2 " -> " $3}'
 } > "$WT/.candidate"
 echo
 echo "Candidate ready in $WT. Versions that changed:"
@@ -150,5 +151,5 @@ tail -n +2 "$WT/.candidate"
 echo
 echo "Test it here (about 10 minutes on pelee):"
 echo "    (source $WT/env/ocean_setup.sh && bash $WT/tools/run_tests.sh)"
-echo "Then its speed against main (about 25 minutes, in the background): bash $CLONE/tools/compare_speed.sh"
+echo "Then its speed against main (about 25 minutes, in the background): bash $(cd "$here/.." && pwd)/tools/compare_speed.sh"
 echo "If both pass: bash $0 --push upgrade/<name>"
