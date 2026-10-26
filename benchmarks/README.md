@@ -119,21 +119,16 @@ Run it in each worktree to compare versions (`tools/compare_speed.sh --profile` 
 CUDA_VISIBLE_DEVICES=0 julia --project=. benchmarks/tridiagonal_kernel.jl     # default 512x512x1024, Float32
 ```
 
-Alone on an ordinary grid the kernel was only 8–17% slower. The 4-GPU profiles showed the same kernel,
-launch and arrays in both versions; only the grid's y topology differed (one rank of a grid split in y:
-`FullyConnected`, now `Sides{Connected, Connected}`). `--y-topology=connected` builds that grid type on
-one GPU, without MPI, and `--size=1024x256x1024` is one GPU's array in the 4-GPU run:
-
-```bash
-CUDA_VISIBLE_DEVICES=0 julia --project=. benchmarks/tridiagonal_kernel.jl --size=1024x256x1024 --y-topology=connected
-```
-
-That made no difference (Oct 26). `--solution=field` passes the solution as the distributed solver does,
-as a Field (an `OffsetArray` in the kernel) instead of a plain `CuArray`:
+Alone on an ordinary grid the kernel was only 8–17% slower; inside the 4-GPU run the solution is a
+Field (an `OffsetArray` in the kernel), not a plain `CuArray`. `--solution=field` passes it that way, and
+`--size=1024x256x1024` is one GPU's array in the 4-GPU run:
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 julia --project=. benchmarks/tridiagonal_kernel.jl --size=1024x256x1024 --solution=field
 ```
+
+On Julia 1.13 that is the slow case (Oct 26): complex elements of an `OffsetArray`. `--dump-code=DIR`
+writes the compiled kernel (typed Julia, LLVM IR, PTX, SASS) to compare two Julia versions.
 
 ## `poisson_solver.jl`: the pressure solver alone, MPI or NCCL
 
