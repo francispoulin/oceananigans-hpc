@@ -19,10 +19,14 @@
 #                         grid type as in a multi-GPU run, on one GPU and without MPI. (Oct 26: the profiles
 #                         of the 4-GPU run showed the same kernel and arrays in both versions; only the
 #                         grid's topology types differed. Oct 26: it made no difference.)
-#   --solution=array      array | field. "field" passes the solution as the distributed pressure solver
-#                         does (a Field without halos, an OffsetArray in the kernel) instead of a plain
-#                         CuArray. (Oct 26: the kernel is 3.8 times slower inside the 4-GPU run with
-#                         Julia 1.13.2 but not alone; the solution's array type is what differs.)
+#   --solution=array      array | field | offsetarray. "field" passes the solution as the distributed
+#                         pressure solver does (a Field without halos, an OffsetArray in the kernel);
+#                         "offsetarray" passes a plain OffsetArray (offsets 0) around a CuArray, without
+#                         Oceananigans' Field. (Oct 26, A100, 1024x256x1024 complex: array 9.9 ms and field
+#                         9.9 ms on Julia 1.10.10; array 11.6 ms and field 36.5 ms on Julia 1.13.2, as
+#                         inside the 4-GPU run.)
+#   --dump-code=DIR       write the compiled complex kernel (typed Julia, LLVM IR, PTX, SASS) to DIR
+#                         (CUDA.@device_code), to compare what two Julia versions generate
 # Prints one line per element type: RESULT tridiagonal phi=complex|real size=... t_min_ms=...
 # t_median_ms=... checksum=... (the same on every Julia and Oceananigans version, to round-off) and
 # the versions of Julia, Oceananigans, KernelAbstractions and CUDA.
@@ -31,7 +35,7 @@ using Oceananigans, CUDA, Printf, Statistics
 using Oceananigans.Solvers: BatchedTridiagonalSolver, solve!
 using Random
 
-opts = Dict("size" => "512x512x1024", "float" => "Float32", "reps" => "20", "y-topology" => "periodic", "solution" => "array")
+opts = Dict("size" => "512x512x1024", "float" => "Float32", "reps" => "20", "y-topology" => "periodic", "solution" => "array", "dump-code" => "")
 for a in ARGS
     m = match(r"^--([a-z-]+)=(.*)$", a)
     m === nothing && error("bad argument '$a' (use --name=value)")
@@ -60,12 +64,19 @@ versions = join(("julia=$(VERSION)",
                  "CUDA=$(pkgversion(CUDA))"), " ")
 for (label, T) in (("complex", Complex{FT}), ("real", FT))
     rhs = CuArray(rand(Xoshiro(1), T, Nx, Ny, Nz))
-    ϕ   = opts["solution"] == "array" ? similar(rhs) :
-          opts["solution"] == "field" ? Field((Center(), Center(), Center()), grid, T; indices = (1:Nx, 1:Ny, 1:Nz)) :
-          error("--solution must be array or field")
-    solve!(ϕ, solver, rhs); CUDA.synchronize()               # compile
+    ϕ   = opts["solution"] == "array"       ? similar(rhs) :
+          opts["solution"] == "field"       ? Field((Center(), Center(), Center()), grid, T; indices = (1:Nx, 1:Ny, 1:Nz)) :
+          opts["solution"] == "offsetarray" ? Oceananigans.Architectures.OffsetArray(similar(rhs), 0, 0, 0) :
+          error("--solution must be array, field or offsetarray")
+    dir = opts["dump-code"]
+    if label == "complex" && !isempty(dir)                   # compile, writing the kernel's code to dir
+        mkpath(dir)
+        CUDA.@device_code dir=dir (solve!(ϕ, solver, rhs); CUDA.synchronize())
+    else
+        solve!(ϕ, solver, rhs); CUDA.synchronize()           # compile
+    end
     times = [CUDA.@elapsed(for _ in 1:reps; solve!(ϕ, solver, rhs); end) / reps for _ in 1:5]
-    ϕ_array = ϕ isa Field ? parent(ϕ) : ϕ
+    ϕ_array = ϕ isa CuArray ? ϕ : parent(ϕ)
     checksum = sum(x -> Float64(abs(x)), Array(ϕ_array)) / length(ϕ_array)
     @printf("RESULT tridiagonal phi=%s size=%dx%dx%d float=%s y_topology=%s solution=%s t_min_ms=%.3f t_median_ms=%.3f checksum=%.12e %s gpu=\"%s\"\n",
             label, Nx, Ny, Nz, FT, opts["y-topology"], opts["solution"], 1e3 * minimum(times), 1e3 * median(times), checksum, versions, CUDA.name(CUDA.device()))
