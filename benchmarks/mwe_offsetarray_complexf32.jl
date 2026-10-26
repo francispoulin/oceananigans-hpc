@@ -36,7 +36,9 @@ end
 @inline float_eltype(::AbstractArray{T}) where T <: AbstractFloat = T
 @inline float_eltype(::AbstractArray{<:Complex{T}}) where T <: AbstractFloat = T
 
-@kernel function oceananigans_tridiagonal_z!(ϕ, a, b, c, f, t, Nz)
+# mul = masked_multiply (Oceananigans) or * (no masking); check = Val(true): keep the old value where
+# the pivot is tiny (Oceananigans), Val(false): don't (both compiled separately, as constants)
+@kernel function oceananigans_tridiagonal_z!(ϕ, a, b, c, f, t, Nz, mul, check)
     i, j = @index(Global, NTuple)
     @inbounds begin
         β  = b[i, j, 1]
@@ -46,14 +48,14 @@ end
             bᵏ   = b[i, j, k]
             aᵏ⁻¹ = a[k-1]
             t[i, j, k] = cᵏ⁻¹ / β
-            β = bᵏ - masked_multiply(aᵏ⁻¹, t[i, j, k])
+            β = bᵏ - mul(aᵏ⁻¹, t[i, j, k])
             fᵏ = f[i, j, k]
             definitely_diagonally_dominant = abs(β) > 10 * eps(float_eltype(ϕ))
-            ϕ★ = (fᵏ - masked_multiply(aᵏ⁻¹, ϕ[i, j, k-1])) / β
-            ϕ[i, j, k] = ifelse(definitely_diagonally_dominant, ϕ★, ϕ[i, j, k])
+            ϕ★ = (fᵏ - mul(aᵏ⁻¹, ϕ[i, j, k-1])) / β
+            ϕ[i, j, k] = check isa Val{true} ? ifelse(definitely_diagonally_dominant, ϕ★, ϕ[i, j, k]) : ϕ★
         end
         for k = Nz-1:-1:1
-            ϕ[i, j, k] -= masked_multiply(t[i, j, k+1], ϕ[i, j, k+1])
+            ϕ[i, j, k] -= mul(t[i, j, k+1], ϕ[i, j, k+1])
         end
     end
 end
@@ -67,13 +69,17 @@ oceananigans! = oceananigans_tridiagonal_z!(CUDABackend(), (16, 16), (Nx, Ny))
 
 println("julia ", VERSION, ", CUDA.jl ", pkgversion(CUDA), ", KernelAbstractions ", pkgversion(KernelAbstractions),
         ", OffsetArrays ", pkgversion(OffsetArrays), ", ", CUDA.name(CUDA.device()))
+timed_ms(k!, args...) = (k!(args...); CUDA.synchronize();                       # compile, then time
+                         round(minimum(1e3 * CUDA.@elapsed(k!(args...)) for _ in 1:10), digits = 2))
+
+println(rpad("", 28), " simple  Oceananigans  no-mask  no-check")
 for T in (ComplexF32, Float32, ComplexF64)
     f = CUDA.rand(T, Nx, Ny, Nz)
     for (name, ϕ) in (("CuArray", similar(f)), ("OffsetArray", OffsetArray(similar(f), 0, 0, 0)))
-        simple!(ϕ, a, b, f, t, Nz); oceananigans!(ϕ, a, b, a, f, t, Nz); CUDA.synchronize()  # compile
-        ms_simple = minimum(1e3 * CUDA.@elapsed(simple!(ϕ, a, b, f, t, Nz)) for _ in 1:10)
-        ms_oc     = minimum(1e3 * CUDA.@elapsed(oceananigans!(ϕ, a, b, a, f, t, Nz)) for _ in 1:10)
-        println(rpad("$T, ϕ::$name", 30), "simple loop ", lpad(round(ms_simple, digits = 2), 6), " ms, ",
-                "Oceananigans loop ", lpad(round(ms_oc, digits = 2), 6), " ms")
+        ms = (timed_ms(simple!, ϕ, a, b, f, t, Nz),
+              timed_ms(oceananigans!, ϕ, a, b, a, f, t, Nz, masked_multiply, Val(true)),    # Oceananigans' loop
+              timed_ms(oceananigans!, ϕ, a, b, a, f, t, Nz, *, Val(true)),                  # without masking
+              timed_ms(oceananigans!, ϕ, a, b, a, f, t, Nz, masked_multiply, Val(false)))   # without the check
+        println(rpad("$T, ϕ::$name", 28), join(lpad.(ms, (7, 13, 9, 10))), "  ms")
     end
 end
