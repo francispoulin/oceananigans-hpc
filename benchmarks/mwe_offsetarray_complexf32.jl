@@ -1,7 +1,9 @@
 # Minimal reproducer, without Oceananigans: a batched tridiagonal solve in z (Thomas algorithm, one
-# GPU thread per (i, j) column), as in Oceananigans' BatchedTridiagonalSolver. On Julia 1.13.2 it is
-# about 3 times slower when the solution is an OffsetArray of Complex{Float32} than when it is a plain
-# CuArray; on Julia 1.10.10 both are equally fast. Real numbers and Float64 are not affected.
+# GPU thread per (i, j) column), as in Oceananigans' BatchedTridiagonalSolver. Inside Oceananigans, on
+# Julia 1.13.2, it is about 3 times slower when the solution is an OffsetArray of Complex{Float32} than
+# when it is a plain CuArray; on Julia 1.10.10 both are equally fast; real numbers and Float64 are not
+# affected. Two loops: a plain Thomas algorithm (Oct 26: no slowdown on either Julia) and a copy of
+# Oceananigans' loop (masked multiplications, old value kept where the pivot is tiny).
 # (Oct 26, 2026, A100: see benchmarks/tridiagonal_kernel.jl --solution=offsetarray.) Temporary: to be
 # removed from the repository once reported upstream. Runs in its own temporary environment:
 #
@@ -28,19 +30,50 @@ using CUDA, KernelAbstractions, OffsetArrays
     end
 end
 
+# The loop of Oceananigans 0.116.1 (src/Solvers/batched_tridiagonal_solver.jl, z direction), copied:
+# masked multiplications, and the old value kept where the pivot is too small.
+@inline masked_multiply(x, y) = x * y * (x != 0)
+@inline float_eltype(::AbstractArray{T}) where T <: AbstractFloat = T
+@inline float_eltype(::AbstractArray{<:Complex{T}}) where T <: AbstractFloat = T
+
+@kernel function oceananigans_tridiagonal_z!(ϕ, a, b, c, f, t, Nz)
+    i, j = @index(Global, NTuple)
+    @inbounds begin
+        β  = b[i, j, 1]
+        ϕ[i, j, 1] = f[i, j, 1] / β
+        for k = 2:Nz
+            cᵏ⁻¹ = c[k-1]
+            bᵏ   = b[i, j, k]
+            aᵏ⁻¹ = a[k-1]
+            t[i, j, k] = cᵏ⁻¹ / β
+            β = bᵏ - masked_multiply(aᵏ⁻¹, t[i, j, k])
+            fᵏ = f[i, j, k]
+            definitely_diagonally_dominant = abs(β) > 10 * eps(float_eltype(ϕ))
+            ϕ★ = (fᵏ - masked_multiply(aᵏ⁻¹, ϕ[i, j, k-1])) / β
+            ϕ[i, j, k] = ifelse(definitely_diagonally_dominant, ϕ★, ϕ[i, j, k])
+        end
+        for k = Nz-1:-1:1
+            ϕ[i, j, k] -= masked_multiply(t[i, j, k+1], ϕ[i, j, k+1])
+        end
+    end
+end
+
 Nx, Ny, Nz = 1024, 256, 1024
 a = CUDA.ones(Float32, Nz - 1)
 b = CUDA.fill(-4f0, Nx, Ny, Nz)
 t = CUDA.zeros(Float32, Nx, Ny, Nz)
-kernel! = tridiagonal_z!(CUDABackend(), (16, 16), (Nx, Ny))
+simple!      = tridiagonal_z!(CUDABackend(), (16, 16), (Nx, Ny))
+oceananigans! = oceananigans_tridiagonal_z!(CUDABackend(), (16, 16), (Nx, Ny))
 
 println("julia ", VERSION, ", CUDA.jl ", pkgversion(CUDA), ", KernelAbstractions ", pkgversion(KernelAbstractions),
         ", OffsetArrays ", pkgversion(OffsetArrays), ", ", CUDA.name(CUDA.device()))
 for T in (ComplexF32, Float32, ComplexF64)
     f = CUDA.rand(T, Nx, Ny, Nz)
     for (name, ϕ) in (("CuArray", similar(f)), ("OffsetArray", OffsetArray(similar(f), 0, 0, 0)))
-        kernel!(ϕ, a, b, f, t, Nz); CUDA.synchronize()                    # compile
-        ms = minimum(1e3 * CUDA.@elapsed(kernel!(ϕ, a, b, f, t, Nz)) for _ in 1:10)
-        println(rpad("$T, ϕ::$name", 30), round(ms, digits = 2), " ms")
+        simple!(ϕ, a, b, f, t, Nz); oceananigans!(ϕ, a, b, a, f, t, Nz); CUDA.synchronize()  # compile
+        ms_simple = minimum(1e3 * CUDA.@elapsed(simple!(ϕ, a, b, f, t, Nz)) for _ in 1:10)
+        ms_oc     = minimum(1e3 * CUDA.@elapsed(oceananigans!(ϕ, a, b, a, f, t, Nz)) for _ in 1:10)
+        println(rpad("$T, ϕ::$name", 30), "simple loop ", lpad(round(ms_simple, digits = 2), 6), " ms, ",
+                "Oceananigans loop ", lpad(round(ms_oc, digits = 2), 6), " ms")
     end
 end
