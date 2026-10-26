@@ -119,6 +119,15 @@ Run it in each worktree to compare versions (`tools/compare_speed.sh --profile` 
 CUDA_VISIBLE_DEVICES=0 julia --project=. benchmarks/tridiagonal_kernel.jl     # default 512x512x1024, Float32
 ```
 
+Alone on an ordinary grid the kernel was only 8–17% slower. The 4-GPU profiles showed the same kernel,
+launch and arrays in both versions; only the grid's y topology differed (one rank of a grid split in y:
+`FullyConnected`, now `Sides{Connected, Connected}`). `--y-topology=connected` builds that grid type on
+one GPU, without MPI, and `--size=1024x256x1024` is one GPU's array in the 4-GPU run:
+
+```bash
+CUDA_VISIBLE_DEVICES=0 julia --project=. benchmarks/tridiagonal_kernel.jl --size=1024x256x1024 --y-topology=connected
+```
+
 ## `poisson_solver.jl`: the pressure solver alone, MPI or NCCL
 
 Times `solve_for_pressure!` (source term + distributed Poisson solve, built exactly as
