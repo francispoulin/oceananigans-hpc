@@ -260,7 +260,8 @@ run_one() {   # run_one <tag> <worktree> <script> <project args...>: prints the 
     local rc=$?
     echo "$out" >&2
     local l; l="$(sed -n 's/^log: *//p' <<<"$out" | tail -1)"
-    [[ -n "$l" ]] && echo "$w/$l"
+    [[ -n "$l" && "$l" != /* ]] && l="$w/$l"    # run_local prints a full path since #38
+    [[ -n "$l" ]] && echo "$l"
     return $rc
 }
 
