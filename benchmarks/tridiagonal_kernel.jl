@@ -18,7 +18,11 @@
 #                         Sides{Connected, Connected} from 0.116), so the kernel is compiled for the same
 #                         grid type as in a multi-GPU run, on one GPU and without MPI. (Oct 26: the profiles
 #                         of the 4-GPU run showed the same kernel and arrays in both versions; only the
-#                         grid's topology types differed.)
+#                         grid's topology types differed. Oct 26: it made no difference.)
+#   --solution=array      array | field. "field" passes the solution as the distributed pressure solver
+#                         does (a Field without halos, an OffsetArray in the kernel) instead of a plain
+#                         CuArray. (Oct 26: the kernel is 3.8 times slower inside the 4-GPU run with
+#                         Julia 1.13.2 but not alone; the solution's array type is what differs.)
 # Prints one line per element type: RESULT tridiagonal phi=complex|real size=... t_min_ms=...
 # t_median_ms=... checksum=... (the same on every Julia and Oceananigans version, to round-off) and
 # the versions of Julia, Oceananigans, KernelAbstractions and CUDA.
@@ -27,7 +31,7 @@ using Oceananigans, CUDA, Printf, Statistics
 using Oceananigans.Solvers: BatchedTridiagonalSolver, solve!
 using Random
 
-opts = Dict("size" => "512x512x1024", "float" => "Float32", "reps" => "20", "y-topology" => "periodic")
+opts = Dict("size" => "512x512x1024", "float" => "Float32", "reps" => "20", "y-topology" => "periodic", "solution" => "array")
 for a in ARGS
     m = match(r"^--([a-z-]+)=(.*)$", a)
     m === nothing && error("bad argument '$a' (use --name=value)")
@@ -56,11 +60,14 @@ versions = join(("julia=$(VERSION)",
                  "CUDA=$(pkgversion(CUDA))"), " ")
 for (label, T) in (("complex", Complex{FT}), ("real", FT))
     rhs = CuArray(rand(Xoshiro(1), T, Nx, Ny, Nz))
-    ϕ   = similar(rhs)
+    ϕ   = opts["solution"] == "array" ? similar(rhs) :
+          opts["solution"] == "field" ? Field((Center(), Center(), Center()), grid, T; indices = (1:Nx, 1:Ny, 1:Nz)) :
+          error("--solution must be array or field")
     solve!(ϕ, solver, rhs); CUDA.synchronize()               # compile
     times = [CUDA.@elapsed(for _ in 1:reps; solve!(ϕ, solver, rhs); end) / reps for _ in 1:5]
-    checksum = sum(x -> Float64(abs(x)), Array(ϕ)) / length(ϕ)
-    @printf("RESULT tridiagonal phi=%s size=%dx%dx%d float=%s y_topology=%s t_min_ms=%.3f t_median_ms=%.3f checksum=%.12e %s gpu=\"%s\"\n",
-            label, Nx, Ny, Nz, FT, opts["y-topology"], 1e3 * minimum(times), 1e3 * median(times), checksum, versions, CUDA.name(CUDA.device()))
+    ϕ_array = ϕ isa Field ? parent(ϕ) : ϕ
+    checksum = sum(x -> Float64(abs(x)), Array(ϕ_array)) / length(ϕ_array)
+    @printf("RESULT tridiagonal phi=%s size=%dx%dx%d float=%s y_topology=%s solution=%s t_min_ms=%.3f t_median_ms=%.3f checksum=%.12e %s gpu=\"%s\"\n",
+            label, Nx, Ny, Nz, FT, opts["y-topology"], opts["solution"], 1e3 * minimum(times), 1e3 * median(times), checksum, versions, CUDA.name(CUDA.device()))
     flush(stdout)
 end
