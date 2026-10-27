@@ -440,7 +440,7 @@ Rorqual (which share the Alliance software stack), and on pelee and rondeau
 | --- | --- | --- | --- | --- | --- |
 | Trillium | 2026-10-27 | 3d16f3e | 21 passed | H100 80GB | 1.10.10, our install |
 | FIR_OR_RORQUAL_ROW |
-| PELEE_ROW |
+| pelee | 2026-10-27 | 3d16f3e | 21 passed (Buildkite, build 75) | A100 40GB | 1.10.10, our install |
 | rondeau | 2026-10-27 | 3d16f3e | 21 passed | A100 40GB | 1.10.10, our install |
 | Nibi | 2026-10-19 | e386059 | 21 passed (v0.2.0) | H100 80GB | 1.10.10, `julia` module |
 
