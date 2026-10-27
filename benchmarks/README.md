@@ -184,6 +184,21 @@ scale better on larger grids (Verma et al. 2022, arXiv:2202.12756: 1024³ 2→4 
 512³). On rondeau, 512³ gave the same efficiencies as 512²×256 (1→2: 35%; 1→4: MPI 28%, NCCL 39%),
 so our costs grow with the data; this checks it on H100 nodes.
 
+## `hydro_box_drift.jl`: is a multi-GPU difference round-off?
+
+Not a benchmark but a diagnostic, for library upgrades: when the platform test `hydro_box`'s
+"4 GPUs vs 1 GPU" number changes, this runs the same model for 3000 steps on 4 GPUs and, inside the
+same run, on 1 GPU twice (as is, and with the initial state changed by one rounding unit). If the
+4-vs-1 difference grows no faster than that control, it is round-off carried by the flow. Run it in
+main's environment and in the candidate's (about 5 minutes each; `--nx=N` for another grid):
+
+```bash
+bash $OCEAN_HPC_ROOT/tools/run_local.sh --wait --gpus 4 --project $OCEAN_HPC_ROOT --job-name drift benchmarks/hydro_box_drift.jl
+```
+
+Oct 26, Oceananigans 0.116.1, 128 cells in x: 4.4e-13 at 30 steps against a control of 1.7e-12,
+3.1e-11 against 2.8e-11 at 3000 steps (the table is in `tests/README.md` on that upgrade): round-off.
+
 ## `alltoall_bandwidth.jl`
 
 Times only the GPU-to-GPU `MPI_Alltoall` that each transpose of the distributed Poisson solvers

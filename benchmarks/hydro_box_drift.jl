@@ -1,16 +1,20 @@
-# TEMPORARY (remove before #37 merges). Does the platform test hydro_box's 4-GPU vs 1-GPU difference
-# (0 on Oceananigans 0.113.5, 5.2e-14 on 0.116.1, Oct 26) grow, and how? On pelee/rondeau, after
-# sourcing the ocean_setup of the environment to test:
+# Is a multi-GPU difference round-off? When a library upgrade changes the platform test hydro_box's
+# "N GPUs vs 1 GPU" number (Oct 26: Oceananigans 0.116.1 made it 4.4e-13 instead of bitwise), this runs
+# the same model longer and compares the difference with what round-off alone does. On pelee/rondeau,
+# after sourcing the ocean_setup of the environment to test (main, then the candidate):
 #
 #     bash $OCEAN_HPC_ROOT/tools/run_local.sh --wait --gpus 4 --project $OCEAN_HPC_ROOT --job-name drift <this file>
+#     ... <this file> --nx=64        # another grid (default 128, as in tests/platform.jl)
 #
-# One MPI run on 4 GPUs. All ranks step hydro_box (as in tests/platform.jl) split in x; rank 0 also
-# steps it on 1 GPU, twice: as is (the reference) and with the initial buoyancy changed by one rounding
-# unit (the control). At 30, 100, 300, 1000 and 3000 steps it prints:
-#   four_vs_one   max |4 GPUs - 1 GPU| / max |1 GPU| over v, w, b
-#   control       the same for the 1-ulp control against the reference: round-off amplified by the flow
-#   at_i          x index (1-64) of the largest 4-vs-1 difference in b; ranks meet between 16|17, 32|33, 48|49
-# Round-off: four_vs_one stays at or below control and at_i is not tied to the rank boundaries.
+# One MPI run on N GPUs (the grid split in x). All ranks step hydro_box; rank 0 also steps it on
+# 1 GPU, twice: as is (the reference) and with the initial buoyancy changed by one rounding unit (the
+# control). At 30, 100, 300, 1000 and 3000 steps it prints:
+#   n_vs_one   max |N GPUs - 1 GPU| / max |1 GPU| over v, w, b
+#   control    the same for the 1-ulp control against the reference: round-off amplified by the flow
+#   at_i       x index of the largest N-vs-1 difference in b (ranks meet every nx/N cells)
+# Round-off: n_vs_one stays at or below control (within ~10% once both level off). Larger, or growing
+# faster, means something is computed differently: look before accepting the upgrade.
+# About 5 minutes on 4 A100s (mostly compiling).
 
 using Oceananigans, CUDA, MPI, Printf
 include(joinpath(ENV["OCEAN_HPC_ROOT"], "src", "drac_mpi.jl"))
@@ -19,7 +23,13 @@ const comm = MPI.COMM_WORLD
 const rank = MPI.Comm_rank(comm)
 const nranks = MPI.Comm_size(comm)
 
-const Nh = (64, 32, 16)
+nx = 128
+for a in ARGS
+    m = match(r"^--nx=(\d+)$", a)
+    m === nothing && error("unknown argument '$a' (only --nx=N)")
+    global nx = parse(Int, m[1])
+end
+const Nh = (nx, 32, 16)
 function hydro_box(arch; δ = 0.0)          # tests/platform.jl's hydro_box, initial b times (1 + δ)
     L = 640e3
     g = RectilinearGrid(arch; size = Nh, halo = (4, 4, 4), x = (-L / 2, L / 2), y = (-L / 4, L / 4), z = (-1000, 0),
@@ -53,8 +63,8 @@ md = hydro_box(arch)
 if rank == 0
     m1 = hydro_box(GPU())
     mc = hydro_box(GPU(); δ = eps(Float64))
-    @printf("hydro_box drift: Oceananigans %s, Julia %s, %d GPUs vs 1\n", pkgversion(Oceananigans), VERSION, nranks)
-    @printf("%6s %13s %13s %6s\n", "steps", "four_vs_one", "control", "at_i")
+    @printf("hydro_box drift: Oceananigans %s, Julia %s, %d GPUs vs 1, %d cells in x\n", pkgversion(Oceananigans), VERSION, nranks, nx)
+    @printf("%6s %13s %13s %6s\n", "steps", "n_vs_one", "control", "at_i")
 end
 
 done = 0

@@ -144,7 +144,9 @@ Tools:
       release notes of 0.114, 0.115 and 0.116 (breaking changes for `tests/platform.jl`,
       `benchmarks/*.jl`, `src/`)
 - [ ] 1. pelee: `bash setup/make_candidate.sh --julia 1.13.2 Oceananigans@0.116.1`
-- [ ] 2. pelee: platform tests in the candidate (21 steps, ~10 min)
+- [ ] 2. pelee: platform tests in the candidate (21 steps, ~10 min). If a "4 GPUs vs 1 GPU" number
+      changes from main's, run `benchmarks/hydro_box_drift.jl` in both before accepting it (Oct 26:
+      0.116.1 made hydro_box round-off instead of bitwise; the drift showed it is round-off)
 - [ ] 3. pelee: does the physics change? BalancedFlows' quick tier with the candidate against its
       references (not necessarily bitwise across versions; small and explained by the release notes)
 - [ ] 4. pelee: speed: `bash tools/compare_speed.sh` (1024³ on 4 GPUs, MPI; main reproduced Oct 22's
