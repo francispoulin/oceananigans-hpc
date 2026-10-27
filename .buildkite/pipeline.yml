@@ -4,6 +4,9 @@
 steps:
   - label: ":julia: Platform tests (1 and 4 GPUs)"
     command: bash tools/ci_platform_tests.sh
+    # GPUs only for main, pull requests and builds started by hand (New Build); a push to a branch
+    # without a pull request runs the upload alone, leaving the GPUs free.
+    if: build.branch == pipeline.default_branch || build.pull_request.id != null || build.source == "ui"
     agents:
       queue: fluidsgpu            # the agents on pelee and rondeau
     # pelee and rondeau share one clone and one test worktree: one test at a time on both.

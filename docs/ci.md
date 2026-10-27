@@ -53,7 +53,8 @@ skipping steps, and the build passes only if the summary is clean.
 5. The pipeline's *Settings → GitHub* (names as Buildkite shows them; they change now and then):
    - **Build when pull request is opened or updated**: on;
    - **Allow builds from third-party forked repositories**: **off** (check this one);
-   - branch filtering: `main` (pull request branches are built through their pull requests);
+   - branch filtering: none needed. `.buildkite/pipeline.yml` runs the GPU step only for `main`, pull
+     requests and *New Build*; a push to a branch without a pull request runs only the upload step;
    - commit statuses: on (this puts the check on the pull request).
 6. Optional: making the pipeline public lets anyone read the build pages without a Buildkite login
    (as Oceananigans' are). Logs show paths on the server; nothing else.
