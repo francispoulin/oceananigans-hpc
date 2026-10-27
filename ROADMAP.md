@@ -160,6 +160,12 @@ environment). Oceananigans, a package, tests ranges of versions; this repository
       (about 2 to 3 times the run time); lower the job scripts' defaults (benchmarks ask 45–80 min and
       run 8–16, Oct 21); let `jobs/submit_gpu.sh` use Trillium's debug queue for jobs that fit
 
+- [ ] **Test jobs ask for 20 minutes, too tight** (Oct 27): on Fir a platform test at 3d16f3e passed 20 of
+      21 steps and was stopped by the limit before `viz`, so no summary was written. Raise
+      `test_job_request` in `jobs/gpu_request.sh` to 30 minutes (about 3 times a normal run), v1.0.1
+- [ ] **Fir's 1-GPU test step took 672 s** (Oct 27; 205 s on Trillium, tests about 180 s of it), with no
+      package precompiling in its log; its 4-GPU step was normal (285 s). Cause unknown (shared file
+      system?): look at the step's own timings if it happens again
 - [ ] Point the Waterloo Fluids Computing Handbook's Oceananigans pages to this workflow
 - [ ] Shared depot for the group on pelee/rondeau, once several people use it
 - [ ] GPU tests on every pull request (a self-hosted runner on pelee)
