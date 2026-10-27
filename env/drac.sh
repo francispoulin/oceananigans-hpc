@@ -11,6 +11,7 @@
 # to its default depots, including ~/.julia in $HOME. Setting the depot cleanly afterwards
 # keeps Julia to exactly one depot.
 _drac_depot="${JULIA_DEPOT_PATH%%:*}"
+[[ "$_drac_depot" == "${SCRATCH:-/nonexistent}/julia_depot_jobs" ]] && _drac_depot="${OCEAN_DEPOT:-}"   # sourced again in a Trillium job
 
 module --force purge                 # some modules are "sticky" and stay loaded: that is normal
 module load StdEnv/2023
@@ -65,7 +66,12 @@ export OCEAN_HPC_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # Julia depot: where packages and compiled code are stored (about 2 GB). Not on $SCRATCH,
 # which is purged after 60 days without access. Choose another (e.g. project space) by
 # setting JULIA_DEPOT_PATH before sourcing this file.
-export JULIA_DEPOT_PATH="${_drac_depot:-$HOME/julia_depot}"
+# JULIA_DEPOT_PATH is "<depot>:": the trailing empty entry adds the depots bundled with Julia (its
+# precompiled standard libraries) but not ~/.julia. Without it, Julia >= 1.11 recompiles its own
+# standard libraries into our depot, and on 1.13.2 compiling Markdown overflows the stack (Oct 24).
+# OCEAN_DEPOT is the depot itself, for scripts that need the folder.
+export OCEAN_DEPOT="${_drac_depot:-$HOME/julia_depot}"
+export JULIA_DEPOT_PATH="$OCEAN_DEPOT:"
 
 unset _drac_depot
 
@@ -79,15 +85,15 @@ source "$OCEAN_HPC_ROOT/env/julia.sh"
 # still read from the project depot. Julia tries the most recently modified cache first, and the
 # copies are newer. Only new or updated files are copied (a few seconds once the copy exists).
 # Nothing in this copy needs keeping: if $SCRATCH is purged it is simply made again.
-if [[ "$CC_CLUSTER" == trillium && -n "$SLURM_JOB_ID" && "$JULIA_DEPOT_PATH" != *:* ]]; then
+if [[ "$CC_CLUSTER" == trillium && -n "$SLURM_JOB_ID" ]]; then
     _drac_rw="$SCRATCH/julia_depot_jobs"
     mkdir -p "$_drac_rw/compiled"
-    if [[ -d "$JULIA_DEPOT_PATH/compiled" ]]; then
+    if [[ -d "$OCEAN_DEPOT/compiled" ]]; then
         # cp without -p: the copies get the current time, so they are newer than the originals;
         # -u: copy only files that are missing or older than the original (updated packages)
-        ( flock 9; cp -ru "$JULIA_DEPOT_PATH/compiled/." "$_drac_rw/compiled/" ) 9>"$_drac_rw/.lock"
+        ( flock 9; cp -ru "$OCEAN_DEPOT/compiled/." "$_drac_rw/compiled/" ) 9>"$_drac_rw/.lock"
     fi
-    export JULIA_DEPOT_PATH="$_drac_rw:$JULIA_DEPOT_PATH"
+    export JULIA_DEPOT_PATH="$_drac_rw:$OCEAN_DEPOT:"
     unset _drac_rw
 fi
 
@@ -122,7 +128,7 @@ echo "oceananigans-hpc environment (${CC_CLUSTER:-unknown cluster}): repo=$OCEAN
 # Ocean data (ECCO, EN4, ETOPO, ...): a folder next to the Julia depot unless OCEAN_DATA_DIR is
 # already set. NumericalEarth reads and downloads its datasets there. Download on a login node
 # (compute nodes have no internet, and on Trillium they can't write to /project).
-export OCEAN_DATA_DIR="${OCEAN_DATA_DIR:-$(dirname "${JULIA_DEPOT_PATH##*:}")/ocean_data}"
+export OCEAN_DATA_DIR="${OCEAN_DATA_DIR:-$(dirname "$OCEAN_DEPOT")/ocean_data}"
 export NUMERICALEARTH_DATA_DIRECTORY="${NUMERICALEARTH_DATA_DIRECTORY:-$OCEAN_DATA_DIR}"
 echo "  ocean data: $OCEAN_DATA_DIR"
 

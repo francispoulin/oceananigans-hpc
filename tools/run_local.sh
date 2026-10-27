@@ -19,6 +19,8 @@
 #               rank (Oceananigans' Distributed(GPU()) does this), instead of seeing only its own.
 #               Not needed for speed on pelee/rondeau: MPI uses NVLink either way
 #               (benchmarks/alltoall_bandwidth.jl). Kept for testing other machines.
+#   --prefix "CMD"  run each rank's julia under CMD (e.g. a profiler: --prefix "nsys profile -o
+#               logs/prof_rank%q{OMPI_COMM_WORLD_RANK}"); split at spaces
 #   --wait      stay attached until the run ends (still logged); exit status = the run's
 #   --dry-run   show what would run, start nothing
 #
@@ -39,7 +41,7 @@
 set -eo pipefail
 : "${OCEAN_HPC_ROOT:?run ocean_setup first}"
 
-ngpu=1; gpus=""; project="$PWD"; name=""; dry=0; wait_end=0; all_visible=0
+ngpu=1; gpus=""; project="$PWD"; name=""; dry=0; wait_end=0; all_visible=0; prefix=()
 # value <option> <next argument>: the option's value, or stop with a message if it is missing
 value() { [[ -n "${2:-}" && "$2" != -* ]] || { echo "$1 needs a value (try --help)" >&2; exit 1; }; }
 while [[ $# -gt 0 ]]; do
@@ -49,6 +51,7 @@ while [[ $# -gt 0 ]]; do
         --gpu-ids|-g)  value "$1" "${2:-}"; gpus="$2"; shift 2 ;;
         --project|-p)  value "$1" "${2:-}"; project="$(cd "$2" && pwd)"; shift 2 ;;
         --job-name|-j) value "$1" "${2:-}"; name="$2"; shift 2 ;;
+        --prefix)      value "$1" "${2:-}"; read -ra prefix <<<"$2"; shift 2 ;;
         --viz|--wait|--all-visible|--dry-run)
             (( with_value )) && { echo "$1 takes no value (try --help)"; exit 1; }
             case "$1" in
@@ -98,7 +101,7 @@ else
 fi
 
 # ---- command ----
-jl=(julia --project="$project" "$script" "$@")
+jl=("${prefix[@]}" julia --project="$project" "$script" "$@")
 if [[ "$ngpu" -gt 1 && $all_visible -eq 1 ]]; then
     # Every rank sees all chosen GPUs (CUDA_VISIBLE_DEVICES=$gpus); the program picks one per rank.
     cmd=(mpiexec -n "$ngpu" --bind-to none "${jl[@]}")

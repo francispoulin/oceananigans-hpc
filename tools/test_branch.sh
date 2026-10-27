@@ -18,7 +18,8 @@
 # What it does: git fetch; the worktree is created (or moved) to origin/<branch>, detached, so the
 # same branch can also be checked out elsewhere; the clone's machine-specific LocalPreferences.toml
 # files (MPI setup, not under version control) are copied into it (earlier summaries left in the
-# worktree are moved to its local/old_summaries/); then tools/run_tests.sh runs
+# worktree are moved to its local/old_summaries/); the branch's Julia and packages are installed if
+# its Manifest.toml asks for new ones (an upgrade branch); then tools/run_tests.sh runs
 # there with the worktree's own environment (OCEAN_HPC_ROOT = the worktree).
 #   pelee/rondeau: the tests run now (about 10 min) if enough GPUs are free (otherwise nothing runs);
 #   at the end the summary is published if nothing failed or was skipped.
@@ -132,8 +133,14 @@ fi
 echo "== Platform tests"
 echo "pid $$ $(hostname -s)" > "$LOCK"
 out="$(mktemp)"
-# A subshell, so the worktree's environment does not stay in the caller's shell
-( source "$WT/env/ocean_setup.sh" && "${cmd[@]}" ) 2>&1 | tee "$out"
+# A subshell, so the worktree's environment does not stay in the caller's shell. A branch that
+# changes Manifest.toml (a library or Julia upgrade) gets its Julia installed and its packages
+# installed first; both are quick no-ops when nothing changed.
+( bash "$WT/setup/install_julia.sh" &&
+  source "$WT/env/ocean_setup.sh" &&
+  julia --project="$WT" -e 'using Pkg; Pkg.instantiate()' &&
+  julia --project="$WT/viz" -e 'using Pkg; Pkg.instantiate()' &&
+  "${cmd[@]}" ) 2>&1 | tee "$out"
 status=${PIPESTATUS[0]}
 
 job="$(sed -n 's/^Submitted batch job \([0-9]*\).*/\1/p' "$out" | tail -1)"

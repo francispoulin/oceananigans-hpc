@@ -20,7 +20,8 @@ Scripts in `setup/`, `jobs/` and `tools/` rely only on these, so a new machine n
 | `OCEAN_MACHINE` | short machine name, for messages and logs |
 | `OCEAN_MPI_ROOT` | installation prefix of the system OpenMPI (contains `lib/libmpi.so`) |
 | `OPAL_PREFIX` | set to `$OCEAN_MPI_ROOT` (see `src/drac_mpi.jl`) |
-| `JULIA_DEPOT_PATH` | one depot, set after loading modules |
+| `OCEAN_DEPOT` | the Julia depot (packages and compiled code) |
+| `JULIA_DEPOT_PATH` | `$OCEAN_DEPOT:`, set after loading modules: the trailing empty entry adds the depots bundled with Julia (its precompiled standard libraries), not `~/.julia`; in Trillium jobs a writable copy of the compiled files comes first |
 | `JULIA_NUM_THREADS` | default 1 |
 | `JULIA_NUM_PRECOMPILE_TASKS` | default 2, so precompiling doesn't hit login-node thread limits |
 | `OCEAN_DATA_DIR` | downloaded input data (ECCO, EN4, ETOPO, ...); also `NUMERICALEARTH_DATA_DIRECTORY` |

@@ -49,7 +49,10 @@ fi
 export OPAL_PREFIX="$OCEAN_MPI_ROOT"
 
 export OCEAN_HPC_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-export JULIA_DEPOT_PATH="${_fluids_depot:-$_fluids_default_depot}"
+# JULIA_DEPOT_PATH is "<depot>:": the trailing empty entry adds the depots bundled with Julia (its
+# precompiled standard libraries) but not ~/.julia (see env/drac.sh). OCEAN_DEPOT is the depot itself.
+export OCEAN_DEPOT="${_fluids_depot:-$_fluids_default_depot}"
+export JULIA_DEPOT_PATH="$OCEAN_DEPOT:"
 export JULIA_NUM_THREADS="${JULIA_NUM_THREADS:-1}"
 export JULIA_NUM_PRECOMPILE_TASKS="${JULIA_NUM_PRECOMPILE_TASKS:-2}"
 
@@ -66,7 +69,7 @@ echo "oceananigans-hpc environment ($OCEAN_MACHINE): repo=$OCEAN_HPC_ROOT, depot
 # Ocean data (ECCO, EN4, ETOPO, ...): a folder next to the Julia depot unless OCEAN_DATA_DIR is
 # already set. NumericalEarth reads and downloads its datasets there. Download on a login node
 # (compute nodes have no internet, and on Trillium they can't write to /project).
-export OCEAN_DATA_DIR="${OCEAN_DATA_DIR:-$(dirname "${JULIA_DEPOT_PATH##*:}")/ocean_data}"
+export OCEAN_DATA_DIR="${OCEAN_DATA_DIR:-$(dirname "$OCEAN_DEPOT")/ocean_data}"
 export NUMERICALEARTH_DATA_DIRECTORY="${NUMERICALEARTH_DATA_DIRECTORY:-$OCEAN_DATA_DIR}"
 echo "  ocean data: $OCEAN_DATA_DIR"
 

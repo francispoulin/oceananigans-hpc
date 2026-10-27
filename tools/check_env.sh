@@ -46,14 +46,17 @@ else
     warn "julia is not on PATH (source ocean_setup; install_julia.sh)"; exit 1
 fi
 
+# Expected: "<depot>:" (the trailing empty entry adds Julia's bundled depots, not ~/.julia), or in a
+# Trillium job "$SCRATCH/julia_depot_jobs:<depot>:" (env/drac.sh)
 case "$JULIA_DEPOT_PATH" in
     "")      warn "JULIA_DEPOT_PATH is empty: Julia will use ~/.julia" ;;
-    "$SCRATCH/julia_depot_jobs:"[!:]*)                  # Trillium job (env/drac.sh): intended
-             ok "depot ${JULIA_DEPOT_PATH#*:} (job: compiled files copied to ${JULIA_DEPOT_PATH%%:*})" ;;
-    *:*)     warn "JULIA_DEPOT_PATH has several or empty entries: '$JULIA_DEPOT_PATH'"
+    "${OCEAN_DEPOT:-?}:")
+             [[ -d "$OCEAN_DEPOT" ]] && ok "depot $OCEAN_DEPOT" \
+                                     || warn "depot $OCEAN_DEPOT does not exist yet (fine before first setup)" ;;
+    "$SCRATCH/julia_depot_jobs:${OCEAN_DEPOT:-?}:")
+             ok "depot $OCEAN_DEPOT (job: compiled files copied to $SCRATCH/julia_depot_jobs)" ;;
+    *)       warn "JULIA_DEPOT_PATH is '$JULIA_DEPOT_PATH', not '${OCEAN_DEPOT:-<depot>}:'"
              info "Something changed it after ocean_setup (a module load?). Source ocean_setup again." ;;
-    *)       [[ -d "$JULIA_DEPOT_PATH" ]] && ok "depot $JULIA_DEPOT_PATH" \
-                                         || warn "depot $JULIA_DEPOT_PATH does not exist yet (fine before first setup)" ;;
 esac
 
 [[ -n "$JULIA_NUM_PRECOMPILE_TASKS" ]] && ok "JULIA_NUM_PRECOMPILE_TASKS=$JULIA_NUM_PRECOMPILE_TASKS" \
