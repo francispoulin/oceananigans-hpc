@@ -6,7 +6,7 @@ configuration, plotting environment, launcher, checks, platform tests and benchm
 repositories depend on it by convention, not as a Julia package, and dependencies point one way:
 this repository never depends on a simulation repository.
 
-Boxes are ticked in the pull request that does the work. Last updated: October 19, 2026 (v0.2.0).
+Boxes are ticked in the pull request that does the work. Last updated: October 27, 2026.
 Versions: see [CONTRIBUTING.md](CONTRIBUTING.md#versions-and-releases).
 
 ## Phase 1: finish and stabilize
@@ -73,8 +73,12 @@ Versions: see [CONTRIBUTING.md](CONTRIBUTING.md#versions-and-releases).
       Alliance, `$OCEAN_RESULTS_ROOT/BalancedFlows/` (BalancedFlows v0.7.0; old name dropped in its #27)
 - [x] Then drop `OCEANANIGANS_DRAC_ROOT` (v0.4.0); `ocean_setup` points out `~/.bashrc` lines that still use it
 - [x] Trillium job folder `$SCRATCH/oceananigans-hpc` (was `oceananigans-drac`) in `env/drac.sh`
-- [ ] Folders renamed on every machine: clones `Oceananigans-DRAC` → `oceananigans-hpc` (README), and on
-      Trillium `$SCRATCH/oceananigans-drac` → `oceananigans-hpc`; Nibi and Fir once their queued jobs end
+- [x] Folders renamed on Fir, Rorqual, Trillium and pelee/rondeau: clones `Oceananigans-DRAC` → `oceananigans-hpc`
+      (README), and on Trillium `$SCRATCH/oceananigans-drac` → `oceananigans-hpc`
+- [ ] Nibi: switch to the new clone once the scaling jobs queued from the old one have ended (they run from
+      it): `ocean_setup` alias to `oceananigans-hpc`, our own Julia (`setup/install_julia.sh`), one platform
+      test, then remove `Oceananigans-DRAC`. Not needed for v1.0.0 (Rorqual stands for Nibi, Fir and
+      Rorqual; CONTRIBUTING.md, "Making a release")
 - [x] Nonhydrostatic benchmark: Oceananigans' own nonhydrostatic box (`benchmarks/nonhydrostatic_box.jl`,
       results in `results/nonhydrostatic_rondeau.md`), as for the hydrostatic model (`earth_ocean`). No
       BalancedFlows configuration (decided Oct 20: benchmarks use Oceananigans' cases; a harness for its own
@@ -86,9 +90,11 @@ Versions: see [CONTRIBUTING.md](CONTRIBUTING.md#versions-and-releases).
         without the `julia` module), the same version, so 1.0.0 starts on the setup we keep
     - [x] `env/julia.sh`, one place for every machine: our install next to the depot, else the module
     - [x] Installed and tested on Rorqual and Trillium (Oct 21, 6bf3999, 21 of 21 each; pelee by Buildkite)
-    - [ ] Installed on Nibi and Fir (with their rename)
-  - [ ] Folders renamed on Nibi and Fir (item above)
-  - [ ] Platform tests on every machine at one commit; BalancedFlows has used the contract on each
+    - [x] Installed on Fir, with its new clone
+    - [ ] Nibi: after v1.0.0 (item above)
+  - [ ] Platform tests at one commit on the machines a 1.0.0 needs (Oct 27: Trillium, Rorqual,
+        pelee and rondeau; CONTRIBUTING.md, "Making a release")
+  - [ ] BalancedFlows has used the contract on pelee and one Alliance cluster
 
 ## Phase 4: a workflow for updating libraries
 
@@ -107,9 +113,14 @@ environment). Oceananigans, a package, tests ranges of versions; this repository
       does ([docs/ci.md](docs/ci.md); decided Oct 20: a GitHub Actions runner is advised against for
       public repositories, a poller gives no check on the pull request)
   - [x] Pipeline (`.buildkite/pipeline.yml`) and `tools/ci_platform_tests.sh`
-  - [ ] Trial: agent on pelee under a personal account; first green build
-  - [ ] Agreed with the servers' administrators: a dedicated account, the agent as a service
-  - [ ] rondeau; then BalancedFlows on the same agents
+  - [x] Trial: agent on pelee under a personal account; first green build (Oct 21–26; builds `main` and
+        pull requests only since #39)
+  - [ ] Agreed with the servers' administrators: a dedicated account (being created, Oct 27), the agent
+        as a service
+  - [ ] Move the agent to that account: its own Julia 1.10.10 and depot (it can't use a personal one), the
+        agent as a service, one green build; `docs/ci.md` updated
+  - [ ] Then BalancedFlows' pipeline on the same agent (after this repository's first green build there,
+        so a failure has one cause); then rondeau
   - [ ] Later, if the cluster's staff agree: one Alliance cluster (Slurm jobs started from Buildkite,
         as CliMA's slurm-buildkite does)
 
