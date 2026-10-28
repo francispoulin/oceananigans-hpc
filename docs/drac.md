@@ -381,15 +381,17 @@ Strong-scaling efficiency against each cluster's 1-GPU run (about 1.05 s per ste
 | 4 | (1) 99% | 99% / 100% | 100% / 100% |
 | 8 | (1) 92% | 91% / 93% (2 nodes) | 88% / 93% (2 nodes) |
 | 16 | (2) 81% | 80% / 83% (4 nodes) | 76% / 82% (4 nodes) |
-| 32 | (4) 59% | | |
+| 32 | (4) 59%; NCCL 64% | | |
 
 - Within a node the model scales almost perfectly. Across nodes it keeps about 80% at 16 GPUs, where
   each GPU has only 13 million cells: it exchanges only thin halos. At 32 GPUs (6.5 million cells per
   GPU) the GPUs run out of work, and efficiency falls to 59%.
 - Larger grids scale further. Before the settings (Oct 2–5, [results/nibi_scaling.md](../results/nibi_scaling.md)),
   1/8° kept 80% on 32 GPUs and 1/16° 93%; with the work per GPU held fixed (weak scaling), 16 GPUs on
-  2 nodes cost under 4% and 64 GPUs on 8 nodes 15%. Weak scaling with the settings: 98% on 4 GPUs and
-  97% on 16 (2 nodes, 1/16°); 64 queued.
+  2 nodes cost under 4% and 64 GPUs on 8 nodes 15%. Weak scaling with the settings: 98% on 4 GPUs,
+  97% on 16 (2 nodes, 1/16°), and on 64 (8 nodes, 1/32°) 87% with the grid split in x but **98% split
+  in both directions** (8 × 8: each GPU's tile has 2.7 times less halo to exchange than a strip, and
+  needs 7 GiB less memory). **Across many nodes, split the grid in x and y.**
 - The settings matter across nodes: on Nibi they make 2 nodes 5% faster and 4 nodes 20% faster, with
   much steadier timings; within a node they cost 1.5–3.5% (the memory pool is off).
 - NCCL gains 1–7% over MPI across nodes and nothing within a node.
