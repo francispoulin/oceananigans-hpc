@@ -166,7 +166,7 @@ and removed in v0.4.0).
      Nibi's 8 GPUs per node or its Slurm path) is tested on that cluster.
    - **pelee or rondeau** as well, when `env/fluidsgpu.sh`, `tools/run_local.sh` or anything else
      they use changed (no queue there).
-   - **1.0.0:** every kind of machine: Trillium, Rorqual (for Nibi, Fir and Rorqual), pelee and rondeau.
+   - **1.0.0:** every kind of machine: Trillium, one of Nibi, Fir and Rorqual, pelee and rondeau.
    - **Upgrades of Julia, Oceananigans or the GPU stack** (ROADMAP.md, Phase 4): pelee and Trillium
      (decided Oct 24, to keep upgrades cheap); the other machines are rerun as their setup changes.
 

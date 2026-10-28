@@ -75,26 +75,28 @@ Versions: see [CONTRIBUTING.md](CONTRIBUTING.md#versions-and-releases).
 - [x] Trillium job folder `$SCRATCH/oceananigans-hpc` (was `oceananigans-drac`) in `env/drac.sh`
 - [x] Folders renamed on Fir, Rorqual, Trillium and pelee/rondeau: clones `Oceananigans-DRAC` → `oceananigans-hpc`
       (README), and on Trillium `$SCRATCH/oceananigans-drac` → `oceananigans-hpc`
-- [ ] Nibi: switch to the new clone once the scaling jobs queued from the old one have ended (they run from
-      it): `ocean_setup` alias to `oceananigans-hpc`, our own Julia (`setup/install_julia.sh`), one platform
-      test, then remove `Oceananigans-DRAC`. Not needed for v1.0.0 (Rorqual stands for Nibi, Fir and
-      Rorqual; CONTRIBUTING.md, "Making a release")
+- [x] Nibi on the new clone (Oct 28, after its queued scaling jobs ended): `ocean_setup` alias to
+      `oceananigans-hpc`, our own Julia, platform tests (21 passed); old clone renamed
+      `Oceananigans-DRAC.old-20261028`, to delete once nothing is missed
 - [x] Nonhydrostatic benchmark: Oceananigans' own nonhydrostatic box (`benchmarks/nonhydrostatic_box.jl`,
       results in `results/nonhydrostatic_rondeau.md`), as for the hydrostatic model (`earth_ocean`). No
       BalancedFlows configuration (decided Oct 20: benchmarks use Oceananigans' cases; a harness for its own
       configurations is on BalancedFlows' wish list)
-- [ ] v1.0.0: a stable baseline before any library changes (Phase 4), in this order (agreed Oct 20):
+- [x] v1.0.0: a stable baseline before any library changes (Phase 4), in this order (agreed Oct 20):
   - [x] Test a branch without switching the clone (`tools/test_branch.sh`, a worktree), and publish
         test summaries from the machines (`tools/publish_summary.sh`)
-  - [ ] Our own Julia 1.10.10 on the Alliance clusters too (`setup/install_julia.sh`, `env/drac.sh`
+  - [x] Our own Julia 1.10.10 on the Alliance clusters too (`setup/install_julia.sh`, `env/drac.sh`
         without the `julia` module), the same version, so 1.0.0 starts on the setup we keep
     - [x] `env/julia.sh`, one place for every machine: our install next to the depot, else the module
     - [x] Installed and tested on Rorqual and Trillium (Oct 21, 6bf3999, 21 of 21 each; pelee by Buildkite)
     - [x] Installed on Fir, with its new clone
-    - [ ] Nibi: after v1.0.0 (item above)
-  - [ ] Platform tests at one commit on the machines a 1.0.0 needs (Oct 27: Trillium, Rorqual,
-        pelee and rondeau; CONTRIBUTING.md, "Making a release")
-  - [ ] BalancedFlows has used the contract on pelee and one Alliance cluster
+    - [x] Installed on Nibi, with its new clone (Oct 28)
+  - [x] Platform tests at one commit on the machines a 1.0.0 needs (Oct 27–28: Trillium, pelee and
+        rondeau at 3d16f3e, Nibi at 1027177, docs only since; Nibi stands for Fir and Rorqual, Rorqual
+        being in maintenance; CONTRIBUTING.md, "Making a release")
+  - [x] BalancedFlows has used the contract on pelee and one Alliance cluster (Oct 28, quick tier at
+        1027177: pelee 15/15 bitwise; Nibi 11/15, the other four 1–2 rounding units from the A100
+        references in the norms, H100 summation order, its own tests' tolerance to change, not this setup)
 
 ## Phase 4: a workflow for updating libraries
 
@@ -162,6 +164,12 @@ environment). Oceananigans, a package, tests ranges of versions; this repository
       (about 2 to 3 times the run time); lower the job scripts' defaults (benchmarks ask 45–80 min and
       run 8–16, Oct 21); let `jobs/submit_gpu.sh` use Trillium's debug queue for jobs that fit
 
+- [ ] **Test jobs ask for 20 minutes, too tight** (Oct 27): on Fir a platform test at 3d16f3e passed 20 of
+      21 steps and was stopped by the limit before `viz`, so no summary was written. Raise
+      `test_job_request` in `jobs/gpu_request.sh` to 30 minutes (about 3 times a normal run), v1.0.1
+- [ ] **Fir's 1-GPU test step took 672 s** (Oct 27; 205 s on Trillium, tests about 180 s of it), with no
+      package precompiling in its log; its 4-GPU step was normal (285 s). Cause unknown (shared file
+      system?): look at the step's own timings if it happens again
 - [ ] Point the Waterloo Fluids Computing Handbook's Oceananigans pages to this workflow
 - [ ] Shared depot for the group on pelee/rondeau, once several people use it
 - [ ] GPU tests on every pull request (a self-hosted runner on pelee)
