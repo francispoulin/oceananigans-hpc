@@ -82,7 +82,7 @@ Versions: see [CONTRIBUTING.md](CONTRIBUTING.md#versions-and-releases).
       results in `results/nonhydrostatic_rondeau.md`), as for the hydrostatic model (`earth_ocean`). No
       BalancedFlows configuration (decided Oct 20: benchmarks use Oceananigans' cases; a harness for its own
       configurations is on BalancedFlows' wish list)
-- [ ] v1.0.0: a stable baseline before any library changes (Phase 4), in this order (agreed Oct 20):
+- [x] v1.0.0: a stable baseline before any library changes (Phase 4), in this order (agreed Oct 20):
   - [x] Test a branch without switching the clone (`tools/test_branch.sh`, a worktree), and publish
         test summaries from the machines (`tools/publish_summary.sh`)
   - [x] Our own Julia 1.10.10 on the Alliance clusters too (`setup/install_julia.sh`, `env/drac.sh`
@@ -94,7 +94,9 @@ Versions: see [CONTRIBUTING.md](CONTRIBUTING.md#versions-and-releases).
   - [x] Platform tests at one commit on the machines a 1.0.0 needs (Oct 27–28: Trillium, pelee and
         rondeau at 3d16f3e, Nibi at 1027177, docs only since; Nibi stands for Fir and Rorqual, Rorqual
         being in maintenance; CONTRIBUTING.md, "Making a release")
-  - [ ] BalancedFlows has used the contract on pelee and one Alliance cluster
+  - [x] BalancedFlows has used the contract on pelee and one Alliance cluster (Oct 28, quick tier at
+        1027177: pelee 15/15 bitwise; Nibi 11/15, the other four 1–2 rounding units from the A100
+        references in the norms, H100 summation order, its own tests' tolerance to change, not this setup)
 
 ## Phase 4: a workflow for updating libraries
 
