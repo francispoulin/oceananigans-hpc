@@ -75,10 +75,9 @@ Versions: see [CONTRIBUTING.md](CONTRIBUTING.md#versions-and-releases).
 - [x] Trillium job folder `$SCRATCH/oceananigans-hpc` (was `oceananigans-drac`) in `env/drac.sh`
 - [x] Folders renamed on Fir, Rorqual, Trillium and pelee/rondeau: clones `Oceananigans-DRAC` → `oceananigans-hpc`
       (README), and on Trillium `$SCRATCH/oceananigans-drac` → `oceananigans-hpc`
-- [ ] Nibi: switch to the new clone once the scaling jobs queued from the old one have ended (they run from
-      it): `ocean_setup` alias to `oceananigans-hpc`, our own Julia (`setup/install_julia.sh`), one platform
-      test, then remove `Oceananigans-DRAC`. Not needed for v1.0.0 (Rorqual stands for Nibi, Fir and
-      Rorqual; CONTRIBUTING.md, "Making a release")
+- [x] Nibi on the new clone (Oct 28, after its queued scaling jobs ended): `ocean_setup` alias to
+      `oceananigans-hpc`, our own Julia, platform tests (21 passed); old clone renamed
+      `Oceananigans-DRAC.old-20261028`, to delete once nothing is missed
 - [x] Nonhydrostatic benchmark: Oceananigans' own nonhydrostatic box (`benchmarks/nonhydrostatic_box.jl`,
       results in `results/nonhydrostatic_rondeau.md`), as for the hydrostatic model (`earth_ocean`). No
       BalancedFlows configuration (decided Oct 20: benchmarks use Oceananigans' cases; a harness for its own
@@ -86,14 +85,15 @@ Versions: see [CONTRIBUTING.md](CONTRIBUTING.md#versions-and-releases).
 - [ ] v1.0.0: a stable baseline before any library changes (Phase 4), in this order (agreed Oct 20):
   - [x] Test a branch without switching the clone (`tools/test_branch.sh`, a worktree), and publish
         test summaries from the machines (`tools/publish_summary.sh`)
-  - [ ] Our own Julia 1.10.10 on the Alliance clusters too (`setup/install_julia.sh`, `env/drac.sh`
+  - [x] Our own Julia 1.10.10 on the Alliance clusters too (`setup/install_julia.sh`, `env/drac.sh`
         without the `julia` module), the same version, so 1.0.0 starts on the setup we keep
     - [x] `env/julia.sh`, one place for every machine: our install next to the depot, else the module
     - [x] Installed and tested on Rorqual and Trillium (Oct 21, 6bf3999, 21 of 21 each; pelee by Buildkite)
     - [x] Installed on Fir, with its new clone
-    - [ ] Nibi: after v1.0.0 (item above)
-  - [ ] Platform tests at one commit on the machines a 1.0.0 needs (Oct 27: Trillium, Rorqual,
-        pelee and rondeau; CONTRIBUTING.md, "Making a release")
+    - [x] Installed on Nibi, with its new clone (Oct 28)
+  - [x] Platform tests at one commit on the machines a 1.0.0 needs (Oct 27–28: Trillium, pelee and
+        rondeau at 3d16f3e, Nibi at 1027177, docs only since; Nibi stands for Fir and Rorqual, Rorqual
+        being in maintenance; CONTRIBUTING.md, "Making a release")
   - [ ] BalancedFlows has used the contract on pelee and one Alliance cluster
 
 ## Phase 4: a workflow for updating libraries
