@@ -143,13 +143,15 @@ environment). Oceananigans, a package, tests ranges of versions; this repository
 - [x] Pressure solve (1024³, Float32), MPI vs NCCL, 1–8 GPUs: Trillium and Rorqual; Nibi 1–4 GPUs
 - [ ] Nibi pressure solve on 8 GPUs (one node)
 - [ ] Hydrostatic strong scaling with both settings: Nibi 1–32 GPUs (MPI; NCCL at 8–32),
-      Trillium and Rorqual up to 16 GPUs
-- [ ] Hydrostatic weak scaling on Nibi with both settings (4, 16, 64 GPUs; 64 also with a 2-D split)
+      Trillium and Rorqual up to 16 GPUs (all but Nibi NCCL on 16; NCCL on 32: 64% against MPI's 59%, Oct 27)
+- [x] Hydrostatic weak scaling on Nibi with both settings (4, 16, 64 GPUs; 64 also with a 2-D split):
+      98%, 97%, and on 64 GPUs (8 nodes) 87% split in x, **98% split 8 × 8** (Oct 27)
 - [ ] Results name their code: repository commit and Oceananigans commit in every table
 - [x] Results pages `results/hydrostatic_scaling.md` (with its figure, `tools/plot_scaling.py`) and
       `results/pressure_solver_1024.md`; `docs/drac.md` section 8 rewritten from them (Oct 20)
-- [ ] Fill the queued rows as runs finish (Nibi NCCL, Nibi 8-GPU pressure solve, weak 16 and 64)
-- [ ] Update to the Discussion posts
+- [ ] Fill the queued rows as runs finish (Nibi NCCL on 16 GPUs, Nibi 8-GPU pressure solve; weak 16 and 64
+      and NCCL on 32 done Oct 27)
+- [ ] Update to the Discussion posts (the 8 × 8 weak-scaling result is worth one: 98% on 8 nodes)
 
 ## Later
 
