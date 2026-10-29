@@ -144,18 +144,27 @@ environment). Oceananigans, a package, tests ranges of versions; this repository
 
 - [x] Pressure solve (1024³, Float32), MPI vs NCCL, 1–8 GPUs: Trillium and Rorqual; Nibi 1–4 GPUs
 - [ ] Nibi pressure solve on 8 GPUs (one node)
-- [ ] Hydrostatic strong scaling with both settings: Nibi 1–32 GPUs (MPI; NCCL at 8–32),
-      Trillium and Rorqual up to 16 GPUs (all but Nibi NCCL on 16; NCCL on 32: 64% against MPI's 59%, Oct 27)
+- [x] Hydrostatic strong scaling with both settings: Nibi 1–32 GPUs (MPI; NCCL at 8–32),
+      Trillium and Rorqual up to 16 GPUs (NCCL on 32: 64% against MPI's 59%, Oct 27); Rorqual 1/8° on
+      4–16 GPUs: 99% and 94%
 - [x] Hydrostatic weak scaling on Nibi with both settings (4, 16, 64 GPUs; 64 also with a 2-D split):
       98%, 97%, and on 64 GPUs (8 nodes) 87% split in x, **98% split 8 × 8** (Oct 27)
 - [ ] Results name their code: repository commit and Oceananigans commit in every table
 - [x] Results pages `results/hydrostatic_scaling.md` (with its figure, `tools/plot_scaling.py`) and
       `results/pressure_solver_1024.md`; `docs/drac.md` section 8 rewritten from them (Oct 20)
-- [ ] Fill the queued rows as runs finish (Nibi NCCL on 16 GPUs, Nibi 8-GPU pressure solve; weak 16 and 64
-      and NCCL on 32 done Oct 27)
+- [ ] Fill the queued rows as runs finish (Nibi 8-GPU pressure solve, Fir 8-GPU NCCL pressure solve; Nibi
+      NCCL on 16, weak 16 and 64 and NCCL on 32 done)
 - [ ] Update to the Discussion posts (the 8 × 8 weak-scaling result is worth one: 98% on 8 nodes)
 
 ## Later
+
+- [ ] pelee/rondeau: MPI moves GPU buffers at half NCCL's speed within the node (1024³ transposes 71 vs
+      36 ms, Oct 22; OpenMPI 4.1.7 with `smcuda`, no UCX). Try `smcuda` settings (CUDA IPC), or ask for
+      an OpenMPI built with UCX; meanwhile NCCL for nonhydrostatic runs there
+- [ ] pelee/rondeau, in the Oceananigans 0.116.1 round: the `cuda/12.3.2` module puts its libraries on
+      `LD_LIBRARY_PATH`, and the newer CUDA.jl loads `libcusparse`/`libnvJitLink` 12.3 from there
+      instead of its own (warning seen with Oceananigans PR #6314's branch, Oct 22). Test removing the
+      module's `lib64` from `LD_LIBRARY_PATH` after loading OpenMPI in `env/fluidsgpu.sh`
 
 - [ ] **Re-evaluate the tests, here and in BalancedFlows** (Francis, Oct 21): what each test checks,
       how long it runs, and where (pelee by Buildkite, Trillium's debug queue: 1 h, 2 nodes, one job at
