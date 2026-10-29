@@ -49,6 +49,21 @@ Before the two settings, the same solve on Nibi took 445 ms on 2 GPUs and 700 ms
 From `jobs/submit_poisson_scaling.sh`, Oct 17; the 1- and 2-GPU runs and the NCCL runs on 8 GPUs are
 still queued.
 
+## pelee, 4 × A100 (one node, no Slurm), October 22
+
+The same 1024³ Float32 solve with `tools/run_local.sh` on 4 GPUs: ms per solve (transposes).
+
+| Layout | MPI | NCCL |
+| --- | --- | --- |
+| One GPU visible per rank (`run_local.sh` default) | 158.9 (71.1) | – |
+| All GPUs visible (`--all-visible`) | 159.4 (71.0) | 124.1 (36.3) |
+
+- The layout makes no difference on pelee (Oceananigans PR #6314 warns about the first one; here it is
+  a false alarm).
+- MPI's transposes take twice as long as NCCL's. pelee's OpenMPI 4.1.7 is built with CUDA but without
+  UCX (`smcuda` for GPU buffers), unlike the clusters, where MPI and NCCL match within a node. For
+  nonhydrostatic runs on pelee/rondeau NCCL makes the pressure solve about 20% faster.
+
 ## What the numbers show
 
 1. **Within a node, communication is no longer the problem.** With both settings MPI matches NCCL,

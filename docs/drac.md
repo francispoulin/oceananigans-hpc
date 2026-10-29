@@ -386,7 +386,8 @@ Strong-scaling efficiency against each cluster's 1-GPU run (about 1.05 s per ste
 - Within a node the model scales almost perfectly. Across nodes it keeps about 80% at 16 GPUs, where
   each GPU has only 13 million cells: it exchanges only thin halos. At 32 GPUs (6.5 million cells per
   GPU) the GPUs run out of work, and efficiency falls to 59%.
-- Larger grids scale further. Before the settings (Oct 2–5, [results/nibi_scaling.md](../results/nibi_scaling.md)),
+- Larger grids scale further. With the settings, 1/8° on Rorqual keeps 99% from 4 to 8 GPUs and 94%
+  on 16 (4 nodes; MPI and NCCL alike). Before the settings (Oct 2–5, [results/nibi_scaling.md](../results/nibi_scaling.md)),
   1/8° kept 80% on 32 GPUs and 1/16° 93%; with the work per GPU held fixed (weak scaling), 16 GPUs on
   2 nodes cost under 4% and 64 GPUs on 8 nodes 15%. Weak scaling with the settings: 98% on 4 GPUs,
   97% on 16 (2 nodes, 1/16°), and on 64 (8 nodes, 1/32°) 87% with the grid split in x but **98% split
