@@ -45,10 +45,28 @@ was tested and with which versions. One log per step in `logs/`.
 | `nh_ft` | 1, 4 (2) | nonhydrostatic, stretched z, Fourier-tridiagonal solver: 10 steps; 4 (2) GPUs match 1 GPU |
 | `viz` | CPU | viz environment: NetCDF read, PNG and MP4 with CairoMakie |
 
-"Match": relative difference below 1e-8. (2) = only with `--gpus "1 2 ..."`.
+"Match": relative difference below 1e-8. (2) = only with `--gpus "1 2 ..."`. The hydrostatic grids
+have 128 cells in x (32 per rank on 4 GPUs), more than the split-explicit free surface's 16-cell halo.
 
 First full run, rondeau, Oct 13: all 31 passed; hydrostatic 2 and 4 GPUs bitwise equal to 1 GPU,
 checkpoint/restart bitwise, nonhydrostatic ~5e-14 (summation order in the distributed FFT).
+
+Since Oceananigans 0.116.1 (Oct 26) `hydro_box` agrees to round-off instead of bitwise (4.4e-13 on
+4 GPUs; `hydro_channel` stays bitwise): the split-explicit free surface and the halo exchange were
+rewritten after 0.113.5. The difference starts at a boundary between ranks and, over 3000 steps,
+grows no faster than a one-rounding-unit change of the initial state does on 1 GPU (pelee, Oct 26,
+`benchmarks/hydro_box_drift.jl` on the library-upgrade branch):
+
+| Steps | 4 vs 1 GPU | 1-ulp control |
+| --- | --- | --- |
+| 30 | 4.4e-13 | 1.7e-12 |
+| 100 | 2.9e-12 | 4.5e-12 |
+| 300 | 1.5e-11 | 1.7e-11 |
+| 1000 | 2.2e-11 | 2.3e-11 |
+| 3000 | 3.1e-11 | 2.8e-11 |
+
+So it is round-off carried by the flow (on the old 64-cell grid: 5.2e-14 at 30 steps, the same
+behaviour on 2 and 4 GPUs). Checkpoint/restart stays bitwise.
 
 ## Scope
 

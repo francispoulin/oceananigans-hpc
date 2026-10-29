@@ -137,8 +137,10 @@ environment). Oceananigans, a package, tests ranges of versions; this repository
       `benchmarking/` in 0.113.5 has only `earth_ocean`; `benchmarks/nonhydrostatic_box.jl` ports the newer
       suite's nonhydrostatic case. On an upgrade, re-pin the suite and check whether its nonhydrostatic
       case can replace the port (same configuration, so results stay comparable)
-- [ ] First uses, after v1.0.0: Oceananigans 0.114 (released Oct 2026; Julia 1.10 still supported), then
-      Julia 1.13 (Oceananigans tests with it; our own install, as on pelee/rondeau)
+- [ ] First uses, after v1.0.0:
+  - [x] Oceananigans 0.116.1 on Julia 1.10.10 (v1.1.0, Oct 28; tested on pelee and Trillium)
+  - [ ] Julia 1.13 (Oceananigans tests with it; our own install), after the tridiagonal-solver fix is
+        merged in Oceananigans
 
 ## Phase 5: scaling numbers
 
@@ -173,9 +175,14 @@ environment). Oceananigans, a package, tests ranges of versions; this repository
       (about 2 to 3 times the run time); lower the job scripts' defaults (benchmarks ask 45–80 min and
       run 8–16, Oct 21); let `jobs/submit_gpu.sh` use Trillium's debug queue for jobs that fit
 
-- [ ] **Test jobs ask for 20 minutes, too tight** (Oct 27): on Fir a platform test at 3d16f3e passed 20 of
-      21 steps and was stopped by the limit before `viz`, so no summary was written. Raise
-      `test_job_request` in `jobs/gpu_request.sh` to 30 minutes (about 3 times a normal run), v1.0.1
+- [ ] **Hydrostatic multi-GPU no longer bitwise** (Oceananigans 0.116.1, Oct 26): 4 vs 1 GPU differs by
+      4.4e-13 after 30 steps (hydro_box, 128 cells in x) and grows like a one-rounding-unit change of the initial state, so it is
+      round-off (tests/README.md). Revisit if it ever grows faster than that, or to find the release
+      that changed it (0.114, 0.115 or 0.116.0) if the Oceananigans developers want to know.
+- [x] **Test jobs ask for 20 minutes, too tight** (Oct 27): on Fir a platform test at 3d16f3e passed 20 of
+      21 steps and was stopped by the limit before `viz`, so no summary was written (twice; the third try
+      passed). `test_job_request` in `jobs/gpu_request.sh` now asks for 30 minutes (about 3 times a normal
+      run), v1.1.0
 - [ ] **Fir's 1-GPU test step took 672 s** (Oct 27; 205 s on Trillium, tests about 180 s of it), with no
       package precompiling in its log; its 4-GPU step was normal (285 s). Cause unknown (shared file
       system?): look at the step's own timings if it happens again
