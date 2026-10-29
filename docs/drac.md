@@ -432,29 +432,30 @@ Reduce `DT` at higher resolution to stay stable (we used 60, 30, 15 and 7.5 s fo
      
 ## 10. Tested with
 
-**Version v1.0.0** (October 2026), the first stable baseline: one environment on every machine (our own
-Julia 1.10.10, Oceananigans 0.113.5). The platform tests (`tools/run_tests.sh`, 21 tests on 1 and 4 GPUs)
-pass on Trillium, on Nibi (standing for Nibi, Fir and Rorqual, which share the Alliance software stack),
-and on pelee and rondeau ([CONTRIBUTING.md](../CONTRIBUTING.md#versions-and-releases)): at 3d16f3e, and
-on Nibi at 1027177, which differs from it only in docs and results. Summaries, with the exact package
+**Version v1.1.0** (October 2026): Oceananigans 0.116.1 (from 0.113.5) and OpenMPI_jll 4.1.11, still on our own
+Julia 1.10.10. A library upgrade is retested on pelee and Trillium
+([CONTRIBUTING.md](../CONTRIBUTING.md#versions-and-releases)); the other rows are v1.0.0's, the first stable
+baseline (Oceananigans 0.113.5), when the platform tests (`tools/run_tests.sh`, 21 tests on 1 and 4 GPUs)
+passed on every kind of machine: at 3d16f3e, and on Nibi (standing for Nibi, Fir and Rorqual, which share
+the Alliance software stack) at 1027177, which differs from it only in docs and results. Summaries, with the exact package
 versions, are in [results/tests/](../results/tests/).
 
-| Machine | Date | Commit | Result | GPU | Julia |
-| --- | --- | --- | --- | --- | --- |
-| Trillium | 2026-10-27 | 3d16f3e | 21 passed | H100 80GB | 1.10.10, our install |
-| Nibi | 2026-10-28 | 1027177 | 21 passed | H100 80GB | 1.10.10, our install |
-| pelee | 2026-10-27 | 3d16f3e | 21 passed (Buildkite, build 75) | A100 40GB | 1.10.10, our install |
-| rondeau | 2026-10-27 | 3d16f3e | 21 passed | A100 40GB | 1.10.10, our install |
-| Rorqual | 2026-10-21 | 7b1915f | 21 passed (v0.4.0) | H100 80GB | 1.10.10, our install |
-| Fir | 2026-10-27 | 3d16f3e | 21 passed | H100 80GB | 1.10.10, our install |
+| Machine | Date | Commit | Oceananigans | Result | GPU | Julia |
+| --- | --- | --- | --- | --- | --- | --- |
+| Trillium | 2026-10-28 | 91a1953 | 0.116.1 | 21 passed | H100 80GB | 1.10.10, our install |
+| pelee | 2026-10-26 | b2e4088 | 0.116.1 | 21 passed (Buildkite) | A100 40GB | 1.10.10, our install |
+| Nibi | 2026-10-28 | 1027177 | 0.113.5 | 21 passed (v1.0.0) | H100 80GB | 1.10.10, our install |
+| rondeau | 2026-10-27 | 3d16f3e | 0.113.5 | 21 passed (v1.0.0) | A100 40GB | 1.10.10, our install |
+| Fir | 2026-10-27 | 3d16f3e | 0.113.5 | 21 passed (v1.0.0) | H100 80GB | 1.10.10, our install |
+| Rorqual | 2026-10-21 | 7b1915f | 0.113.5 | 21 passed (v0.4.0) | H100 80GB | 1.10.10, our install |
 
-Packages everywhere: Oceananigans 0.113.5, CUDA.jl 6.4.1, MPI.jl 0.20.27, OpenMPI_jll 4.1.10,
-NCDatasets 0.14.15, JLD2 0.6.7. Julia 1.10.10 everywhere, our own install (`setup/install_julia.sh`,
+Packages with v1.1.0: Oceananigans 0.116.1, CUDA.jl 6.4.1, MPI.jl 0.20.27, OpenMPI_jll 4.1.11,
+NCDatasets 0.14.15, JLD2 0.6.7 (v1.0.0: Oceananigans 0.113.5, OpenMPI_jll 4.1.10). Julia 1.10.10 everywhere, our own install (`setup/install_julia.sh`,
 found by `env/julia.sh`); Nibi moved to it on Oct 28 with its new clone. Rorqual was not retested
 for v1.0.0 (Nibi stands for it; it was in maintenance on Oct 27–28). Fir's test at 3d16f3e passed on the
 third try: twice before it had passed 20 of 21 steps and stopped at the job's 20-minute limit before the
-last (`viz`); test jobs now ask for 30 minutes. Every result is the same as with v0.1.0 to v0.4.0 on each
-machine.
+last (`viz`); test jobs now ask for 30 minutes. With v1.0.0 every result was the same as with v0.1.0 to
+v0.4.0 on each machine; with 0.116.1 the hydrostatic `hydro_box` changed from bitwise to round-off (below).
 
 What the tests show on every machine: 4 GPUs against 1 GPU agree to round-off, 1e-14 to 1e-12 (the
 hydrostatic model was bitwise up to Oceananigans 0.113.5: [tests/README.md](../tests/README.md#what-is-tested));

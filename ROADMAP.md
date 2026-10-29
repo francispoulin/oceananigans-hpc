@@ -137,8 +137,10 @@ environment). Oceananigans, a package, tests ranges of versions; this repository
       `benchmarking/` in 0.113.5 has only `earth_ocean`; `benchmarks/nonhydrostatic_box.jl` ports the newer
       suite's nonhydrostatic case. On an upgrade, re-pin the suite and check whether its nonhydrostatic
       case can replace the port (same configuration, so results stay comparable)
-- [ ] First uses, after v1.0.0: Oceananigans 0.114 (released Oct 2026; Julia 1.10 still supported), then
-      Julia 1.13 (Oceananigans tests with it; our own install, as on pelee/rondeau)
+- [ ] First uses, after v1.0.0:
+  - [x] Oceananigans 0.116.1 on Julia 1.10.10 (v1.1.0, Oct 28; tested on pelee and Trillium)
+  - [ ] Julia 1.13 (Oceananigans tests with it; our own install), after the tridiagonal-solver fix is
+        merged in Oceananigans
 
 ## Phase 5: scaling numbers
 
