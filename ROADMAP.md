@@ -6,7 +6,7 @@ configuration, plotting environment, launcher, checks, platform tests and benchm
 repositories depend on it by convention, not as a Julia package, and dependencies point one way:
 this repository never depends on a simulation repository.
 
-Boxes are ticked in the pull request that does the work. Last updated: October 19, 2026 (v0.2.0).
+Boxes are ticked in the pull request that does the work. Last updated: October 27, 2026.
 Versions: see [CONTRIBUTING.md](CONTRIBUTING.md#versions-and-releases).
 
 ## Phase 1: finish and stabilize
@@ -73,22 +73,30 @@ Versions: see [CONTRIBUTING.md](CONTRIBUTING.md#versions-and-releases).
       Alliance, `$OCEAN_RESULTS_ROOT/BalancedFlows/` (BalancedFlows v0.7.0; old name dropped in its #27)
 - [x] Then drop `OCEANANIGANS_DRAC_ROOT` (v0.4.0); `ocean_setup` points out `~/.bashrc` lines that still use it
 - [x] Trillium job folder `$SCRATCH/oceananigans-hpc` (was `oceananigans-drac`) in `env/drac.sh`
-- [ ] Folders renamed on every machine: clones `Oceananigans-DRAC` → `oceananigans-hpc` (README), and on
-      Trillium `$SCRATCH/oceananigans-drac` → `oceananigans-hpc`; Nibi and Fir once their queued jobs end
+- [x] Folders renamed on Fir, Rorqual, Trillium and pelee/rondeau: clones `Oceananigans-DRAC` → `oceananigans-hpc`
+      (README), and on Trillium `$SCRATCH/oceananigans-drac` → `oceananigans-hpc`
+- [x] Nibi on the new clone (Oct 28, after its queued scaling jobs ended): `ocean_setup` alias to
+      `oceananigans-hpc`, our own Julia, platform tests (21 passed); old clone renamed
+      `Oceananigans-DRAC.old-20261028`, to delete once nothing is missed
 - [x] Nonhydrostatic benchmark: Oceananigans' own nonhydrostatic box (`benchmarks/nonhydrostatic_box.jl`,
       results in `results/nonhydrostatic_rondeau.md`), as for the hydrostatic model (`earth_ocean`). No
       BalancedFlows configuration (decided Oct 20: benchmarks use Oceananigans' cases; a harness for its own
       configurations is on BalancedFlows' wish list)
-- [ ] v1.0.0: a stable baseline before any library changes (Phase 4), in this order (agreed Oct 20):
+- [x] v1.0.0: a stable baseline before any library changes (Phase 4), in this order (agreed Oct 20):
   - [x] Test a branch without switching the clone (`tools/test_branch.sh`, a worktree), and publish
         test summaries from the machines (`tools/publish_summary.sh`)
-  - [ ] Our own Julia 1.10.10 on the Alliance clusters too (`setup/install_julia.sh`, `env/drac.sh`
+  - [x] Our own Julia 1.10.10 on the Alliance clusters too (`setup/install_julia.sh`, `env/drac.sh`
         without the `julia` module), the same version, so 1.0.0 starts on the setup we keep
     - [x] `env/julia.sh`, one place for every machine: our install next to the depot, else the module
     - [x] Installed and tested on Rorqual and Trillium (Oct 21, 6bf3999, 21 of 21 each; pelee by Buildkite)
-    - [ ] Installed on Nibi and Fir (with their rename)
-  - [ ] Folders renamed on Nibi and Fir (item above)
-  - [ ] Platform tests on every machine at one commit; BalancedFlows has used the contract on each
+    - [x] Installed on Fir, with its new clone
+    - [x] Installed on Nibi, with its new clone (Oct 28)
+  - [x] Platform tests at one commit on the machines a 1.0.0 needs (Oct 27–28: Trillium, pelee and
+        rondeau at 3d16f3e, Nibi at 1027177, docs only since; Nibi stands for Fir and Rorqual, Rorqual
+        being in maintenance; CONTRIBUTING.md, "Making a release")
+  - [x] BalancedFlows has used the contract on pelee and one Alliance cluster (Oct 28, quick tier at
+        1027177: pelee 15/15 bitwise; Nibi 11/15, the other four 1–2 rounding units from the A100
+        references in the norms, H100 summation order, its own tests' tolerance to change, not this setup)
 
 ## Phase 4: a workflow for updating libraries
 
@@ -107,9 +115,14 @@ environment). Oceananigans, a package, tests ranges of versions; this repository
       does ([docs/ci.md](docs/ci.md); decided Oct 20: a GitHub Actions runner is advised against for
       public repositories, a poller gives no check on the pull request)
   - [x] Pipeline (`.buildkite/pipeline.yml`) and `tools/ci_platform_tests.sh`
-  - [ ] Trial: agent on pelee under a personal account; first green build
-  - [ ] Agreed with the servers' administrators: a dedicated account, the agent as a service
-  - [ ] rondeau; then BalancedFlows on the same agents
+  - [x] Trial: agent on pelee under a personal account; first green build (Oct 21–26; builds `main` and
+        pull requests only since #39)
+  - [ ] Agreed with the servers' administrators: a dedicated account (being created, Oct 27), the agent
+        as a service
+  - [ ] Move the agent to that account: its own Julia 1.10.10 and depot (it can't use a personal one), the
+        agent as a service, one green build; `docs/ci.md` updated
+  - [ ] Then BalancedFlows' pipeline on the same agent (after this repository's first green build there,
+        so a failure has one cause); then rondeau
   - [ ] Later, if the cluster's staff agree: one Alliance cluster (Slurm jobs started from Buildkite,
         as CliMA's slurm-buildkite does)
 
@@ -132,13 +145,15 @@ environment). Oceananigans, a package, tests ranges of versions; this repository
 - [x] Pressure solve (1024³, Float32), MPI vs NCCL, 1–8 GPUs: Trillium and Rorqual; Nibi 1–4 GPUs
 - [ ] Nibi pressure solve on 8 GPUs (one node)
 - [ ] Hydrostatic strong scaling with both settings: Nibi 1–32 GPUs (MPI; NCCL at 8–32),
-      Trillium and Rorqual up to 16 GPUs
-- [ ] Hydrostatic weak scaling on Nibi with both settings (4, 16, 64 GPUs; 64 also with a 2-D split)
+      Trillium and Rorqual up to 16 GPUs (all but Nibi NCCL on 16; NCCL on 32: 64% against MPI's 59%, Oct 27)
+- [x] Hydrostatic weak scaling on Nibi with both settings (4, 16, 64 GPUs; 64 also with a 2-D split):
+      98%, 97%, and on 64 GPUs (8 nodes) 87% split in x, **98% split 8 × 8** (Oct 27)
 - [ ] Results name their code: repository commit and Oceananigans commit in every table
 - [x] Results pages `results/hydrostatic_scaling.md` (with its figure, `tools/plot_scaling.py`) and
       `results/pressure_solver_1024.md`; `docs/drac.md` section 8 rewritten from them (Oct 20)
-- [ ] Fill the queued rows as runs finish (Nibi NCCL, Nibi 8-GPU pressure solve, weak 16 and 64)
-- [ ] Update to the Discussion posts
+- [ ] Fill the queued rows as runs finish (Nibi NCCL on 16 GPUs, Nibi 8-GPU pressure solve; weak 16 and 64
+      and NCCL on 32 done Oct 27)
+- [ ] Update to the Discussion posts (the 8 × 8 weak-scaling result is worth one: 98% on 8 nodes)
 
 ## Later
 
@@ -149,10 +164,19 @@ environment). Oceananigans, a package, tests ranges of versions; this repository
       (about 2 to 3 times the run time); lower the job scripts' defaults (benchmarks ask 45–80 min and
       run 8–16, Oct 21); let `jobs/submit_gpu.sh` use Trillium's debug queue for jobs that fit
 
+<<<<<<< ours
 - [ ] **Hydrostatic multi-GPU no longer bitwise** (Oceananigans 0.116.1, Oct 26): 4 vs 1 GPU differs by
       4.4e-13 after 30 steps (hydro_box, 128 cells in x) and grows like a one-rounding-unit change of the initial state, so it is
       round-off (tests/README.md). Revisit if it ever grows faster than that, or to find the release
       that changed it (0.114, 0.115 or 0.116.0) if the Oceananigans developers want to know.
+=======
+- [ ] **Test jobs ask for 20 minutes, too tight** (Oct 27): on Fir a platform test at 3d16f3e passed 20 of
+      21 steps and was stopped by the limit before `viz`, so no summary was written. Raise
+      `test_job_request` in `jobs/gpu_request.sh` to 30 minutes (about 3 times a normal run), v1.0.1
+- [ ] **Fir's 1-GPU test step took 672 s** (Oct 27; 205 s on Trillium, tests about 180 s of it), with no
+      package precompiling in its log; its 4-GPU step was normal (285 s). Cause unknown (shared file
+      system?): look at the step's own timings if it happens again
+>>>>>>> theirs
 - [ ] Point the Waterloo Fluids Computing Handbook's Oceananigans pages to this workflow
 - [ ] Shared depot for the group on pelee/rondeau, once several people use it
 - [ ] GPU tests on every pull request (a self-hosted runner on pelee)

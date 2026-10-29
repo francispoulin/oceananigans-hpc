@@ -23,7 +23,7 @@
 #   --dry-run   show what would run, start nothing
 #
 # Output goes to logs/<name>_<date-time>.out in the current folder (_2, _3, ... added if a run with
-# the same name started in the same second). The command prints the
+# the same name started in the same second); the full path of the log is printed. The command prints the
 # process ID; stop the run with `kill <pid>` (stops all its ranks).
 #
 # With N > 1, each MPI rank sees only its own GPU (rank i -> i-th chosen GPU), and
@@ -115,8 +115,9 @@ name="${name:-$(basename "$script" .jl)}"
 mkdir -p logs
 # logs/<name>_<date-time>.out; a second run with the same name in the same second gets _2, _3, ...
 # The file is created here with noclobber (set -C: create only if absent, atomically), so two runs
-# started together can never share a log.
-base="logs/${name}_$(date +%Y%m%d-%H%M%S)"
+# started together can never share a log. The full path is printed, so the log can be found from
+# any folder (Oct 26: a run started from inside a worktree left its log there, not in the clone).
+base="$PWD/logs/${name}_$(date +%Y%m%d-%H%M%S)"
 log="$base.out"
 if [[ $dry -eq 0 ]]; then
     n=1
@@ -149,6 +150,7 @@ echo "started:  pid $pid"
 if [[ $wait_end -eq 1 ]]; then
     wait "$pid" || true
     tail -n 1 "$log"
+    echo "  log:   $log"     # indented: tools parse the unindented "log:" line above
     grep -q "exit status 0$" "$log"; exit $?
 fi
 echo

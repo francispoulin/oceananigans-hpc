@@ -45,6 +45,21 @@ at releases and for changes aimed at them, not for every pull request.
 | What only runs off Trillium (`--mem`, `h100` GPUs, Nibi's 8 GPUs per node, a cluster's own fix) | The cluster concerned | `bash tools/test_branch.sh <branch>` there |
 | Package or module upgrades | rondeau first, then one cluster | `ROADMAP.md`, Phase 4 |
 
+## How results are compared
+
+- **The same run repeated** (checkpoint and restart, the same command twice on one GPU): **bitwise**.
+- **Across decompositions (1 vs N GPUs), machines or library versions:** relative difference **below
+  1e-8, on short runs** (tens of steps). There, healthy round-off is 1e-14 to 1e-12, and the real
+  problems found so far were 1e-7 or more (Oct 22: a WENO smoothness indicator that amplified
+  round-off, 1 vs 4 GPUs 3e-7 to 1.5e-5 after 16 steps). Never assume bitwise here: since Oceananigans
+  0.116.1, hydrostatic 4 vs 1 GPU is round-off, no longer bitwise.
+- **Long runs** of an unstable flow amplify round-off past any tolerance, so they are compared on
+  physical quantities (norms, energy, growth rates), not on fields.
+- **Speed is not tested by any of these:** a slowdown with identical results (Julia 1.13's tridiagonal
+  solve, Oct 26) shows only in timings, so a library upgrade also compares speed (`ROADMAP.md`, Phase 4).
+
+Simulation repositories that build on this one can use the same rule for their own tests.
+
 ## Step by step
 
 ```bash
@@ -142,17 +157,18 @@ and removed in v0.4.0).
    their summaries are committed. The queues make testing every cluster slow, so how many depends
    on what changed since the last release:
    - **Only the numbers can change** (package versions, Julia code the tests run): **one** Alliance
-     cluster, any of Nibi, Fir, Rorqual and Trillium.
+     cluster, usually Rorqual (its jobs start soonest) or Trillium.
    - **The setup can change** (`env/`, `setup/`, `jobs/`, `tools/run_tests.sh`, Slurm options):
-     **two** clusters, one of them Trillium, which differs most (no writing to `/project` in jobs,
-     a clean job environment, 1 GPU or whole nodes), the other usually Rorqual. A change aimed at one
-     cluster (for example Nibi's 8 GPUs per node or its Slurm path) is tested on that cluster. This is
-     where Rorqual (or Nibi, Fir) is tested "every so often": pull requests merge on pelee and
-     Trillium, and a release catches what only shows elsewhere before anyone depends on it.
+     **two** clusters: **Trillium**, which differs most (no writing to `/project` in jobs, a clean job
+     environment, 1 GPU or whole nodes), and **one of Nibi, Fir and Rorqual**, usually Rorqual. These
+     three share the Alliance software stack and the platform tests use one node with at most 4 GPUs,
+     so one of them stands for all three (agreed Oct 27). A change aimed at one cluster (for example
+     Nibi's 8 GPUs per node or its Slurm path) is tested on that cluster.
    - **pelee or rondeau** as well, when `env/fluidsgpu.sh`, `tools/run_local.sh` or anything else
      they use changed (no queue there).
-   - **Every machine** for 1.0.0 and for upgrades of Julia, Oceananigans or the GPU stack
-     (ROADMAP.md, Phase 4).
+   - **1.0.0:** every kind of machine: Trillium, one of Nibi, Fir and Rorqual, pelee and rondeau.
+   - **Upgrades of Julia, Oceananigans or the GPU stack** (ROADMAP.md, Phase 4): pelee and Trillium
+     (decided Oct 24, to keep upgrades cheap); the other machines are rerun as their setup changes.
 
    Machines not retested keep their last summary; the "Tested with" table says which version it was.
    The automatic checks (`tests/ci/`) cover the Slurm options of every cluster on every pull request.

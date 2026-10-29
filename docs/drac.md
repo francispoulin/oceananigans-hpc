@@ -381,15 +381,17 @@ Strong-scaling efficiency against each cluster's 1-GPU run (about 1.05 s per ste
 | 4 | (1) 99% | 99% / 100% | 100% / 100% |
 | 8 | (1) 92% | 91% / 93% (2 nodes) | 88% / 93% (2 nodes) |
 | 16 | (2) 81% | 80% / 83% (4 nodes) | 76% / 82% (4 nodes) |
-| 32 | (4) 59% | | |
+| 32 | (4) 59%; NCCL 64% | | |
 
 - Within a node the model scales almost perfectly. Across nodes it keeps about 80% at 16 GPUs, where
   each GPU has only 13 million cells: it exchanges only thin halos. At 32 GPUs (6.5 million cells per
   GPU) the GPUs run out of work, and efficiency falls to 59%.
 - Larger grids scale further. Before the settings (Oct 2–5, [results/nibi_scaling.md](../results/nibi_scaling.md)),
   1/8° kept 80% on 32 GPUs and 1/16° 93%; with the work per GPU held fixed (weak scaling), 16 GPUs on
-  2 nodes cost under 4% and 64 GPUs on 8 nodes 15%. Weak scaling with the settings: 98% on 4 GPUs and
-  97% on 16 (2 nodes, 1/16°); 64 queued.
+  2 nodes cost under 4% and 64 GPUs on 8 nodes 15%. Weak scaling with the settings: 98% on 4 GPUs,
+  97% on 16 (2 nodes, 1/16°), and on 64 (8 nodes, 1/32°) 87% with the grid split in x but **98% split
+  in both directions** (8 × 8: each GPU's tile has 2.7 times less halo to exchange than a strip, and
+  needs 7 GiB less memory). **Across many nodes, split the grid in x and y.**
 - The settings matter across nodes: on Nibi they make 2 nodes 5% faster and 4 nodes 20% faster, with
   much steadier timings; within a node they cost 1.5–3.5% (the memory pool is off).
 - NCCL gains 1–7% over MPI across nodes and nothing within a node.
@@ -429,37 +431,39 @@ Reduce `DT` at higher resolution to stay stable (we used 60, 30, 15 and 7.5 s fo
      
 ## 10. Tested with
 
-**Version v0.4.0** (October 2026): the platform tests (`tools/run_tests.sh`, 21 tests on 1 and 4
-GPUs, or 1 and 2) pass on every machine, with the GPU settings of step 7. Summaries, with the exact package
+**Version v1.0.0** (October 2026), the first stable baseline: one environment on every machine (our own
+Julia 1.10.10, Oceananigans 0.113.5). The platform tests (`tools/run_tests.sh`, 21 tests on 1 and 4 GPUs)
+pass on Trillium, on Nibi (standing for Nibi, Fir and Rorqual, which share the Alliance software stack),
+and on pelee and rondeau ([CONTRIBUTING.md](../CONTRIBUTING.md#versions-and-releases)): at 3d16f3e, and
+on Nibi at 1027177, which differs from it only in docs and results. Summaries, with the exact package
 versions, are in [results/tests/](../results/tests/).
 
 | Machine | Date | Commit | Result | GPU | Julia |
 | --- | --- | --- | --- | --- | --- |
-| Nibi | 2026-10-19 | e386059 | 21 passed | H100 80GB | 1.10.10 |
-| Fir | 2026-10-19 | e386059 | 21 passed | H100 80GB | 1.10.10 |
-| Rorqual | 2026-10-21 | 7b1915f | 21 passed | H100 80GB | 1.10.10 |
-| Trillium | 2026-10-21 | 51e032e | 21 passed | H100 80GB | 1.10.10 |
-| pelee | 2026-10-20 | 51e032e | 21 passed | A100 40GB | 1.10.10 |
-| rondeau | 2026-10-19 | 86b6e02 | 21 passed (1 and 2 GPUs) | A100 40GB | 1.10.10 |
+| Trillium | 2026-10-27 | 3d16f3e | 21 passed | H100 80GB | 1.10.10, our install |
+| Nibi | 2026-10-28 | 1027177 | 21 passed | H100 80GB | 1.10.10, our install |
+| pelee | 2026-10-27 | 3d16f3e | 21 passed (Buildkite, build 75) | A100 40GB | 1.10.10, our install |
+| rondeau | 2026-10-27 | 3d16f3e | 21 passed | A100 40GB | 1.10.10, our install |
+| Rorqual | 2026-10-21 | 7b1915f | 21 passed (v0.4.0) | H100 80GB | 1.10.10, our install |
+| Fir | 2026-10-19 | e386059 | 21 passed (v0.2.0) | H100 80GB | 1.10.10, `julia` module |
 
 Packages everywhere: Oceananigans 0.113.5, CUDA.jl 6.4.1, MPI.jl 0.20.27, OpenMPI_jll 4.1.10,
-NCDatasets 0.14.15, JLD2 0.6.7. Julia 1.10.10 everywhere: the `julia/1.10.10` module on the Alliance
-(with StdEnv/2023, gcc/12.3, openmpi/4.1.5, cuda/12.6), and on pelee and rondeau the official release
-installed by `setup/install_julia.sh` (their modules stop at 1.10.8). Between 68d7c0b and e386059
-only test summaries and docs changed. v0.2.1 changes only `tools/run_local.sh` (pelee and rondeau),
-retested on pelee at 56c36df. v0.3.0 changes only how `tools/run_local.sh` reads its options (pelee and
-rondeau), retested on rondeau at 86b6e02 on 1 and 2 GPUs (two of its GPUs were in use). v0.4.0 changes the
-environment files (the old variable `OCEANANIGANS_DRAC_ROOT` removed; Trillium's job folder renamed
-`$SCRATCH/oceananigans-hpc`), retested on Trillium and pelee at b24a028, and again at 51e032e with
-`tools/test_branch.sh` (pelee also by Buildkite at 68cc309), and on Rorqual at 7b1915f (the same
-environment files as b24a028); the other rows are unchanged from v0.2.0. Its new
-tools (`tools/test_branch.sh`, `tools/publish_summary.sh`, Buildkite) don't change the environment. Every result is the same as with v0.1.0 on each machine, and
-the same on pelee and rondeau with Julia 1.10.8 and 1.10.10. Which machines are retested for a
-release: [CONTRIBUTING.md](../CONTRIBUTING.md#versions-and-releases).
+NCDatasets 0.14.15, JLD2 0.6.7. Julia 1.10.10 everywhere, our own install (`setup/install_julia.sh`,
+found by `env/julia.sh`); Nibi moved to it on Oct 28 with its new clone. Rorqual and Fir were not retested
+for v1.0.0 (Nibi stands for them; Rorqual was in maintenance on Oct 27–28). Fir runs our own install since
+Oct 2026; its test at 3d16f3e passed 20 of 21 steps and stopped at the job's 20-minute limit before the
+last (`viz`), twice (ROADMAP.md, "Later"). Every result is the same as with v0.1.0 to v0.4.0 on each
+machine.
 
+<<<<<<< ours
 What the tests show on every machine: 4 GPUs against 1 GPU agree to round-off, 1e-14 to 1e-12 (the
 hydrostatic model was bitwise up to Oceananigans 0.113.5: [tests/README.md](../tests/README.md#what-is-tested));
 checkpoint restarts are bitwise; every rank sees all of its node's GPUs and uses its own (`cuda_aware`, "4 visible per rank").
+=======
+What the tests show on every machine: 4 GPUs against 1 GPU agree bitwise for the hydrostatic model
+and to 5e-14 for the nonhydrostatic pressure solvers; checkpoint restarts are bitwise; every rank
+sees all of its node's GPUs and uses its own (`cuda_aware`, "4 visible per rank" on the Alliance).
+>>>>>>> theirs
 
 ## 11. Trillium
 
@@ -517,6 +521,22 @@ the modules differ).
   resubmit with `sbatch --exclude=<node> ...`, and report it to
   support@tech.alliancecan.ca. There is no `SBATCH_` environment variable for `--exclude`;
   put it on the command line or in an `#SBATCH` line.
+- **A multi-node job fails within minutes, before any simulation step, with `UCX ERROR
+  ibv_create_ah(...) Invalid argument` and then `MPI_ERR_OTHER` in `MPI_Comm_split_type`.** When a job
+  spans several nodes, the GPUs on different nodes exchange data through the nodes' network cards,
+  which copy memory directly from one node to another (RDMA) without going through the CPUs. For this,
+  each card keeps its own table of the addresses it can be reached at. Before two nodes can talk, each
+  one looks up the other's address in that table, in the form the cluster uses (an IPv4 address; RoCE
+  v2). If a node's table is missing that entry (on Nibi in October 2026 this happened to one node after
+  a reboot), no other node can connect to it. MPI connects every node to every other node in its first
+  steps, so the whole job stops at start-up. Only jobs that include that node fail; the same job on
+  other nodes works, which is how you can tell it is the node and not your setup.
+  **What to do:** find the job's nodes (`sacct -j <jobid> -o JobID,NodeList%30`); the error lines name
+  the nodes that couldn't connect, and the faulty one is usually the node they have in common.
+  Resubmit with `--exclude=<node>` on the `sbatch` line (or `scontrol update JobId=<n>
+  ExcNodeList=<node>` for a job still waiting), and report it to support@tech.alliancecan.ca with the
+  job ID and the log's path. Don't set `UCX_NET_DEVICES` to work around it: network card names differ
+  between nodes, so forcing one breaks jobs on other nodes.
 - **Errors loading packages after weeks without   using the cluster** (depot or clones on
   `$SCRATCH`). Files on `$SCRATCH` that haven't been accessed for 60 days are purged (you
   get an email first), and this can remove parts of the Julia depot. Delete the depot and

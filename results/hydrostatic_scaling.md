@@ -4,9 +4,9 @@ The current numbers, measured with both GPU-to-GPU settings of `docs/drac.md` st
 (`--gpus-per-node`, CUDA.jl memory pool off). The earlier Nibi runs (Oct 2–14, without them) are in
 [nibi_scaling.md](nibi_scaling.md).
 
-**Status (Oct 21): draft.** Trillium and Rorqual are complete; Nibi has 1–32 GPUs with MPI and 8 with
-NCCL (job 24350489, Oct 21); its other NCCL runs and weak scaling beyond 4 GPUs are queued (rows say
-*pending*; Nibi's GPU partitions were down on Oct 21 evening).
+**Status (Oct 27).** Trillium and Rorqual are complete. Nibi: strong scaling on 1–32 GPUs with MPI, and
+with NCCL on 8 and 32; weak scaling on 1–64 GPUs, on 64 also with a 2-D split. Still to run: Nibi NCCL
+on 16 GPUs (the row says *pending*).
 
 ## Setup
 
@@ -37,7 +37,7 @@ The figure is made from this table: `python3 tools/plot_scaling.py` (after editi
 | 4 | 1 | 0.2638 (99%) | 0.2622 (100%) | 1 | 0.264 (100%) | 0.263 (100%) | 1 | 0.2633 (99%) | |
 | 8 | 2 | 0.1429 (91%) | 0.1413 (93%) | 2 | 0.148 (88%) | 0.142 (93%) | 1 | 0.1419 (92%) | 0.1404 (93%) |
 | 16 | 4 | 0.0819 (80%) | 0.0791 (83%) | 4 | 0.0866 (76%) | 0.0797 (82%) | 2 | 0.0805 (81%) | pending |
-| 32 | | | | | | | 4 | 0.0550 (59%) | pending |
+| 32 | | | | | | | 4 | 0.0550 (59%) | 0.0511 (64%) |
 
 GPU memory per rank on Trillium: 46.6 GiB on 1 GPU, 13.5–14.4 on 4, 7.8–8.2 on 8, 4.9–5.4 on 16
 (NCCL uses 0.4–0.9 GiB more than MPI); the same on Rorqual and Nibi. Median windows are within 0.4% of
@@ -70,7 +70,9 @@ on 2 and 4 GPUs, 92% on Nibi's 8). Across nodes it keeps 88–93% on 2 four-GPU 
 16 GPUs on every cluster, although each GPU then has only 13 million cells; at 32 GPUs (Nibi, 6.5 million
 cells per GPU) it falls to 59%: the model exchanges only thin halos, so the network matters much less than
 for the nonhydrostatic pressure solve ([pressure_solver_1024.md](pressure_solver_1024.md)). NCCL
-gains 1–4% once the run crosses nodes and is the same as MPI within a node.
+gains 1–4% on 2 nodes and is the same as MPI within a node; on 4 Nibi nodes (32 GPUs, one run, Oct 27)
+it is 7% faster (64% against 59%) and steadier (slowest window 13% above the fastest, against 25%), with
+4.0 GiB per rank against 3.5.
 
 ## Weak scaling on Nibi (about 207 million cells per GPU)
 
@@ -82,11 +84,29 @@ time step halves with the grid spacing. Grid split in x, except where noted.
 | 1 | 1 | 1440 × 720 × 200 (1/4°) | 60 | 1.0459 | 100% | `hyd2_1gpu` |
 | 4 | 1 | 2880 × 1440 × 200 (1/8°) | 30 | 1.0683 | 98% | `wk_4gpu` |
 | 16 | 2 | 5760 × 2880 × 200 (1/16°) | 15 | 1.0812 | 97% | `wk_16gpu` |
-| 64 | 8 | 11520 × 5760 × 200 (1/32°) | 7.5 | pending | | `wk_64gpu` |
-| 64 | 8 | 11520 × 5760 × 200, 8 × 8 split | 7.5 | pending | | `wk_64gpu_8x8` |
+| 64 | 8 | 11520 × 5760 × 200 (1/32°) | 7.5 | 1.2078 | 87% | `wk_64gpu` |
+| 64 | 8 | 11520 × 5760 × 200, **8 × 8 split** | 7.5 | **1.0665** | **98%** | `wk_64gpu_8x8` |
 
-GPU memory per rank: 46.6 GiB on 1 GPU, 48.4 on 4. Before the two settings (Oct 5–14): 97.5% on 4 GPUs and 84.7% on 64 GPUs (1.1929 s per step;
-54.9 GiB per GPU, so about 290 million cells per H100 is the practical limit).
+GPU memory per rank: 46.6 GiB on 1 GPU, 48.4 on 4; on 64, 55.7 GiB split in x and 48.6 with the 8 × 8
+split. Windows on 64 GPUs: median 0.8% (x) and 0.2% (8 × 8) above the fastest, slowest 1.4% and 2.0%.
+Before the two settings (Oct 5–14): 97.5% on 4 GPUs and 84.7% on 64 GPUs split in x (1.1929 s per step,
+against a 1-GPU run of 1.011 s; 54.9 GiB per GPU).
+
+**Reading the results.** At a production-sized load per GPU the model keeps 97–98% up to 16 GPUs on 2
+nodes. On 64 GPUs on 8 nodes, **how the grid is split matters more than the number of nodes**:
+
+- **Split in x (64 × 1):** each rank holds a strip of 180 × 5760 columns and exchanges halos along its
+  two long sides (2 × 5760 columns). 87%, about what it was before the GPU settings (85%): at over a
+  second of work per step, communication is a small part, so the settings change little here.
+- **Split in both directions (8 × 8):** each rank holds a 1440 × 720 tile, the same shape as the 1-GPU
+  problem, whose edges add up to 2 × (1440 + 720) = 4320 columns, about 2.7 times less halo to exchange.
+  **98% on 8 nodes**: 12% faster than the strips, and 7 GiB less memory per GPU, since a strip carries
+  proportionally more halo cells.
+
+So for production runs across many nodes, split the grid in both directions (`PARTITION=8x8x1` for
+`jobs/benchmark.sh`; in a simulation, `Partition(x = 8, y = 8)`): a 13-billion-cell 1/32° global grid
+then runs at 1.07 s per step on 64 GPUs, with room left for more cells per GPU. These are single runs,
+but their windows agree within 2%. Each 64-GPU job took 17–20 minutes (about 10 of them stepping).
 
 ## Notes
 
@@ -95,5 +115,6 @@ GPU memory per rank: 46.6 GiB on 1 GPU, 48.4 on 4. Before the two settings (Oct 
 - Efficiencies here use the fastest window; `tools/summarize_benchmarks.py` reports them from the median,
   which differs by at most 2 points (Nibi, 16 GPUs).
 - Rorqual's numbers are from Oct 15–18, Trillium's from Oct 17, Nibi's from Oct 17–20 (jobs 24350485–90 and
-  24042817–18); the software versions on each
+  24042817–18) and Oct 27 (NCCL on 32 GPUs, 25116374; weak scaling on 64, 24168416–17, nodes
+  g[13-15,19-22,29]); the software versions on each
   cluster are in [tests/](tests/).
