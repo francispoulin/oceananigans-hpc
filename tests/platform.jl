@@ -172,7 +172,9 @@ run_test("output") do
 end
 
 # ---- hydrostatic models -------------------------------------------------------------------------
-const Nh = (64, 32, 16)
+# 128 cells in x: 32 per rank on 4 GPUs, more than the 16-cell halo the split-explicit free surface
+# extends into with 20 substeps (with 64, Oceananigans warns that results may be wrong).
+const Nh = (128, 32, 16)
 
 function hydro_channel(arch)
     Lx, Ly = 640e3, 320e3

@@ -16,16 +16,16 @@
 # only needs setting to override. (Oct 16: with the old default of 4, a 4-GPU job on Nibi asked
 # for --mem=0 on half a node and sbatch refused it; 8-GPU jobs got --mem=<mem> instead of the node.)
 
-# Short test jobs (tools/run_tests.sh: about 10 minutes) ask for 20 minutes, and on Trillium go to its
-# debug partitions (1 hour at most): debug_full_node for whole nodes, debug for 1 GPU. The scheduler
-# does not pick debug by itself: on Oct 21, 2026 a 30-minute test in compute_full_node was estimated
+# Short test jobs (tools/run_tests.sh: about 10 minutes, up to 20 on Fir on Oct 27) ask for 30 minutes,
+# and on Trillium go to its debug partitions (1 hour at most): debug_full_node for whole nodes, debug
+# for 1 GPU. The scheduler does not pick debug by itself: on Oct 21, 2026 a 30-minute test in compute_full_node was estimated
 # to start the next afternoon, and the same job moved to debug_full_node (scontrol update) about a day
 # earlier. The other clusters have no debug partition; their jobs are placed by requested time, and a
 # short request fits more gaps in the schedule (backfill).
 #
 #     test_job_request <tasks per node>   ->  sets the array TEST_JOB_OPTS
 test_job_request() {
-    TEST_JOB_OPTS=( --time=0:20:00 )
+    TEST_JOB_OPTS=( --time=0:30:00 )
     if [[ "$CC_CLUSTER" == trillium ]]; then
         if (( $1 == 1 )); then TEST_JOB_OPTS+=( --partition=debug ); else TEST_JOB_OPTS+=( --partition=debug_full_node ); fi
     fi

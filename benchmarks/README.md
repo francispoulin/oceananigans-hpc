@@ -5,7 +5,7 @@
 Time per step of a `NonhydrostaticModel` on 1, 2, 4, ... GPUs (one MPI rank per GPU, grid split in
 x), to see how the nonhydrostatic pressure solve scales. Configuration copied from the
 `nonhydrostatic` case of the newer Oceananigans benchmark suite (main branch), adapted to the
-Oceananigans version in this repository (0.113.5) and to multiple GPUs:
+Oceananigans 0.113.5 (v1.0.0's version) and to multiple GPUs:
 1 km x 1 km x 500 m box, periodic in x and y, WENO(5), f-plane, stratified buoyancy tracer.
 
 | `--solver` | Grid | 1 GPU | several GPUs |

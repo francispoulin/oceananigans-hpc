@@ -60,7 +60,7 @@ if [[ $slurm -eq 1 && $in_job -eq 0 && -z "$SLURM_JOB_ID" ]]; then
     pernode=$(default_gpus_per_node)
     (( maxgpu > pernode )) && { echo "$CC_CLUSTER: at most $pernode GPUs (one node) for the tests"; exit 1; }
     gpu_request "$maxgpu" 128G
-    test_job_request "$maxgpu"           # 20 minutes; Trillium: its debug partitions (start much sooner)
+    test_job_request "$maxgpu"           # 30 minutes; Trillium: its debug partitions (start much sooner)
     res=(--ntasks-per-node="$maxgpu" "${GPU_OPTS[@]}" "${TEST_JOB_OPTS[@]}")
     # Trillium allocates whole GPUs with their cores; elsewhere 4 cores per rank.
     [[ "$CC_CLUSTER" == trillium ]] || res+=(--cpus-per-task=4)

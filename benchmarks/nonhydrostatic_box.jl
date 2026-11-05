@@ -2,7 +2,7 @@
 # on 1 or more GPUs (one MPI rank per GPU, grid split in x). Same configuration as the
 # `nonhydrostatic` case of the newer Oceananigans benchmark suite (benchmarking/src/
 # nonhydrostatic_box.jl on Oceananigans main), written for the Oceananigans version in this
-# repository (0.113.5), with multi-GPU support and the same timing method as our hydrostatic runs.
+# repository at v1.0.0 (0.113.5), with multi-GPU support and the same timing method as our hydrostatic runs.
 #
 #   Box 1 km x 1 km x 500 m, Periodic x Periodic x Bounded, WENO(5), f = 1e-4, buoyancy tracer,
 #   N^2 = 1e-5, U = 0.05 m/s mean flow + deterministic sinusoidal perturbation. RK3, fixed dt.

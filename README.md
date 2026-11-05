@@ -13,7 +13,9 @@ alias in `~/.bashrc`, open a new shell and run `check_env`. Nothing else stores 
 **Results:** hydrostatic scaling on Nibi, Trillium and Rorqual, with a figure
 ([results/hydrostatic_scaling.md](results/hydrostatic_scaling.md)), and the nonhydrostatic pressure
 solve ([results/pressure_solver_1024.md](results/pressure_solver_1024.md)); summary in
-[docs/drac.md, section 8](docs/drac.md#8-scaling).
+[docs/drac.md, section 8](docs/drac.md#8-scaling). Highlight: a 1/32° global ocean (13 billion cells)
+on **64 H100 GPUs across 8 Nibi nodes runs at 98% of single-GPU speed** per GPU (weak scaling, grid
+split 8 × 8; 87% split in x only).
 
 **Status:** platform tests pass on every machine below; current work and plans are in
 [ROADMAP.md](ROADMAP.md). How changes are made: [CONTRIBUTING.md](CONTRIBUTING.md). Every
