@@ -10,7 +10,8 @@
 # tests (both "busy" cases exit with 75, "try later"); --latest publishes only the summary file, on
 # top of main, as results/<name>, without changing the clone; publishing twice does nothing; a file
 # that is not a summary is refused; an earlier summary left in the worktree does not block switching
-# to a commit that contains it; --clean removes the worktree.
+# to a commit that contains it; --clean removes the worktree; setup/make_candidate.sh refuses bad
+# arguments and pushes or removes nothing that does not exist.
 
 [[ "${1:-}" == -h || "${1:-}" == --help ]] && { sed -n '2,/^[^#]/{/^#SBATCH/d;/^# *shellcheck/d;s/^# \{0,1\}//p;}' "$0"; exit 0; }   # -h: usage
 set -o pipefail
@@ -26,6 +27,7 @@ g init -q --bare "$t/remote.git"
 g clone -q "$t/remote.git" "$t/seed" 2>/dev/null
 mkdir -p "$t/seed/tools" "$t/seed/results/tests"
 cp "$ROOT/tools/test_branch.sh" "$ROOT/tools/publish_summary.sh" "$t/seed/tools/"
+mkdir -p "$t/seed/setup"; cp "$ROOT/setup/make_candidate.sh" "$t/seed/setup/"
 echo "seed" > "$t/seed/README.md"; touch "$t/seed/results/tests/.keep"
 printf '# Platform tests on old, 2026-10-01 00:00:00\n\n**21 passed, 0 failed, 0 skipped or warnings.**\n' \
     > "$t/seed/results/tests/old_20261001-0000.md"            # a summary already in the repository
@@ -108,6 +110,20 @@ report $ok "test_branch.sh: an earlier summary left in the worktree does not blo
 out="$(bash "$t/clone/tools/test_branch.sh" --clean 2>&1)"; rc=$?
 [[ $rc -eq 0 && ! -e "$WT" && "$(git -C "$t/clone" worktree list | wc -l)" -eq 1 ]] && ok=1 || ok=0
 report $ok "test_branch.sh --clean: worktree removed" "$out"
+
+# 8. setup/make_candidate.sh: refuses to push or clean what does not exist, and bad arguments
+out="$(bash "$t/clone/setup/make_candidate.sh" --push upgrade/x 2>&1)"; rc=$?
+[[ $rc -ne 0 && "$out" == *"No candidate"* && -z "$(git -C "$t/remote.git" for-each-ref refs/heads/upgrade)" ]] && ok=1 || ok=0
+report $ok "make_candidate.sh --push: refuses without a candidate, pushes nothing" "$out"
+out="$(bash "$t/clone/setup/make_candidate.sh" --clean 2>&1)"; rc=$?
+[[ $rc -eq 0 && "$out" == *"No candidate"* ]] && ok=1 || ok=0
+report $ok "make_candidate.sh --clean: nothing to remove" "$out"
+out="$(bash "$t/clone/setup/make_candidate.sh" Oceananigans 2>&1)" && ok=0 || ok=1
+[[ "$out" == *"Name@version"* ]] || ok=0
+report $ok "make_candidate.sh: a package without @version is refused" "$out"
+out="$(bash "$t/clone/setup/make_candidate.sh" --julia 1.13 X@1 2>&1)" && ok=0 || ok=1
+[[ "$out" == *"full version"* && ! -e "$t/clone-candidate" ]] || ok=0
+report $ok "make_candidate.sh: --julia needs a full version; nothing created" "$out"
 
 echo "$fails failure(s)"
 exit $(( fails > 0 ))

@@ -107,6 +107,29 @@ may drop. If `nsys stats` rejects a report name, `nsys stats --help-reports` lis
 in that version. Most useful: the kernel summary (total GPU time per kernel, 1 vs 2 GPUs) and the
 CUDA API summary (time the host spends waiting in `cuStreamSynchronize`/`cuCtxSynchronize`).
 
+## `tridiagonal_kernel.jl`: one kernel, the batched tridiagonal solve, on one GPU
+
+Times `Oceananigans.Solvers.BatchedTridiagonalSolver` in z alone, on complex numbers (as in the
+Fourier-tridiagonal pressure solver) and on real numbers (as in vertically implicit diffusion, e.g.
+CATKE), with the versions of Julia, Oceananigans, KernelAbstractions and CUDA. About two minutes.
+Run it in each worktree to compare versions (`tools/compare_speed.sh --profile` found this kernel
+3.8 times slower with Julia 1.13.2 and Oceananigans 0.116.1, Oct 25):
+
+```bash
+CUDA_VISIBLE_DEVICES=0 julia --project=. benchmarks/tridiagonal_kernel.jl     # default 512x512x1024, Float32
+```
+
+Alone on an ordinary grid the kernel was only 8–17% slower; inside the 4-GPU run the solution is a
+Field (an `OffsetArray` in the kernel), not a plain `CuArray`. `--solution=field` passes it that way, and
+`--size=1024x256x1024` is one GPU's array in the 4-GPU run:
+
+```bash
+CUDA_VISIBLE_DEVICES=0 julia --project=. benchmarks/tridiagonal_kernel.jl --size=1024x256x1024 --solution=field
+```
+
+On Julia 1.13 that is the slow case (Oct 26): complex elements of an `OffsetArray`. `--dump-code=DIR`
+writes the compiled kernel (typed Julia, LLVM IR, PTX, SASS) to compare two Julia versions.
+
 ## `poisson_solver.jl`: the pressure solver alone, MPI or NCCL
 
 Times `solve_for_pressure!` (source term + distributed Poisson solve, built exactly as
@@ -160,6 +183,21 @@ H100-80GB, ~38 GiB) on 1, 2, 4 and 8 GPUs with MPI and NCCL (7 jobs; on Nibi all
 scale better on larger grids (Verma et al. 2022, arXiv:2202.12756: 1024³ 2→4 GPUs ~90% vs ~77% at
 512³). On rondeau, 512³ gave the same efficiencies as 512²×256 (1→2: 35%; 1→4: MPI 28%, NCCL 39%),
 so our costs grow with the data; this checks it on H100 nodes.
+
+## `hydro_box_drift.jl`: is a multi-GPU difference round-off?
+
+Not a benchmark but a diagnostic, for library upgrades: when the platform test `hydro_box`'s
+"4 GPUs vs 1 GPU" number changes, this runs the same model for 3000 steps on 4 GPUs and, inside the
+same run, on 1 GPU twice (as is, and with the initial state changed by one rounding unit). If the
+4-vs-1 difference grows no faster than that control, it is round-off carried by the flow. Run it in
+main's environment and in the candidate's (about 5 minutes each; `--nx=N` for another grid):
+
+```bash
+bash $OCEAN_HPC_ROOT/tools/run_local.sh --wait --gpus 4 --project $OCEAN_HPC_ROOT --job-name drift benchmarks/hydro_box_drift.jl
+```
+
+Oct 26, Oceananigans 0.116.1, 128 cells in x: 4.4e-13 at 30 steps against a control of 1.7e-12,
+3.1e-11 against 2.8e-11 at 3000 steps (the table is in `tests/README.md` on that upgrade): round-off.
 
 ## `alltoall_bandwidth.jl`
 

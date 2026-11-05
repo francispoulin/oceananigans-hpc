@@ -76,10 +76,12 @@ Log in again (or run `source ~/.bashrc`) before step 3, and check with `echo $JU
 
 **Why the order matters.** The `julia` module (used until our own Julia is installed, step 3) runs
 `append_path("JULIA_DEPOT_PATH", ":")`, so every time it is loaded it adds a colon to the depot path. Julia reads empty entries in
-the depot path as "add the default depots here", and those include `~/.julia` in your home
-directory. Packages can then come from, or be written to, an unexpected place. Setting the
-variable after loading modules replaces whatever the module added, and `env/drac.sh` strips
-it in jobs.
+the depot path as "add the default depots here": in the middle or at the start, those include
+`~/.julia` in your home directory, so packages can come from, or be written to, an unexpected
+place. Setting the variable after loading modules replaces whatever the module added.
+`env/drac.sh` sets it to `<depot>:`: one trailing empty entry, which adds only the depots bundled
+with Julia (its precompiled standard libraries), not `~/.julia`. Julia 1.11 and later need those;
+without them Julia recompiles its own standard libraries (on 1.13.2 that fails).
 
 ## 3. One-time setup (login node)
 

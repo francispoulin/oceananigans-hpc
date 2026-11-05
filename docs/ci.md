@@ -60,6 +60,8 @@ skipping steps, and the build passes only if the summary is clean.
    - **Skip builds with existing commits** and **Skip when pull request has existing build for
      commit and branch**: off (a pull request is always tested);
    - commit statuses: on (this puts the check on the pull request).
+   - *Settings → Builds*: **Skip intermediate builds** on (only the newest commit of a branch is built;
+     otherwise every push queues its own ~17-minute build holding all four GPUs).
 6. Optional: making the pipeline public lets anyone read the build pages without a Buildkite login
    (as Oceananigans' are). Logs show paths on the server; nothing else.
 

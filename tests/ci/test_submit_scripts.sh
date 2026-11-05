@@ -154,6 +154,9 @@ for long in "--gpus 2 --gpu-ids 1,3 --project ../other --job-name myrun" \
 --- short form:
 $short"
 done
+out="$(rl -n 2 -g 1,3 --prefix "nsys profile -o logs/p_rank%q{OMPI_COMM_WORLD_RANK}" run.jl --x=1)"
+[[ "$out" == *'exec "$@" _ nsys profile -o logs/p_rank%q{OMPI_COMM_WORLD_RANK} julia --project='*'run.jl --x=1'* ]] && ok=1 || ok=0
+report "$ok" "run_local.sh: --prefix puts the command before each rank's julia" "$out"
 for bad in "--gpus" "--gpus two" "--gpus --wait" "--wait=1" "--gpu 2"; do
     # shellcheck disable=SC2086
     out="$(cd "$lt/proj" && PATH="$lt/bin:$PATH" bash "$ROOT/tools/run_local.sh" --dry-run $bad run.jl 2>&1)" && ok=0 || ok=1

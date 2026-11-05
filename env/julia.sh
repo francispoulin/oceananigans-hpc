@@ -17,8 +17,8 @@ _ojl_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OCEAN_JULIA_VERSION="$(sed -n 's/^julia_version = "\(.*\)"$/\1/p' "$_ojl_root/Manifest.toml")"
 export OCEAN_JULIA_VERSION
 
-# Next to the depot: its last entry (on Trillium jobs the first entry is a copy on $SCRATCH).
-_ojl_depot="${JULIA_DEPOT_PATH##*:}"
+# Next to the depot (OCEAN_DEPOT, set by the machine file).
+_ojl_depot="${OCEAN_DEPOT:-${JULIA_DEPOT_PATH%%:*}}"
 export OCEAN_SOFTWARE_DIR="${OCEAN_SOFTWARE_DIR:-$(dirname "${_ojl_depot:-$HOME/julia_depot}")/software}"
 
 if [[ -x "$OCEAN_SOFTWARE_DIR/julia-$OCEAN_JULIA_VERSION/bin/julia" ]]; then

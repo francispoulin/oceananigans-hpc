@@ -5,6 +5,7 @@
 # or a server with internet, from anywhere:
 #
 #     bash /path/to/oceananigans-hpc/setup/install_julia.sh
+#     bash /path/to/oceananigans-hpc/setup/install_julia.sh 1.13.2   # another version (upgrades)
 #
 # Installs to $OCEAN_SOFTWARE_DIR/julia-<version>, as env/julia.sh defines it (default: a folder
 # "software" next to the Julia depot, e.g. /project/<group>/<user>/software on the Alliance), after
@@ -26,7 +27,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 set +eu
 source "$ROOT/env/ocean_setup.sh" >/dev/null 2>&1
 set -eu
-version="${OCEAN_JULIA_VERSION:-}"
+version="${1:-${OCEAN_JULIA_VERSION:-}}"
 [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "install_julia.sh: no julia_version in $ROOT/Manifest.toml (or no environment for this machine)" >&2; exit 1; }
 [[ -n "${OCEAN_SOFTWARE_DIR:-}" ]] || { echo "install_julia.sh: OCEAN_SOFTWARE_DIR not set by env/julia.sh" >&2; exit 1; }
 target="$OCEAN_SOFTWARE_DIR/julia-$version"
