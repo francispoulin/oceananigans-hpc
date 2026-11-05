@@ -86,14 +86,14 @@ without them Julia recompiles its own standard libraries (on 1.13.2 that fails).
 ## 3. One-time setup (login node)
 
 ```bash
-bash setup/install_julia.sh     # our own Julia 1.10.10, about 1 GB, next to the depot
+bash setup/install_julia.sh     # our own Julia 1.13.2, about 1 GB, next to the depot
 bash setup/setup.sh
 ```
 
 **Julia: our own install, not the module.** `setup/install_julia.sh` downloads the official
 release that `Manifest.toml` was made with (`julia_version`), checks it against julialang.org's
 checksums, and unpacks it in a folder `software` next to the depot (for example
-`/project/<group>/<user>/software/julia-1.10.10`; set `OCEAN_SOFTWARE_DIR` to put it elsewhere), then
+`/project/<group>/<user>/software/julia-1.13.2`; set `OCEAN_SOFTWARE_DIR` to put it elsewhere), then
 adapts it with the Alliance's `setrpaths.sh`: the programs then use the software stack's own loader
 (as the module's Julia does), without which the cluster's `libmpi` fails to load
 (`libze_loader.so.1: cannot open shared object file`). The code is unchanged.
@@ -309,7 +309,7 @@ Once per cluster, on a login node:
 bash setup/setup_viz.sh
 ```
 
-With Julia 1.10, Pkg warns `Circular dependency detected ... CairoMakie` and compiles
+Pkg may warn `Circular dependency detected ... CairoMakie` (it did with Julia 1.10) and then compiles
 CairoMakie on its first use instead (several minutes, once): do that first run in a job.
 Run plotting scripts from your project folder, in a CPU job:
 
@@ -434,8 +434,8 @@ Reduce `DT` at higher resolution to stay stable (we used 60, 30, 15 and 7.5 s fo
      
 ## 10. Tested with
 
-**Version v1.1.0** (October 2026): Oceananigans 0.116.1 (from 0.113.5) and OpenMPI_jll 4.1.11, still on our own
-Julia 1.10.10. A library upgrade is retested on pelee and Trillium
+**Version v1.2.0** (November 2026): Julia 1.13.2 (from 1.10.10), our own install, with CUDA.jl 6.4.2 and MPI.jl 0.20.29;
+Oceananigans stays at 0.116.1 (v1.1.0: 0.116.1 from 0.113.5, OpenMPI_jll 4.1.11). A library upgrade is retested on pelee and Trillium
 ([CONTRIBUTING.md](../CONTRIBUTING.md#versions-and-releases)); the other rows are v1.0.0's, the first stable
 baseline (Oceananigans 0.113.5), when the platform tests (`tools/run_tests.sh`, 21 tests on 1 and 4 GPUs)
 passed on every kind of machine: at 3d16f3e, and on Nibi (standing for Nibi, Fir and Rorqual, which share
@@ -444,16 +444,17 @@ versions, are in [results/tests/](../results/tests/).
 
 | Machine | Date | Commit | Oceananigans | Result | GPU | Julia |
 | --- | --- | --- | --- | --- | --- | --- |
-| Trillium | 2026-10-28 | 91a1953 | 0.116.1 | 21 passed | H100 80GB | 1.10.10, our install |
-| pelee | 2026-10-26 | b2e4088 | 0.116.1 | 21 passed (Buildkite) | A100 40GB | 1.10.10, our install |
+| Trillium | 2026-11-05 | bbdd3f0 | 0.116.1 | 21 passed | H100 80GB | 1.13.2, our install |
+| pelee | 2026-11-05 | bbdd3f0 | 0.116.1 | 21 passed (candidate, same Manifests) | A100 40GB | 1.13.2, our install |
 | Nibi | 2026-10-28 | 1027177 | 0.113.5 | 21 passed (v1.0.0) | H100 80GB | 1.10.10, our install |
 | rondeau | 2026-10-27 | 3d16f3e | 0.113.5 | 21 passed (v1.0.0) | A100 40GB | 1.10.10, our install |
 | Fir | 2026-10-27 | 3d16f3e | 0.113.5 | 21 passed (v1.0.0) | H100 80GB | 1.10.10, our install |
 | Rorqual | 2026-10-21 | 7b1915f | 0.113.5 | 21 passed (v0.4.0) | H100 80GB | 1.10.10, our install |
 
-Packages with v1.1.0: Oceananigans 0.116.1, CUDA.jl 6.4.1, MPI.jl 0.20.27, OpenMPI_jll 4.1.11,
-NCDatasets 0.14.15, JLD2 0.6.7 (v1.0.0: Oceananigans 0.113.5, OpenMPI_jll 4.1.10). Julia 1.10.10 everywhere, our own install (`setup/install_julia.sh`,
-found by `env/julia.sh`); Nibi moved to it on Oct 28 with its new clone. Rorqual was not retested
+Packages with v1.2.0: Oceananigans 0.116.1, CUDA.jl 6.4.2, MPI.jl 0.20.29, OpenMPI_jll 4.1.11,
+NCDatasets 0.14.15, JLD2 0.6.7 (v1.1.0: CUDA.jl 6.4.1, MPI.jl 0.20.27; v1.0.0: Oceananigans 0.113.5, OpenMPI_jll 4.1.10).
+Julia 1.13.2 on every machine, our own install (`setup/install_julia.sh`, found by `env/julia.sh`); a machine's row above
+says which Julia it was tested with, and the rows before v1.2.0 ran 1.10.10 until the machine is updated. Rorqual was not retested
 for v1.0.0 (Nibi stands for it; it was in maintenance on Oct 27–28). Fir's test at 3d16f3e passed on the
 third try: twice before it had passed 20 of 21 steps and stopped at the job's 20-minute limit before the
 last (`viz`); test jobs now ask for 30 minutes. With v1.0.0 every result was the same as with v0.1.0 to
@@ -462,6 +463,14 @@ v0.4.0 on each machine; with 0.116.1 the hydrostatic `hydro_box` changed from bi
 What the tests show on every machine: 4 GPUs against 1 GPU agree to round-off, 1e-14 to 1e-12 (the
 hydrostatic model was bitwise up to Oceananigans 0.113.5: [tests/README.md](../tests/README.md#what-is-tested));
 checkpoint restarts are bitwise; every rank sees all of its node's GPUs and uses its own (`cuda_aware`, "4 visible per rank" on the Alliance).
+
+**Julia 1.13.2 costs time until Oceananigans 0.117** (pelee, 4 A100 GPUs, MPI, 1024³ Float32 `FourierTridiagonal` pressure solve,
+`tools/compare_speed.sh`, Nov 5): 192.8 ms against 165.4 ms on Julia 1.10.10 (+16.6%), with the transposes unchanged (72.2 against
+71.4 ms) and `p_std` identical in every digit. The extra 26.5 ms are in the FFTs, tridiagonal sweeps and source term, which matches the
+three tridiagonal kernels measured alone on one A100 (10.2 ms on Julia 1.10.10, 35.9 ms on 1.13.2; an H100 loses 22% in the kernel). The
+cause is a Julia 1.13 code-generation regression that Oceananigans pull request
+[#6361](https://github.com/CliMA/Oceananigans.jl/pull/6361) works around (merged Nov 2; expected in 0.117, to be confirmed when we move).
+Absolute times from Julia 1.13.2 are therefore not comparable with earlier ones; ratios such as scaling efficiency are.
 
 ## 11. Trillium
 
@@ -492,7 +501,7 @@ Trillium (run by SciNet) uses the same software stack, so `env/drac.sh` works un
   simulation repository; `OCEAN_JOB_LOGS` names it inside the job), and `OCEAN_RESULTS_ROOT` is on
   `$SCRATCH`. A job script submitted with plain `sbatch` must do the same (or be submitted from
   `$SCRATCH`). `drac.sh` sets `OCEAN_JOB_DIR=$SCRATCH/oceananigans-hpc`, where
-  `tools/run_tests.sh` writes its logs and summary. Julia 1.10 also wants to update the
+  `tools/run_tests.sh` writes its logs and summary. Julia (seen with 1.10) also wants to update the
   timestamp of each precompiled file it loads, which fails on a read-only depot
   (`SystemError: futimes: Permission denied`); inside Trillium jobs `drac.sh` therefore puts a
   writable copy of the compiled files first in `JULIA_DEPOT_PATH` (`$SCRATCH/julia_depot_jobs`,

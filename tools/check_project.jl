@@ -77,7 +77,7 @@ if uses_mpi
     end
 end
 
-# Packages in the global environment (@v1.10) are visible to EVERY project, so a script can
+# Packages in the global environment (@v1.13) are visible to EVERY project, so a script can
 # work only because of them, then fail on another machine or for another user.
 # The main depot is the last entry: Trillium jobs put a writable copy of the compiled files first.
 depot = last(filter(!isempty, split(get(ENV, "JULIA_DEPOT_PATH", joinpath(homedir(), ".julia")), ':')))

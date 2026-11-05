@@ -114,7 +114,7 @@ environment). Oceananigans, a package, tests ranges of versions; this repository
         pull requests only since #39)
   - [ ] Agreed with the servers' administrators: a dedicated account (being created, Oct 27), the agent
         as a service
-  - [ ] Move the agent to that account: its own Julia 1.10.10 and depot (it can't use a personal one), the
+  - [ ] Move the agent to that account: its own Julia (the Manifest's, 1.13.2) and depot (it can't use a personal one), the
         agent as a service, one green build; `docs/ci.md` updated
   - [ ] Then BalancedFlows' pipeline on the same agent (after this repository's first green build there,
         so a failure has one cause); then rondeau
@@ -158,8 +158,12 @@ Tools:
       case can replace the port (same configuration, so results stay comparable)
 - [ ] First uses, after v1.0.0:
   - [x] Oceananigans 0.116.1 on Julia 1.10.10 (v1.1.0, Oct 28; tested on pelee and Trillium)
-  - [ ] Julia 1.13 (Oceananigans tests with it; our own install), after the tridiagonal-solver fix is
-        merged in Oceananigans
+  - [x] Julia 1.13.2 on Oceananigans 0.116.1 (v1.2.0, Nov 5; tested on pelee and Trillium). Breeze, NumericalEarth and ClimaSeaIce
+        allow Oceananigans only up to 0.116 (Nov 5), so 0.117 would shut Breeze out; the price is a 16.6% slower pressure solve on
+        A100 (the Julia 1.13 tridiagonal regression, fixed by #6361 in 0.117; `docs/drac.md` section 10)
+  - [ ] Oceananigans 0.117.x (the tridiagonal fix #6361, the `Open` topology change #6276), when Breeze, NumericalEarth and
+        ClimaSeaIce allow it; read the 0.117.0 and 0.117.1 release notes then (0.117.1: #6398 moves the hydrostatic pressure
+        integral half a cell, so hydrostatic results change)
 
 ## Phase 5: scaling numbers
 

@@ -25,7 +25,7 @@ echo "== 2. Precompile (JULIA_NUM_PRECOMPILE_TASKS=$JULIA_NUM_PRECOMPILE_TASKS)"
 julia --project="$ROOT/viz" -e 'using Pkg; Pkg.precompile()'
 
 echo
-echo "Done. A warning 'Circular dependency detected ... CairoMakie' is expected with Julia 1.10:"
+echo "Done. A warning 'Circular dependency detected ... CairoMakie' can appear (it did with Julia 1.10):"
 echo "CairoMakie is then compiled the first time a script loads it (several minutes, once)."
 echo "Do that first load in a compute job or salloc, not on a login node:"
 echo "    julia --project=$ROOT/viz -e 'using CairoMakie, NCDatasets; println(\"viz OK\")'"
