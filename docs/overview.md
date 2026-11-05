@@ -45,7 +45,7 @@ relies on this one by convention: it is not a Julia package and is never listed 
    `LocalPreferences.toml` (not committed) that points MPI at the system OpenMPI.
 
 All three share **one depot per machine** (`JULIA_DEPOT_PATH`), so packages are downloaded and
-compiled once. The **global environment** (`@v1.10`) stays **empty**: anything in it is visible to
+compiled once. The **global environment** (`@v1.13`) stays **empty**: anything in it is visible to
 every project and hides missing dependencies.
 
 **What every environment file provides** (so scripts work on any machine): `OCEAN_HPC_ROOT`,

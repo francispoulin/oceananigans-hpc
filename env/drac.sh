@@ -79,7 +79,7 @@ unset _drac_depot
 # next to the depot. Until it is installed, the Alliance's julia module of the same version.
 source "$OCEAN_HPC_ROOT/env/julia.sh"
 
-# Trillium jobs: the depot is read-only on compute nodes, and Julia 1.10 fails when it can't update
+# Trillium jobs: the depot is read-only on compute nodes, and Julia (seen with 1.10) fails when it can't update
 # the timestamp of a precompiled file it loads ("SystemError: futimes: Permission denied"). So jobs
 # use a writable copy of the compiled files on $SCRATCH, listed first; packages and artifacts are
 # still read from the project depot. Julia tries the most recently modified cache first, and the

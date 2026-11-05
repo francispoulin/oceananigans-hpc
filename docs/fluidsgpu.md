@@ -11,7 +11,7 @@ MACHINE-SPECIFIC block.
 | --- | --- | --- |
 | Environment | `env/drac.sh` | `env/fluidsgpu.sh` |
 | MPI | `openmpi/4.1.5` | `openmpi/4.1.7-with-cuda` (CUDA-aware, built for the group) |
-| Julia | 1.10.10, our own install in `/project` (`setup/install_julia.sh`) | 1.10.10, our own install on the shared drive (`setup/install_julia.sh`) |
+| Julia | 1.13.2, our own install in `/project` (`setup/install_julia.sh`) | 1.13.2, our own install on the shared drive (`setup/install_julia.sh`) |
 | Running | `sbatch` | `tools/run_local.sh` |
 | GPUs | given by Slurm | shared: `run_local.sh` picks free ones |
 | Internet | login nodes only | yes |
@@ -25,7 +25,7 @@ pelee and rondeau share a drive, so set up once from either:
 ```bash
 alias ocean_setup='source /path/to/oceananigans-hpc/env/ocean_setup.sh'   # in ~/.bashrc
 cd /path/to/oceananigans-hpc
-bash setup/install_julia.sh    # Julia 1.10.10 on the shared drive (the modules stop at 1.10.8)
+bash setup/install_julia.sh    # Julia 1.13.2 on the shared drive (the modules stop at 1.10.8)
 ocean_setup                    # uses that julia
 bash setup/setup.sh            # main environment and system MPI
 bash setup/setup_viz.sh        # plotting environment
