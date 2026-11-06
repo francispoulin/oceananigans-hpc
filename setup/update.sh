@@ -79,7 +79,7 @@ check_safe() {
     report
     running="$(jobs_running)"
     if [[ -n "$running" ]]; then
-        echo "Your jobs (they would start, or are running, with this clone):"; sed 's/^/    /' <<<"$running"
+        echo "Your jobs (running or queued; they use this machine's Julia packages, which the update changes):"; sed 's/^/    /' <<<"$running"
         fail "wait until they have finished, then run this again"
     fi
     [[ -n "${CC_CLUSTER:-}" ]] || echo "pelee and rondeau share this clone: check that nothing of yours runs on the other one."
@@ -100,12 +100,12 @@ after_pull() {
     echo "== 3. Julia (setup/install_julia.sh)"
     bash "$ROOT/setup/install_julia.sh" || fail "installing Julia failed (above)"
     echo "== 4. Packages and MPI (setup/setup.sh), then viz/ (setup/setup_viz.sh)"
-    bash "$ROOT/setup/setup.sh"     || fail "setup/setup.sh failed (above)"
-    bash "$ROOT/setup/setup_viz.sh" || fail "setup/setup_viz.sh failed (above)"
+    OCEAN_UPDATING=1 bash "$ROOT/setup/setup.sh"     || fail "setup/setup.sh failed (above)"
+    OCEAN_UPDATING=1 bash "$ROOT/setup/setup_viz.sh" || fail "setup/setup_viz.sh failed (above)"
     echo "== 5. Check (tools/check_env.sh)"
     in_env bash "$ROOT/tools/check_env.sh" "$ROOT" || fail "tools/check_env.sh found problems (above)"
     echo
-    echo "Updated: $(hostname -s), oceananigans-hpc $(git -C "$ROOT" describe --tags), Julia $(in_env julia --startup-file=no -e 'print(VERSION)')."
+    echo "Updated: $(hostname -s)${CC_CLUSTER:+ ($CC_CLUSTER)}, oceananigans-hpc $(git -C "$ROOT" describe --tags), Julia $(in_env julia --startup-file=no -e 'print(VERSION)')."
     echo "Next: ocean_setup again in your shell, then each simulation repository's own update script."
 }
 
