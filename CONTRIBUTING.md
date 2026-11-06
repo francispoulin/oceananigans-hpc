@@ -95,11 +95,17 @@ way: `source <clone>-test/env/ocean_setup.sh`, then the usual command. `test_bra
 removes the worktree.
 
 **Merging:** on the pull request page, check the diff and that the automatic checks pass, then
-*Merge*. Delete the branch (GitHub offers a button). Then on every machine:
+*Merge*. Delete the branch (GitHub offers a button). Then on every machine (pelee and rondeau share
+a clone: once for both):
 
 ```bash
-cd "$OCEAN_HPC_ROOT" && git switch main && git pull
+bash "$OCEAN_HPC_ROOT/setup/update.sh"
 ```
+
+It refuses while you have jobs queued or running, or if the clone is not on `main` or has local
+changes, and otherwise pulls and redoes the setup (Julia, packages, `viz/`, `check_env`), stopping at
+the first problem. `--check` only says what would change. Then `ocean_setup` again in your shell, and
+each simulation repository's own update script.
 
 If `git pull` stops with `Not possible to fast-forward`, the clone has local commits or edits:
 `git status` and `git log origin/main..` show them. Keep them on a branch (`git switch -c ...`) or
@@ -173,7 +179,7 @@ it on its own schedule.
    - **1.0.0:** every kind of machine: Trillium, one of Nibi, Fir and Rorqual, pelee and rondeau.
    - **Library upgrades** (Julia, Oceananigans, the GPU stack): **pelee and Trillium** (ROADMAP.md,
      Phase 4: the candidate is tried on pelee, the pull request confirmed in Trillium's debug queue);
-     the other machines are updated with a pull and `setup/install_julia.sh` and keep their last
+     the other machines are updated with `setup/update.sh` and keep their last
      summary until a release that requires them.
 
    Machines not retested keep their last summary; the "Tested with" table says which version it was.

@@ -84,10 +84,19 @@ srun --cpu-bind=none julia --project=. scripts/run.jl "$@"
 
 ## When oceananigans-hpc changes
 
-Pull it on every machine (`git pull` in `$OCEAN_HPC_ROOT`), and rerun `setup/setup.sh` there if its
-release notes say the packages changed. Your project's own Manifest is yours: upgrade it when you
-choose, after the platform has been tested with the new versions ([ROADMAP.md](../ROADMAP.md),
-Phase 4).
+Update it on every machine with `bash $OCEAN_HPC_ROOT/setup/update.sh` (pull, Julia, packages,
+`viz/`, `check_env`; it refuses while you have jobs queued). Your project's own Manifest is yours:
+upgrade it when you choose, after the platform has been tested with the new versions
+([ROADMAP.md](../ROADMAP.md), Phase 4).
+
+**Your repository's update script.** Give it one too (BalancedFlows.jl: `test/update_clone.sh`), run
+after `ocean_setup` in its clone. Before pulling, it compares the `julia_version` of the incoming
+Manifest (`git show origin/main:Manifest.toml`) with the running Julia, and stops with "update
+oceananigans-hpc first" if they differ: the clone then never holds a Manifest this machine's platform
+can't run. After the pull: `Pkg.instantiate()`, `Pkg.precompile()`, load the main packages,
+`tools/check_env.sh .` (exit status 0), and `Manifest.toml` must be unchanged (`git status`). It
+checks the platform but does not update it: a platform release that moves to a new Julia must not
+switch the Julia under your Manifest.
 
 **Julia is the same version on every machine**: the `julia_version` of this repository's
 `Manifest.toml` (1.13.2), our own install from `setup/install_julia.sh` on every machine. Make your Manifest with that version, so instantiating it on another machine

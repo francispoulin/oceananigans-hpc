@@ -27,6 +27,7 @@ they export.
 
 | Script | What it does | Where | Example |
 | --- | --- | --- | --- |
+| `setup/update.sh` | After a release: everything a machine needs, in one command (checks that no jobs are queued, pulls, installs Julia if needed, `setup.sh`, `setup_viz.sh`, `check_env.sh`); `--check` only says what would change | login, server | `bash $OCEAN_HPC_ROOT/setup/update.sh` |
 | `setup/make_candidate.sh` | A candidate environment for a library upgrade, in a worktree next to the clone (`<clone>-candidate`): packages at new versions (and a newer Julia with `--julia`), MPI set up, precompiled; `--push` makes it a branch | server, login | `bash setup/make_candidate.sh Oceananigans@0.116.1` |
 | `setup/install_julia.sh` | Installs the official Julia release the platform's Manifest was made with, next to the depot; every machine runs it instead of a module (once per machine and version) | login, server | `bash setup/install_julia.sh` |
 | `setup/setup.sh` | Installs the packages and points MPI.jl and OpenMPI_jll at the system MPI | login, server | `bash setup/setup.sh` |
@@ -48,6 +49,7 @@ they export.
 | `jobs/hello_cpu.sh`, `jobs/hello_gpu.sh` | A first Oceananigans run on a CPU node and on one GPU | job | `sbatch jobs/hello_gpu.sh` |
 | `tests/ci/run_all.sh` | The checks GitHub runs on every pull request (no GPUs or Slurm needed) | any | `bash tests/ci/run_all.sh` |
 | `tests/ci/test_branch_tools.sh` | Part of `run_all.sh`: `test_branch.sh` and `publish_summary.sh` against a throwaway local repository | any | `bash tests/ci/test_branch_tools.sh` |
+| `tests/ci/test_update.sh` | Part of `run_all.sh`: `setup/update.sh` against a throwaway local repository (refusals, step order, stop at the first failure) | any | `bash tests/ci/test_update.sh` |
 | `tests/ci/test_compare_speed.sh` | Part of `run_all.sh`: `tools/compare_speed.sh` with fake worktrees and a fake `nvidia-smi` | any | `bash tests/ci/test_compare_speed.sh` |
 | `tests/ci/test_submit_scripts.sh` | Part of `run_all.sh`: the Slurm options of the submit scripts on each cluster | any | `bash tests/ci/test_submit_scripts.sh` |
 

@@ -27,10 +27,15 @@ if [[ -x "$OCEAN_SOFTWARE_DIR/julia-$OCEAN_JULIA_VERSION/bin/julia" ]]; then
 else
     # The module appends empty entries to JULIA_DEPOT_PATH (they mean "also ~/.julia"): keep ours.
     _ojl_keep="$JULIA_DEPOT_PATH"
-    module load "${_ocean_julia_module:-julia/$OCEAN_JULIA_VERSION}"
+    _ojl_module="${_ocean_julia_module:-julia/$OCEAN_JULIA_VERSION}"
+    if module load "$_ojl_module" 2>/dev/null; then
+        echo "ocean_setup: Julia $OCEAN_JULIA_VERSION is not installed in $OCEAN_SOFTWARE_DIR; using the $_ojl_module module meanwhile." >&2
+    else   # e.g. no julia/1.13.2 module on the Alliance: whatever julia is on PATH is not the platform's
+        echo "ocean_setup: Julia $OCEAN_JULIA_VERSION is not installed in $OCEAN_SOFTWARE_DIR, and there is no $_ojl_module module." >&2
+    fi
     export JULIA_DEPOT_PATH="$_ojl_keep"
-    echo "ocean_setup: Julia $OCEAN_JULIA_VERSION is not installed in $OCEAN_SOFTWARE_DIR; using the ${_ocean_julia_module:-julia/$OCEAN_JULIA_VERSION} module." >&2
     echo "             Install it once (login node): bash $_ojl_root/setup/install_julia.sh" >&2
-    unset _ojl_keep
+    echo "             or update everything: bash $_ojl_root/setup/update.sh" >&2
+    unset _ojl_keep _ojl_module
 fi
 unset _ojl_root _ojl_depot _ocean_julia_module
