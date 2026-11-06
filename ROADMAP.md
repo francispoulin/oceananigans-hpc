@@ -156,6 +156,9 @@ Tools:
       `benchmarking/` in 0.113.5 has only `earth_ocean`; `benchmarks/nonhydrostatic_box.jl` ports the newer
       suite's nonhydrostatic case. On an upgrade, re-pin the suite and check whether its nonhydrostatic
       case can replace the port (same configuration, so results stay comparable)
+- [x] One command per machine: `setup/update.sh` (v1.3.0, Nov 6): refuses while jobs run, pulls, then Julia,
+      setup, viz and check_env; first runs on pelee and Trillium (Nov 6). Simulation repositories get their own
+      update script that checks the platform and never updates it (`docs/simulation_repos.md`)
 - [ ] First uses, after v1.0.0:
   - [x] Oceananigans 0.116.1 on Julia 1.10.10 (v1.1.0, Oct 28; tested on pelee and Trillium)
   - [x] Julia 1.13.2 on Oceananigans 0.116.1 (v1.2.0, Nov 5; tested on pelee and Trillium). Breeze, NumericalEarth and ClimaSeaIce

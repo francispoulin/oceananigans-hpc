@@ -49,21 +49,27 @@ julia --project=. -e 'using OpenMPI_jll; println("   OpenMPI_jll.libmpi_path = "
 echo "== 4. Precompile"
 julia --project=. -e 'using Pkg; Pkg.precompile()'
 
-echo
-echo "Setup done. The libmpi_path above must be the system OpenMPI ($OCEAN_MPI_ROOT), not in your Julia depot."
-echo "Next: sbatch jobs/hello_cpu.sh, then jobs/hello_gpu.sh, then jobs/checks.sh"
-
 echo "== 5. Check that the main packages load"
 julia --project=. -e 'using Oceananigans, CUDA, MPI, NCDatasets; println("   imports OK")'
 
 echo "== 6. GPU"
 # Loading CUDA is not enough: with a too-old NVIDIA driver it loads but cannot run (rondeau, Nov 6:
-# driver 550 refuses the CUDA 13 forward-compatible driver). Login nodes on the Alliance have no
-# GPU; the tests check the GPU there.
+# driver 550 refuses the CUDA 13 forward-compatible driver). Most Alliance login nodes have no GPU
+# (Trillium's trig-login01 has); the tests check the GPU there.
 if nvidia-smi -L >/dev/null 2>&1; then
     julia --project=. -e 'using CUDA
         CUDA.functional() || (println("   CUDA does not work on this GPU: run with JULIA_DEBUG=CUDA_Driver_jll for why (often the NVIDIA driver is too old for the CUDA runtime)"); exit(1))
         println("   CUDA works: runtime ", CUDA.runtime_version(), ", driver ", CUDA.driver_version(), ", ", CUDA.name(CUDA.device()))'
 else
     echo "   no GPU on this node (login node): checked by the tests instead"
+fi
+
+echo
+echo "Setup done. The libmpi_path above must be the system OpenMPI ($OCEAN_MPI_ROOT), not in your Julia depot."
+if [[ -z "${OCEAN_UPDATING:-}" ]]; then          # set by setup/update.sh, which says what comes next
+    if [[ -n "${CC_CLUSTER:-}" ]]; then
+        echo "Next: sbatch jobs/hello_cpu.sh, then jobs/hello_gpu.sh, then jobs/checks.sh"
+    else
+        echo "Next: bash tools/run_tests.sh"
+    fi
 fi

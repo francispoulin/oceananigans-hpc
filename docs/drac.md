@@ -446,8 +446,8 @@ versions, are in [results/tests/](../results/tests/).
 | --- | --- | --- | --- | --- | --- | --- |
 | Trillium | 2026-11-05 | bbdd3f0 | 0.116.1 | 21 passed | H100 80GB | 1.13.2, our install |
 | pelee | 2026-11-05 | bbdd3f0 | 0.116.1 | 21 passed (candidate, same Manifests) | A100 40GB | 1.13.2, our install |
+| rondeau | 2026-11-06 | c73673b | 0.116.1 | 21 passed, 1 and 2 GPUs (3 GPUs now; new driver 610.57.04; v1.2.1's `LD_LIBRARY_PATH` set by hand) | A100 40GB | 1.13.2, our install |
 | Nibi | 2026-10-28 | 1027177 | 0.113.5 | 21 passed (v1.0.0) | H100 80GB | 1.10.10, our install |
-| rondeau | 2026-10-27 | 3d16f3e | 0.113.5 | 21 passed (v1.0.0) | A100 40GB | 1.10.10, our install |
 | Fir | 2026-10-27 | 3d16f3e | 0.113.5 | 21 passed (v1.0.0) | H100 80GB | 1.10.10, our install |
 | Rorqual | 2026-10-21 | 7b1915f | 0.113.5 | 21 passed (v0.4.0) | H100 80GB | 1.10.10, our install |
 
