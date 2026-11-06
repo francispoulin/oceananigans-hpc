@@ -449,7 +449,7 @@ versions, are in [results/tests/](../results/tests/).
 
 | Machine | Date | Commit | Oceananigans | Result | GPU | Julia |
 | --- | --- | --- | --- | --- | --- | --- |
-| Trillium | TRILLIUM_DATE | TRILLIUM_COMMIT | 0.117.2 | TRILLIUM_RESULT | H100 80GB | 1.13.2, our install |
+| Trillium | 2026-11-06 | bec72a0 | 0.117.2 | 21 passed (a node with a failed GPU excluded) | H100 80GB | 1.13.2, our install |
 | pelee | 2026-11-06 | bec72a0 | 0.117.2 | 21 passed (candidate, same Manifests) | A100 40GB | 1.13.2, our install |
 | rondeau | 2026-11-06 | c73673b | 0.116.1 | 21 passed, 1 and 2 GPUs (3 GPUs now; new driver 610.57.04; v1.2.1's `LD_LIBRARY_PATH` set by hand) | A100 40GB | 1.13.2, our install |
 | Nibi | 2026-10-28 | 1027177 | 0.113.5 | 21 passed (v1.0.0) | H100 80GB | 1.10.10, our install |
