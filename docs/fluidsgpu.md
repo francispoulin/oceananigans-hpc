@@ -1,7 +1,7 @@
 # Using the fluids group's GPU servers (pelee, rondeau)
 
-pelee and rondeau are private servers of the Waterloo fluids group: 4× A100-SXM4-40GB each,
-linked by NVLink, with a shared drive and **no Slurm**. Not everyone has access. This page is also
+pelee and rondeau are private servers of the Waterloo fluids group: A100-SXM4-40GB GPUs (pelee 4,
+rondeau 3 since Nov 2026), linked by NVLink, with a shared drive and **no Slurm**. Not everyone has access. This page is also
 a worked example for any machine without a scheduler: copy `env/fluidsgpu.sh` and change its
 MACHINE-SPECIFIC block.
 
@@ -15,6 +15,7 @@ MACHINE-SPECIFIC block.
 | Running | `sbatch` | `tools/run_local.sh` |
 | GPUs | given by Slurm | shared: `run_local.sh` picks free ones |
 | Internet | login nodes only | yes |
+| NVIDIA driver | the cluster's | must support CUDA 13 (pelee: 610.57.04); see below |
 
 You source the same `env/ocean_setup.sh` on both; it picks the right file.
 
@@ -37,6 +38,13 @@ For your own project: `bash $OCEAN_HPC_ROOT/setup/configure_mpi.sh /path/to/proj
 `LocalPreferences.toml` holds this machine's MPI path, so a project folder used on both the
 Alliance and pelee needs a separate clone on each (the usual case: the drives are different).
 `check_env.sh` warns if a project's MPI settings come from another machine.
+
+**The two servers need the same NVIDIA driver.** They share one Julia depot, so they also share
+CUDA.jl's choice of CUDA runtime (13.4 with v1.2.x, through CUDA.jl's forward-compatible driver).
+An older driver cannot use it: on Nov 6 rondeau had 550.90.07 (CUDA 12.4), the forward-compatible
+driver failed (`cuInit` status 803) and `CUDA.functional()` was false, although every package
+loaded. `setup/setup.sh` now ends with a GPU check; to see why CUDA fails:
+`JULIA_DEBUG=CUDA_Driver_jll julia --project -e 'using CUDA; CUDA.versioninfo()'`.
 
 ## Running
 
