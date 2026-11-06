@@ -91,9 +91,27 @@ else
     info("Remove with: julia --project=@v$(VERSION.major).$(VERSION.minor) -e 'using Pkg; Pkg.rm([$(join(repr.(globaldeps), ", "))])'")
 end
 
+# viz/ is set up when the CairoMakie that viz/Manifest.toml names is in the depot: after a platform
+# update with a new viz/Manifest.toml, an older CairoMakie left in the depot does not count (it did
+# until v1.3.0, so check_env said "set up" before setup_viz.sh had run). Packages are stored under
+# packages/<name>/<slug>, the slug made from the package's UUID and tree hash, as Pkg does.
+function viz_installed()
+    vm = readtoml(joinpath(vizdir, "Manifest.toml"))
+    vm === nothing && return false
+    any_cairomakie = isdir(joinpath(depot, "packages", "CairoMakie"))
+    entries = get(get(vm, "deps", Dict()), "CairoMakie", nothing)
+    entries === nothing && return any_cairomakie
+    e = first(entries)
+    try
+        slug = Base.version_slug(Base.UUID(e["uuid"]), Base.SHA1(e["git-tree-sha1"]))
+        return isdir(joinpath(depot, "packages", "CairoMakie", slug))
+    catch                     # an internal of Base: if it changes, fall back to the simpler check
+        return any_cairomakie
+    end
+end
+
 if !is_viz
-    # Both needed: the Manifest may come from git, and packages may be left from another install.
-    installed = isfile(joinpath(vizdir, "Manifest.toml")) && isdir(joinpath(depot, "packages", "CairoMakie"))
+    installed = viz_installed()
     if !isdir(vizdir)
         info("viz/ not found in the repository")
     elseif !installed
