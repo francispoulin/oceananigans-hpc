@@ -22,6 +22,10 @@ fi
 # CUDA-aware OpenMPI is used with 12.3.2.
 module load cuda/12.3.2
 module load openmpi/4.1.7-with-cuda          # CUDA-aware OpenMPI built for the group
+# CUDA.jl brings its own CUDA libraries (CUDA 13); with the module's lib64 on LD_LIBRARY_PATH it
+# loads libcusparse/libnvJitLink 12.3 from there instead ("loaded from a system path"). The module
+# stays loaded (nvcc, nsys); only its libraries leave the search path (tested with cuda_aware, Nov 6).
+export LD_LIBRARY_PATH="$(tr : '\n' <<<"${LD_LIBRARY_PATH:-}" | grep -v '^/opt/uw/cuda' | paste -sd:)"
 
 # Julia comes from env/julia.sh (below): our own install of Manifest.toml's julia_version. Until it
 # is installed, the newest module here, julia/1.10.8 (the modules stop there).

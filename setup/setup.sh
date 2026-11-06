@@ -8,6 +8,7 @@
 #   2. make MPI.jl use the system OpenMPI (MPIPreferences)
 #   3. redirect OpenMPI_jll, which NetCDF/HDF5 load, to the same system OpenMPI library
 #   4. precompile
+#   5. load the main packages; 6. where this machine has a GPU, check that CUDA works on it
 # It writes LocalPreferences.toml (machine-specific, so not under version control).
 
 [[ "${1:-}" == -h || "${1:-}" == --help ]] && { sed -n '2,/^[^#]/{/^#SBATCH/d;/^# *shellcheck/d;s/^# \{0,1\}//p;}' "$0"; exit 0; }   # -h: usage
@@ -54,3 +55,15 @@ echo "Next: sbatch jobs/hello_cpu.sh, then jobs/hello_gpu.sh, then jobs/checks.s
 
 echo "== 5. Check that the main packages load"
 julia --project=. -e 'using Oceananigans, CUDA, MPI, NCDatasets; println("   imports OK")'
+
+echo "== 6. GPU"
+# Loading CUDA is not enough: with a too-old NVIDIA driver it loads but cannot run (rondeau, Nov 6:
+# driver 550 refuses the CUDA 13 forward-compatible driver). Login nodes on the Alliance have no
+# GPU; the tests check the GPU there.
+if nvidia-smi -L >/dev/null 2>&1; then
+    julia --project=. -e 'using CUDA
+        CUDA.functional() || (println("   CUDA does not work on this GPU: run with JULIA_DEBUG=CUDA_Driver_jll for why (often the NVIDIA driver is too old for the CUDA runtime)"); exit(1))
+        println("   CUDA works: runtime ", CUDA.runtime_version(), ", driver ", CUDA.driver_version(), ", ", CUDA.name(CUDA.device()))'
+else
+    echo "   no GPU on this node (login node): checked by the tests instead"
+fi
