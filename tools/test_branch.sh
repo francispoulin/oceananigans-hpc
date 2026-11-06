@@ -61,7 +61,9 @@ lock_holder() {
     local kind id host
     read -r kind id host < "$LOCK"
     case "$kind" in
-        job) command -v squeue >/dev/null && [[ -n "$(squeue -h -j "$id" 2>/dev/null)" ]] &&
+        # Only pending or running jobs hold the lock: a job stuck in CG (completing) on a broken node
+        # stays in squeue long after it ended (Trillium trig0034, Nov 6).
+        job) command -v squeue >/dev/null && [[ -n "$(squeue -h -j "$id" -t PD,R,CF 2>/dev/null)" ]] &&
                  echo "Slurm job $id (see squeue -u \$USER)" ;;
         pid) if [[ "$host" != "$(hostname -s)" ]]; then
                  echo "process $id on $host (if nothing runs there any more, remove $LOCK)"
@@ -75,6 +77,9 @@ if [[ $clean -eq 1 ]]; then
     [[ -d "$WT" ]] || { echo "No worktree at $WT"; git -C "$CLONE" worktree prune; exit 0; }
     git -C "$CLONE" worktree remove --force "$WT" && git -C "$CLONE" worktree prune && echo "Removed $WT"
     exit $?
+fi
+if [[ "${CC_CLUSTER:-}" == trillium && "$(hostname -s)" == tri-login* ]]; then
+    echo "Trillium: run this on trig-login01, where GPU jobs are queued (docs/drac.md, section 11)"; exit 1
 fi
 [[ -n "$ref" ]] || { echo "usage: test_branch.sh <branch> [--gpus \"1 2\"] [--no-publish] [--dry-run]   (or --clean)"; exit 1; }
 [[ -z "$busy" ]] || { echo "Another test is using $WT: $busy. Wait for it to end."; exit 75; }

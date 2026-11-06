@@ -164,9 +164,9 @@ Tools:
   - [x] Julia 1.13.2 on Oceananigans 0.116.1 (v1.2.0, Nov 5; tested on pelee and Trillium). Breeze, NumericalEarth and ClimaSeaIce
         allow Oceananigans only up to 0.116 (Nov 5), so 0.117 would shut Breeze out; the price is a 16.6% slower pressure solve on
         A100 (the Julia 1.13 tridiagonal regression, fixed by #6361 in 0.117; `docs/drac.md` section 10)
-  - [ ] Oceananigans 0.117.x (the tridiagonal fix #6361, the `Open` topology change #6276), when Breeze, NumericalEarth and
-        ClimaSeaIce allow it; read the 0.117.0 and 0.117.1 release notes then (0.117.1: #6398 moves the hydrostatic pressure
-        integral half a cell, so hydrostatic results change)
+  - [x] Oceananigans 0.117.2 on Julia 1.13.2 (v1.4.0, Nov 6; tested on pelee and Trillium): Breeze 0.15 and ClimaSeaIce 0.7.2
+        require 0.117 (Nov 6). The pressure solve is back to v1.1.0's speed (#6361); hydrostatic results move by design
+        (#6398, #6402, #6370; `docs/drac.md` section 10)
 
 ## Phase 5: scaling numbers
 

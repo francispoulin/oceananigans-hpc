@@ -434,8 +434,13 @@ Reduce `DT` at higher resolution to stay stable (we used 60, 30, 15 and 7.5 s fo
      
 ## 10. Tested with
 
-**Version v1.2.0** (November 2026): Julia 1.13.2 (from 1.10.10), our own install, with CUDA.jl 6.4.2 and MPI.jl 0.20.29;
-Oceananigans stays at 0.116.1 (v1.1.0: 0.116.1 from 0.113.5, OpenMPI_jll 4.1.11). A library upgrade is retested on pelee and Trillium
+**Version v1.4.0** (November 2026): Oceananigans 0.117.2 (from 0.116.1), on Julia 1.13.2 (v1.2.0: Julia 1.13.2 from
+1.10.10, CUDA.jl 6.4.2, MPI.jl 0.20.29; v1.1.0: Oceananigans 0.116.1 from 0.113.5, OpenMPI_jll 4.1.11).
+Oceananigans 0.117 changes some results on purpose: the hydrostatic pressure integral starts half a cell below the
+top ([#6398](https://github.com/CliMA/Oceananigans.jl/pull/6398)), the vector-invariant vertical flux matches the
+divergence cross term ([#6402](https://github.com/CliMA/Oceananigans.jl/pull/6402)), and the barotropic halos are
+filled before the first substep ([#6370](https://github.com/CliMA/Oceananigans.jl/pull/6370)). The platform tests
+compare 4 GPUs with 1 GPU of the same version, so they are unaffected; results of simulation repositories move. A library upgrade is retested on pelee and Trillium
 ([CONTRIBUTING.md](../CONTRIBUTING.md#versions-and-releases)); the other rows are v1.0.0's, the first stable
 baseline (Oceananigans 0.113.5), when the platform tests (`tools/run_tests.sh`, 21 tests on 1 and 4 GPUs)
 passed on every kind of machine: at 3d16f3e, and on Nibi (standing for Nibi, Fir and Rorqual, which share
@@ -444,8 +449,8 @@ versions, are in [results/tests/](../results/tests/).
 
 | Machine | Date | Commit | Oceananigans | Result | GPU | Julia |
 | --- | --- | --- | --- | --- | --- | --- |
-| Trillium | 2026-11-05 | bbdd3f0 | 0.116.1 | 21 passed | H100 80GB | 1.13.2, our install |
-| pelee | 2026-11-05 | bbdd3f0 | 0.116.1 | 21 passed (candidate, same Manifests) | A100 40GB | 1.13.2, our install |
+| Trillium | 2026-11-06 | bec72a0 | 0.117.2 | 21 passed (a node with a failed GPU excluded) | H100 80GB | 1.13.2, our install |
+| pelee | 2026-11-06 | bec72a0 | 0.117.2 | 21 passed (candidate, same Manifests) | A100 40GB | 1.13.2, our install |
 | rondeau | 2026-11-06 | c73673b | 0.116.1 | 21 passed, 1 and 2 GPUs (3 GPUs now; new driver 610.57.04; v1.2.1's `LD_LIBRARY_PATH` set by hand) | A100 40GB | 1.13.2, our install |
 | Nibi | 2026-10-28 | 1027177 | 0.113.5 | 21 passed (v1.0.0) | H100 80GB | 1.10.10, our install |
 | Fir | 2026-10-27 | 3d16f3e | 0.113.5 | 21 passed (v1.0.0) | H100 80GB | 1.10.10, our install |
@@ -464,13 +469,18 @@ What the tests show on every machine: 4 GPUs against 1 GPU agree to round-off, 1
 hydrostatic model was bitwise up to Oceananigans 0.113.5: [tests/README.md](../tests/README.md#what-is-tested));
 checkpoint restarts are bitwise; every rank sees all of its node's GPUs and uses its own (`cuda_aware`, "4 visible per rank" on the Alliance).
 
-**Julia 1.13.2 costs time until Oceananigans 0.117** (pelee, 4 A100 GPUs, MPI, 1024³ Float32 `FourierTridiagonal` pressure solve,
-`tools/compare_speed.sh`, Nov 5): 192.8 ms against 165.4 ms on Julia 1.10.10 (+16.6%), with the transposes unchanged (72.2 against
-71.4 ms) and `p_std` identical in every digit. The extra 26.5 ms are in the FFTs, tridiagonal sweeps and source term, which matches the
-three tridiagonal kernels measured alone on one A100 (10.2 ms on Julia 1.10.10, 35.9 ms on 1.13.2; an H100 loses 22% in the kernel). The
-cause is a Julia 1.13 code-generation regression that Oceananigans pull request
-[#6361](https://github.com/CliMA/Oceananigans.jl/pull/6361) works around (merged Nov 2; expected in 0.117, to be confirmed when we move).
-Absolute times from Julia 1.13.2 are therefore not comparable with earlier ones; ratios such as scaling efficiency are.
+**Speed of the pressure solve** (pelee, 4 A100 GPUs, MPI, 1024³ Float32 `FourierTridiagonal`, `tools/compare_speed.sh`):
+
+| | Julia 1.10.10, Oceananigans 0.116.1 (v1.1.0) | Julia 1.13.2, 0.116.1 (v1.2.0–v1.3.0) | Julia 1.13.2, 0.117.2 (v1.4.0) |
+| --- | --- | --- | --- |
+| time per solve | 165.4 ms | 191.6 ms | 164.8 ms |
+| of which transposes | 71.4 ms | 71.3 ms | 71.6 ms |
+| FFTs, tridiagonal sweeps, source term | 94.0 ms | 120.3 ms | 93.2 ms |
+
+Julia 1.13 made the tridiagonal sweeps slower (a code-generation regression: the three kernels alone went from 10.2
+to 35.9 ms on one A100, +22% on an H100); Oceananigans pull request
+[#6361](https://github.com/CliMA/Oceananigans.jl/pull/6361), in 0.117, works around it, and v1.4.0 is as fast as
+v1.1.0. `p_std` differs from 0.116.1 by 1.6e-7 (Float32 round-off, from the changed store in the sweeps).
 
 ## 11. Trillium
 
