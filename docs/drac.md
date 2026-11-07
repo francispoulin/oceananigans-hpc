@@ -434,6 +434,10 @@ Reduce `DT` at higher resolution to stay stable (we used 60, 30, 15 and 7.5 s fo
      
 ## 10. Tested with
 
+**Version v1.5.0** (November 2026): FFTA 0.3.2 for spectra in `viz/` (it was already there, through Makie; FFTW is not
+added because the two together break `rfft`/`fft`, see `setup/setup_viz.sh`). The simulation environment is v1.4.0's,
+so only pelee was retested (21 passed, 4 vs 1 GPU as with v1.4.0).
+
 **Version v1.4.0** (November 2026): Oceananigans 0.117.2 (from 0.116.1), on Julia 1.13.2 (v1.2.0: Julia 1.13.2 from
 1.10.10, CUDA.jl 6.4.2, MPI.jl 0.20.29; v1.1.0: Oceananigans 0.116.1 from 0.113.5, OpenMPI_jll 4.1.11).
 Oceananigans 0.117 changes some results on purpose: the hydrostatic pressure integral starts half a cell below the
@@ -450,7 +454,7 @@ versions, are in [results/tests/](../results/tests/).
 | Machine | Date | Commit | Oceananigans | Result | GPU | Julia |
 | --- | --- | --- | --- | --- | --- | --- |
 | Trillium | 2026-11-06 | bec72a0 | 0.117.2 | 21 passed (a node with a failed GPU excluded) | H100 80GB | 1.13.2, our install |
-| pelee | 2026-11-06 | bec72a0 | 0.117.2 | 21 passed (candidate, same Manifests) | A100 40GB | 1.13.2, our install |
+| pelee | 2026-11-06 | 9f391bb | 0.117.2 | 21 passed (v1.5.0) | A100 40GB | 1.13.2, our install |
 | rondeau | 2026-11-06 | c73673b | 0.116.1 | 21 passed, 1 and 2 GPUs (3 GPUs now; new driver 610.57.04; v1.2.1's `LD_LIBRARY_PATH` set by hand) | A100 40GB | 1.13.2, our install |
 | Nibi | 2026-10-28 | 1027177 | 0.113.5 | 21 passed (v1.0.0) | H100 80GB | 1.10.10, our install |
 | Fir | 2026-10-27 | 3d16f3e | 0.113.5 | 21 passed (v1.0.0) | H100 80GB | 1.10.10, our install |
@@ -458,6 +462,7 @@ versions, are in [results/tests/](../results/tests/).
 
 Packages with v1.2.0: Oceananigans 0.116.1, CUDA.jl 6.4.2, MPI.jl 0.20.29, OpenMPI_jll 4.1.11,
 NCDatasets 0.14.15, JLD2 0.6.7 (v1.1.0: CUDA.jl 6.4.1, MPI.jl 0.20.27; v1.0.0: Oceananigans 0.113.5, OpenMPI_jll 4.1.10).
+`viz/` with v1.5.0: CairoMakie 0.15.17 (Makie 0.24.17), NCDatasets 0.14.15, FFTA 0.3.2.
 Julia 1.13.2 on every machine, our own install (`setup/install_julia.sh`, found by `env/julia.sh`); a machine's row above
 says which Julia it was tested with, and the rows before v1.2.0 ran 1.10.10 until the machine is updated. Rorqual was not retested
 for v1.0.0 (Nibi stands for it; it was in maintenance on Oct 27–28). Fir's test at 3d16f3e passed on the
