@@ -1,5 +1,5 @@
 #!/bin/bash
-# One-time setup of the plotting environment viz/ (CairoMakie + NCDatasets), on any machine.
+# One-time setup of the plotting environment viz/ (CairoMakie, NCDatasets, FFTA), on any machine.
 # Needs internet, so on the Alliance run it on a LOGIN node. From anywhere:
 #
 #     bash /path/to/oceananigans-hpc/setup/setup_viz.sh
@@ -12,6 +12,11 @@
 #
 # To add a package for plotting:  julia --project=$OCEAN_HPC_ROOT/viz -e 'using Pkg; Pkg.add("X")'
 # and commit viz/Project.toml and viz/Manifest.toml.
+#
+# FFTs (spectra) use FFTA, which Makie already brings in: `using FFTA`, then rfft, fft, irfft as usual.
+# Do not add FFTW here: with FFTA and FFTW both loaded, every rfft/fft of a Float64 array fails
+# ("plan_rfft is ambiguous"; FFTA.jl PR #132). The same happens in a script that loads Oceananigans
+# (which brings FFTW) together with CairoMakie.
 
 [[ "${1:-}" == -h || "${1:-}" == --help ]] && { sed -n '2,/^[^#]/{/^#SBATCH/d;/^# *shellcheck/d;s/^# \{0,1\}//p;}' "$0"; exit 0; }   # -h: usage
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -32,7 +37,7 @@ if [[ -n "${CC_CLUSTER:-}" ]]; then
 else
     echo "To do that first load now:"
 fi
-echo "    julia --project=$ROOT/viz -e 'using CairoMakie, NCDatasets; println(\"viz OK\")'"
+echo "    julia --project=$ROOT/viz -e 'using CairoMakie, NCDatasets, FFTA; println(\"viz OK\")'"
 if ! git -C "$ROOT" ls-files --error-unmatch viz/Manifest.toml >/dev/null 2>&1; then
     echo "viz/Manifest.toml is new: commit it so other machines get the same versions."
 fi

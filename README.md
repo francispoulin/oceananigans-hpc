@@ -92,7 +92,7 @@ Oceananigans Discussions (https://github.com/CliMA/Oceananigans.jl/discussions/6
 | `env/fluidsgpu.sh` | The same for the Waterloo fluids group's servers (pelee, rondeau; no Slurm) |
 | `setup/setup.sh` | One-time setup: packages, system MPI, OpenMPI_jll redirect |
 | `setup/configure_mpi.sh` | The MPI part of the setup, for your own project folder |
-| `setup/setup_viz.sh` | One-time setup of `viz/`, the plotting environment (CairoMakie, NCDatasets) |
+| `setup/setup_viz.sh` | One-time setup of `viz/`, the plotting environment (CairoMakie, NCDatasets, FFTA) |
 | `viz/` | Plotting environment, kept separate so simulations never load Makie |
 | `tools/check_env.sh` | Checks the environment and a project, and says what looks wrong |
 | `tools/run_local.sh` | Background runs on free GPUs, with a log, on machines without Slurm |
