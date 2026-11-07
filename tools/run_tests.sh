@@ -16,7 +16,7 @@
 #   platform, 4 GPUs load, single_mpi, cuda_aware, halo, output, hydro_channel, hydro_box,
 #                    checkpoint, nh_fft, nh_ft (compared with the 1-GPU reference)
 #                    (and the same on 2 GPUs if asked for)
-#   viz              viz environment: NetCDF, PNG and MP4 with CairoMakie (CPU)
+#   viz              viz environment: NetCDF, PNG and MP4 with CairoMakie, FFT with FFTA (CPU)
 #
 # These test the platform only (environment, MPI, CUDA, Oceananigans and other libraries, viz);
 # simulation repositories test their own physics. Proof of function, not performance: small grids,

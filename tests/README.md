@@ -43,7 +43,7 @@ was tested and with which versions. One log per step in `logs/`.
 | `checkpoint` | 1, 4 (2) | 20 straight steps = 10 steps, checkpoint, restart, 10 steps (bitwise expected) |
 | `nh_fft` | 1, 4 (2) | nonhydrostatic, FFT pressure solver: 10 steps; 4 (2) GPUs match 1 GPU |
 | `nh_ft` | 1, 4 (2) | nonhydrostatic, stretched z, Fourier-tridiagonal solver: 10 steps; 4 (2) GPUs match 1 GPU |
-| `viz` | CPU | viz environment: NetCDF read, PNG and MP4 with CairoMakie |
+| `viz` | CPU | viz environment: NetCDF read, PNG and MP4 with CairoMakie, FFT of a sine with FFTA |
 
 "Match": relative difference below 1e-8. (2) = only with `--gpus "1 2 ..."`. The hydrostatic grids
 have 128 cells in x (32 per rank on 4 GPUs), more than the split-explicit free surface's 16-cell halo.

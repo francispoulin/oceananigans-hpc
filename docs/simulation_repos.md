@@ -34,7 +34,7 @@ for both). Set any of these before `ocean_setup` to use another value.
 | `src/drac_mpi.jl` | `include` it and call `drac_mpi_init()` before starting MPI ([drac.md](drac.md) step 7) |
 | `jobs/submit_gpu.sh <your job script> <N>` | submits your job script on N GPUs with the cluster's Slurm options |
 | `tools/run_local.sh` | the same on pelee and rondeau (no Slurm): free GPUs, background, log |
-| `viz/` | the plotting environment: `julia --project=$OCEAN_HPC_ROOT/viz your_plot.jl` |
+| `viz/` | the plotting environment (CairoMakie, NCDatasets, FFTA for spectra): `julia --project=$OCEAN_HPC_ROOT/viz your_plot.jl` |
 
 ## What your repository does
 
