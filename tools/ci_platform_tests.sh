@@ -9,6 +9,12 @@
 # /mnt/autofs/bow.math/scratch/$USER/software/oceananigans-hpc) and runs that clone's
 # tools/test_branch.sh on the commit: worktree next to the clone, the clone's LocalPreferences.toml,
 # one test at a time, free GPUs only. The agent's own checkout only supplies this script.
+#   - No clone yet (a new agent account): the build first clones it over HTTPS and runs
+#     setup/install_julia.sh, setup/setup.sh and setup/setup_viz.sh there (about 30 minutes, once),
+#     so nobody has to log in as the agent's account. If that setup fails, the next build redoes it
+#     (local/ci_setup_started without local/ci_setup_done). A clone made by hand is never set up
+#     again. After that the clone needs no updates: test_branch.sh installs each tested commit's
+#     Julia and packages.
 #   - GPUs or the worktree busy (test_branch.sh exits 75): wait and try again, every 5 minutes, for
 #     up to OCEAN_CI_WAIT_MINUTES (default 120); then the build fails with "busy".
 #   - The summary is shown on the build page (an annotation) and kept as a build artifact.
@@ -25,15 +31,31 @@ set -o pipefail
 commit="${1:-${BUILDKITE_COMMIT:-}}"
 [[ -n "$commit" ]] || { echo "ci_platform_tests.sh: no commit (give one, or run inside a Buildkite job)"; exit 1; }
 CLONE="${OCEAN_HPC_CLONE:-/mnt/autofs/bow.math/scratch/$USER/software/oceananigans-hpc}"
-[[ -f "$CLONE/tools/test_branch.sh" ]] ||
-    { echo "ci_platform_tests.sh: no tools/test_branch.sh in $CLONE (set OCEAN_HPC_CLONE to the machine's clone)"; exit 1; }
-wait_min="${OCEAN_CI_WAIT_MINUTES:-120}"
-gpus=(); [[ -n "${OCEAN_CI_GPUS:-}" ]] && gpus=(--gpus "$OCEAN_CI_GPUS")
 
 # Fetch over HTTPS, push (only when publishing) over SSH as before; for git commands in this job only.
 export GIT_CONFIG_COUNT=2
 export GIT_CONFIG_KEY_0='url.https://github.com/.insteadOf' GIT_CONFIG_VALUE_0='git@github.com:'
 export GIT_CONFIG_KEY_1='url.git@github.com:.pushInsteadOf' GIT_CONFIG_VALUE_1='git@github.com:'
+
+# First build for a new agent account: make the clone and set it up (local/ is ignored by git).
+started="$CLONE/local/ci_setup_started"; done_mark="$CLONE/local/ci_setup_done"
+if [[ ! -d "$CLONE/.git" ]]; then
+    echo "--- :hammer: First build here: cloning $CLONE"
+    mkdir -p "$(dirname "$CLONE")" &&
+        git clone --quiet "${BUILDKITE_REPO:-https://github.com/francispoulin/oceananigans-hpc.git}" "$CLONE" &&
+        git -C "$CLONE" config pull.ff only && mkdir -p "$CLONE/local" && date > "$started" ||
+        { echo "^^^ +++"; echo "ci_platform_tests.sh: could not clone into $CLONE"; exit 1; }
+fi
+if [[ -f "$started" && ! -f "$done_mark" ]]; then
+    echo "--- :hammer: Setting up $CLONE: Julia, packages, MPI (about 30 minutes, once)"
+    ( cd "$CLONE" && bash setup/install_julia.sh && bash setup/setup.sh && bash setup/setup_viz.sh ) &&
+        date > "$done_mark" ||
+        { echo "^^^ +++"; echo "ci_platform_tests.sh: setting up $CLONE failed (above); the next build tries again"; exit 1; }
+fi
+[[ -f "$CLONE/tools/test_branch.sh" ]] ||
+    { echo "ci_platform_tests.sh: no tools/test_branch.sh in $CLONE (set OCEAN_HPC_CLONE to the machine's clone)"; exit 1; }
+wait_min="${OCEAN_CI_WAIT_MINUTES:-120}"
+gpus=(); [[ -n "${OCEAN_CI_GPUS:-}" ]] && gpus=(--gpus "$OCEAN_CI_GPUS")
 
 out="$(mktemp)"; trap 'rm -f "$out"' EXIT
 start=$SECONDS

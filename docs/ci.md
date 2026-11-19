@@ -20,8 +20,9 @@ skipping steps, and the build passes only if the summary is clean.
   off in the pipeline settings (below), and the script fetches the commit from this repository, so a
   fork's commit is not even found. Only people who can push here can start a test.
 - **It uses free GPUs only**, one test at a time on both servers (they share one clone).
-- **It runs as the agent's account**, with that account's files and keys. Use an account that holds
-  nothing else (e.g. `ocean-ci`); a personal account is fine for a first trial.
+- **It runs as the agent's account**, with that account's files and keys: a dedicated account that
+  holds nothing else and that nobody logs in to (`ocean-ci` on pelee, run as a service by the
+  administrators). A personal account is fine for a first trial.
 - **It fetches over HTTPS** (the repository is public): no SSH key is needed to test. Publishing a
   summary as a `results/...` branch (`OCEAN_CI_PUBLISH=1`) needs a key that can push.
 - **Free plan:** Buildkite's free plan allows up to 5 users and 10 jobs at a time on your own
@@ -36,7 +37,7 @@ skipping steps, and the build passes only if the summary is clean.
    machines) → connect the GitHub account that owns this repository, and give it this repository.
 3. *Agents* → your cluster (a new organization has one, with a `default` queue) → *Queues*: add a
    queue with key `fluidsgpu`. Then, in the same cluster, *Agent Tokens*: a new token, described
-   `pelee-rondeau`. **Copy the token now**; it is shown
+   after where it runs (e.g. `pelee-ocean-ci`). **Copy the token now**; it is shown
    once. It is the agent's password: keep it out of any repository and out of chat.
 4. *Pipelines → New pipeline*:
    - Repository: `https://github.com/<owner>/oceananigans-hpc.git` (HTTPS: public, no key needed);
@@ -67,48 +68,59 @@ skipping steps, and the build passes only if the summary is clean.
 
 ### 2. On the server (pelee, then rondeau)
 
-As the account the agent runs under. The account needs a working clone of this repository on that
-server, set up as usual (`setup/install_julia.sh`, `setup/setup.sh`, `tools/run_tests.sh` passing once
-by hand), with `tools/test_branch.sh` on its `main`.
+The agent runs as a dedicated account (`ocean-ci` on pelee) that nobody logs in to, not even with
+a key: the server's administrators run it as a system service, and the build pages on Buildkite are
+how you see what it does. (A service account with a login is a security concern for them.) What
+the administrators set up, once:
 
-```bash
-# Install the agent in ~/.buildkite-agent (no root needed). Paste the token where it says.
-TOKEN="<agent token>" bash -c "$(curl -sL https://raw.githubusercontent.com/buildkite/agent/main/install.sh)"
-```
+1. A folder `/mnt/autofs/bow.math/scratch/ocean-ci` owned by the account: the agent's builds, our
+   Julia, the depot and the account's own clone of this repository go there (a few GB).
+2. The agent, from Buildkite's package, as a `systemd` service running as the account, e.g.
+   `/etc/systemd/system/buildkite-agent.service`:
+   ```ini
+   [Service]
+   User=ocean-ci
+   Group=ocean-ci
+   Environment=HOME=/var/lib/buildkite-agent
+   ExecStart=/usr/bin/buildkite-agent start
+   Restart=on-failure
+   RestartSec=5
+   ```
+   (they may add limits such as `Nice=10`, `CPUQuota=` or `MemoryMax=`).
+3. Its configuration, `/etc/buildkite-agent/buildkite-agent.cfg` (readable by the account only):
+   ```ini
+   token="<agent token>"
+   name="pelee-ocean-ci"
+   # tags="queue=fluidsgpu,machine=rondeau" on rondeau
+   tags="queue=fluidsgpu,machine=pelee"
+   build-path="/mnt/autofs/bow.math/scratch/ocean-ci/buildkite/builds"
+   hooks-path="/etc/buildkite-agent/hooks"
+   ```
+   and the hook `/etc/buildkite-agent/hooks/environment` (executable), which says where the
+   account's clone is:
+   ```bash
+   #!/bin/bash
+   export OCEAN_HPC_CLONE=/mnt/autofs/bow.math/scratch/ocean-ci/software/oceananigans-hpc
+   ```
+4. A check that the account sees other users' GPU processes in
+   `nvidia-smi --query-compute-apps=gpu_uuid,pid --format=csv`: the free-GPU check relies on it.
 
-Then edit `~/.buildkite-agent/buildkite-agent.cfg` (the token is already in it):
+Give them the agent token in person or in a file only you can read (`umask 077`), not by email.
 
-```ini
-name="%hostname-%spawn"
-# machine=rondeau on rondeau
-tags="queue=fluidsgpu,machine=pelee"
-# Builds off the home folder (only this script and the pipeline file are checked out there)
-build-path="/mnt/autofs/bow.math/scratch/<user>/buildkite/builds"
-```
+**Nothing else is set up by hand.** The first build finds no clone, so
+[`tools/ci_platform_tests.sh`](../tools/ci_platform_tests.sh) clones this repository over HTTPS and
+runs `setup/install_julia.sh`, `setup/setup.sh` and `setup/setup_viz.sh` in it (about 30 minutes,
+once; a failed setup is redone by the next build). After that the clone is never updated by hand:
+`tools/test_branch.sh` installs each tested commit's Julia and packages. The account needs no
+GitHub key (the repository is public and nothing is pushed).
 
-Tell the tests where the machine's clone is, in `~/.buildkite-agent/hooks/environment`:
-
-```bash
-#!/bin/bash
-export OCEAN_HPC_CLONE=/mnt/autofs/bow.math/scratch/<user>/software/oceananigans-hpc
-```
-
-Start it:
-
-```bash
-chmod 600 ~/.buildkite-agent/buildkite-agent.cfg && chmod +x ~/.buildkite-agent/hooks/environment
-tmux new -d -s buildkite '~/.buildkite-agent/bin/buildkite-agent start'
-```
-
-Check: the agent appears under *Agents* in Buildkite with `queue=fluidsgpu`; `tmux attach -t buildkite`
-shows its log (Ctrl-b d to leave it running). Started this way it stops when the server reboots; for
-good, the agent runs as a system service (root, i.e. the server's administrators), or from the
-account's `crontab` with `@reboot`.
+Only one agent per server: stop any trial agent under a personal account first
+(`tmux kill-session -t buildkite`), and revoke its token once the new agent's first build is green.
 
 ### 3. First build
 
-In Buildkite, *New Build* on a branch (e.g. the branch that added this page). The *Upload* step
-runs, then *Platform tests*: about 15 minutes on free GPUs. The summary appears at the top of the
+In Buildkite, *New Build* on `main`. The *Upload* step runs, then *Platform tests*: on a new agent
+account first the setup (about 30 minutes), then about 15 minutes of tests on free GPUs. The summary appears at the top of the
 build page; on a pull request, the check appears next to GitHub's own.
 
 ## Day to day
@@ -118,7 +130,8 @@ build page; on a pull request, the check appears next to GitHub's own.
 - **A release:** *New Build* on the release branch with environment `OCEAN_CI_PUBLISH=1` publishes the
   clean summary as a `results/<machine>_<date>` branch, as `tools/test_branch.sh` does by hand.
 - **Fewer GPUs:** `OCEAN_CI_GPUS="1 2"` on a build.
-- **Stopping the agent:** `tmux kill-session -t buildkite` (or *Stop* on the agent's page in Buildkite).
+- **Stopping the agent:** the administrators' `systemctl stop buildkite-agent` (a trial agent:
+  `tmux kill-session -t buildkite`), or *Stop* on the agent's page in Buildkite.
   Revoking the agent token in Buildkite cuts off every agent that uses it.
 
 Tests started by hand (`tools/test_branch.sh`) still work; while one runs, the agent waits for it.
