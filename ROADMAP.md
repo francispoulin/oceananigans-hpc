@@ -112,10 +112,11 @@ environment). Oceananigans, a package, tests ranges of versions; this repository
   - [x] Pipeline (`.buildkite/pipeline.yml`) and `tools/ci_platform_tests.sh`
   - [x] Trial: agent on pelee under a personal account; first green build (Oct 21–26; builds `main` and
         pull requests only since #39)
-  - [ ] Agreed with the servers' administrators: a dedicated account (being created, Oct 27), the agent
-        as a service
-  - [ ] Move the agent to that account: its own Julia (the Manifest's, 1.13.2) and depot (it can't use a personal one), the
-        agent as a service, one green build; `docs/ci.md` updated
+  - [x] Agreed with the servers' administrators (Nov 18): the account `ocean-ci`, which nobody logs in
+        to; they run the agent as a `systemd` service. `tools/ci_platform_tests.sh` clones and sets up
+        the account's own clone on its first build, so nothing is set up by hand; `docs/ci.md` updated
+  - [ ] Move the agent to that account (the personal trial agent stopped Nov 18): service started,
+        one green build, the trial agent's token revoked
   - [ ] Then BalancedFlows' pipeline on the same agent (after this repository's first green build there,
         so a failure has one cause); then rondeau
   - [ ] Later, if the cluster's staff agree: one Alliance cluster (Slurm jobs started from Buildkite,
