@@ -5,8 +5,9 @@
 #     bash tools/ci_platform_tests.sh                 # in a Buildkite job: tests $BUILDKITE_COMMIT
 #     bash tools/ci_platform_tests.sh <commit>        # by hand, to try it outside Buildkite
 #
-# It uses the machine's own clone (OCEAN_HPC_CLONE, set in the agent's environment; default
-# /mnt/autofs/bow.math/scratch/$USER/software/oceananigans-hpc) and runs that clone's
+# It uses the machine's own clone (OCEAN_HPC_CLONE if set in the agent's environment; otherwise
+# software/oceananigans-hpc in /mnt/autofs/bow.math/scratch/$USER if the account has that folder,
+# else in $HOME, as env/fluidsgpu.sh places the depot) and runs that clone's
 # tools/test_branch.sh on the commit: worktree next to the clone, the clone's LocalPreferences.toml,
 # one test at a time, free GPUs only. The agent's own checkout only supplies this script.
 #   - No clone yet (a new agent account): the build first clones it over HTTPS and runs
@@ -30,7 +31,9 @@ set -o pipefail
 
 commit="${1:-${BUILDKITE_COMMIT:-}}"
 [[ -n "$commit" ]] || { echo "ci_platform_tests.sh: no commit (give one, or run inside a Buildkite job)"; exit 1; }
-CLONE="${OCEAN_HPC_CLONE:-/mnt/autofs/bow.math/scratch/$USER/software/oceananigans-hpc}"
+if [[ -n "${OCEAN_HPC_CLONE:-}" ]]; then CLONE="$OCEAN_HPC_CLONE"
+elif [[ -d "/mnt/autofs/bow.math/scratch/$USER" ]]; then CLONE="/mnt/autofs/bow.math/scratch/$USER/software/oceananigans-hpc"
+else CLONE="$HOME/software/oceananigans-hpc"; fi
 
 # Fetch over HTTPS, push (only when publishing) over SSH as before; for git commands in this job only.
 export GIT_CONFIG_COUNT=2

@@ -73,8 +73,10 @@ a key: the server's administrators run it as a system service, and the build pag
 how you see what it does. (A service account with a login is a security concern for them.) What
 the administrators set up, once:
 
-1. A folder `/mnt/autofs/bow.math/scratch/ocean-ci` owned by the account: the agent's builds, our
-   Julia, the depot and the account's own clone of this repository go there (a few GB).
+1. Room for the account's files: our Julia, the depot and its own clone of this repository (as
+   much as your own setup uses). They go in `/mnt/autofs/bow.math/scratch/ocean-ci` if that folder
+   exists, else in the account's home folder (on pelee: `/u/ocean-ci`), the same rule
+   `env/fluidsgpu.sh` uses for the depot.
 2. The agent, from Buildkite's package, as a `systemd` service running as the account, e.g.
    `/etc/systemd/system/buildkite-agent.service`:
    ```ini
@@ -93,15 +95,11 @@ the administrators set up, once:
    name="pelee-ocean-ci"
    # tags="queue=fluidsgpu,machine=rondeau" on rondeau
    tags="queue=fluidsgpu,machine=pelee"
-   build-path="/mnt/autofs/bow.math/scratch/ocean-ci/buildkite/builds"
-   hooks-path="/etc/buildkite-agent/hooks"
+   build-path="/u/ocean-ci/builds"
    ```
-   and the hook `/etc/buildkite-agent/hooks/environment` (executable), which says where the
-   account's clone is:
-   ```bash
-   #!/bin/bash
-   export OCEAN_HPC_CLONE=/mnt/autofs/bow.math/scratch/ocean-ci/software/oceananigans-hpc
-   ```
+   The `tags` line is required: without a queue, Buildkite refuses the agent ("Queue is required
+   when registering agents to a cluster"). No hook is needed; an `environment` hook setting
+   `OCEAN_HPC_CLONE` overrides where the clone goes.
 4. A check that the account sees other users' GPU processes in
    `nvidia-smi --query-compute-apps=gpu_uuid,pid --format=csv`: the free-GPU check relies on it.
 
@@ -112,7 +110,9 @@ Give them the agent token in person or in a file only you can read (`umask 077`)
 runs `setup/install_julia.sh`, `setup/setup.sh` and `setup/setup_viz.sh` in it (about 30 minutes,
 once; a failed setup is redone by the next build). After that the clone is never updated by hand:
 `tools/test_branch.sh` installs each tested commit's Julia and packages. The account needs no
-GitHub key (the repository is public and nothing is pushed).
+GitHub key (the repository is public and nothing is pushed), provided the pipeline's
+*Repository* setting is the HTTPS address: with the SSH one (`git@github.com:…`, which Buildkite's
+GitHub integration may fill in) the agent's own checkout fails with "Permission denied (publickey)".
 
 Only one agent per server: stop any trial agent under a personal account first
 (`tmux kill-session -t buildkite`), and revoke its token once the new agent's first build is green.
