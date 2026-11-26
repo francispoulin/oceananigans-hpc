@@ -218,3 +218,24 @@ grep -h "^RESULT" logs/a2a_*.out
 ~21 ms, about a third of the ~65 ms that 2 GPUs lose in `nonhydrostatic_box.jl`; the rest is
 elsewhere (distributed FFT kernels, packing, or the rest of the model). Use this script to check
 a new machine or MPI version.
+
+## `nccl_alltoall_bandwidth.jl`
+
+The NCCL counterpart of `alltoall_bandwidth.jl`: times only the exchange that Oceananigans' NCCL
+extension does in each transpose (local copy + `ncclSend`/`ncclRecv` in one group), at sizes
+per GPU (default 512³, weak scaling), for both ComplexF64 (Oceananigans, Float64) and ComplexF32
+(Breeze, Float32). Compare its GB/s with the time of `ncclDevKernel_SendRecv` per transpose in a
+Nsight capture to see whether a model's transposes run at the NCCL ceiling or wait.
+
+```bash
+ocean_setup
+cd $OCEAN_HPC_ROOT
+export NCCL_DEBUG=INFO      # log which transport NCCL picks (P2P/IPC over NVLink, or SHM)
+bash tools/run_local.sh --wait --gpus 2 --project envs/nccl --job-name nccl_a2a_own benchmarks/nccl_alltoall_bandwidth.jl
+bash tools/run_local.sh --wait --gpus 2 --project envs/nccl --all-visible --job-name nccl_a2a_all benchmarks/nccl_alltoall_bandwidth.jl
+unset NCCL_DEBUG
+grep -h "^RESULT" logs/nccl_a2a_*.out
+grep -h " via " logs/nccl_a2a_*.out | sort | uniq -c
+```
+
+Needs the NCCL environment (`setup/setup_nccl_env.sh`, once per machine).
