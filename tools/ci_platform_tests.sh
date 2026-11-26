@@ -12,8 +12,8 @@
 # one test at a time, free GPUs only. The agent's own checkout only supplies this script.
 #   - No clone yet (a new agent account): the build first clones it over HTTPS and runs
 #     setup/install_julia.sh, setup/setup.sh and setup/setup_viz.sh there (about 30 minutes, once),
-#     so nobody has to log in as the agent's account. If that setup fails, the next build redoes it
-#     (local/ci_setup_started without local/ci_setup_done). A clone made by hand is never set up
+#     so nobody has to log in as the agent's account. If that setup fails, the next build pulls main
+#     into the clone and redoes it (local/ci_setup_started without local/ci_setup_done). A clone made by hand is never set up
 #     again. After that the clone needs no updates: test_branch.sh installs each tested commit's
 #     Julia and packages.
 #   - GPUs or the worktree busy (test_branch.sh exits 75): wait and try again, every 5 minutes, for
@@ -51,7 +51,8 @@ if [[ ! -d "$CLONE/.git" ]]; then
 fi
 if [[ -f "$started" && ! -f "$done_mark" ]]; then
     echo "--- :hammer: Setting up $CLONE: Julia, packages, MPI (about 30 minutes, once)"
-    ( cd "$CLONE" && bash setup/install_julia.sh && bash setup/setup.sh && bash setup/setup_viz.sh ) &&
+    # A retry takes main's latest setup scripts (a fix may have been merged since the last try).
+    ( cd "$CLONE" && git pull --quiet --ff-only && bash setup/install_julia.sh && bash setup/setup.sh && bash setup/setup_viz.sh ) &&
         date > "$done_mark" ||
         { echo "^^^ +++"; echo "ci_platform_tests.sh: setting up $CLONE failed (above); the next build tries again"; exit 1; }
 fi
