@@ -92,7 +92,9 @@ the administrators set up, once:
 3. Its configuration, `/etc/buildkite-agent/buildkite-agent.cfg` (readable by the account only):
    ```ini
    token="<agent token>"
-   name="pelee-ocean-ci"
+   # %hostname: pelee-ocean-ci, rondeau-ocean-ci. Distinct names matter: the build folder is named
+   # after the agent, and /u is shared by both machines.
+   name="%hostname-ocean-ci"
    # tags="queue=fluidsgpu,machine=rondeau" on rondeau
    tags="queue=fluidsgpu,machine=pelee"
    build-path="/u/ocean-ci/builds"
@@ -113,6 +115,11 @@ once; a failed setup is redone by the next build). After that the clone is never
 GitHub key (the repository is public and nothing is pushed), provided the pipeline's
 *Repository* setting is the HTTPS address: with the SSH one (`git@github.com:…`, which Buildkite's
 GitHub integration may fill in) the agent's own checkout fails with "Permission denied (publickey)".
+
+A job goes to whichever agent is free; the tests themselves run one at a time across both machines
+(the pipelines' shared `concurrency_group`), each waiting on its machine until the GPUs it needs are
+free. A private repository's pipeline also needs a read-only GitHub deploy key for the account
+(generated as the account, so the private key stays on the machine) and its SSH address.
 
 Only one agent per server: stop any trial agent under a personal account first
 (`tmux kill-session -t buildkite`), and revoke its token once the new agent's first build is green.
