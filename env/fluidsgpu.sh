@@ -11,6 +11,12 @@
 _fluids_depot="${JULIA_DEPOT_PATH%%:*}"      # remember the user's depot before loading modules
 
 # ---- MACHINE-SPECIFIC ------------------------------------------------------------------
+# Without a login (the CI agent runs as a systemd service), /etc/profile has not set up Lmod and
+# MODULEPATH is empty, so no module is found: set it up the way /etc/profile does. Logins are
+# unchanged (MODULEPATH is already set).
+if [[ -z "${MODULEPATH:-}" && -r /opt/uwsys/lmod-profile-always/stable/shell.sh ]]; then
+    source /opt/uwsys/lmod-profile-always/stable/shell.sh
+fi
 # In non-interactive shells (setup scripts, run_local.sh) the `module` function may not be
 # defined; define it the way the group's ~/.profile does.
 if ! type module >/dev/null 2>&1; then
