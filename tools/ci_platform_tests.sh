@@ -17,12 +17,15 @@
 #     again. After that the clone needs no updates: test_branch.sh installs each tested commit's
 #     Julia and packages.
 #   - GPUs or the worktree busy (test_branch.sh exits 75): wait and try again, every 5 minutes, for
-#     up to OCEAN_CI_WAIT_MINUTES (default 120); then the build fails with "busy".
+#     up to OCEAN_CI_WAIT_MINUTES (default 10); then exit 75, and the pipeline puts the job back in
+#     the queue (up to 10 times), so the other machine can take it: a build waits only while both
+#     are busy.
 #   - The summary is shown on the build page (an annotation) and kept as a build artifact.
 #   - The build passes only if the summary is clean: nothing failed, skipped or warned.
 #   - OCEAN_CI_PUBLISH=1 (set it on a build, e.g. for a release) also publishes a clean summary as a
 #     results/<machine>_<date> branch (tools/publish_summary.sh); this needs a key that can push.
-#   - OCEAN_CI_GPUS="1 2" passes --gpus to the tests (default: run_tests.sh's own, 1 and 4).
+#   - The tests run on 1 and 2 GPUs (OCEAN_CI_GPUS, default "1 2"), so a build needs only 2 free GPUs;
+#     OCEAN_CI_GPUS="1 4" on a build (New Build, Environment) runs run_tests.sh's own 1 and 4.
 # Fetching uses HTTPS (the repository is public), so the agent needs no SSH key to test. A commit
 # that is not on a branch of this repository (e.g. from a fork) is not found, and nothing runs.
 
@@ -58,8 +61,8 @@ if [[ -f "$started" && ! -f "$done_mark" ]]; then
 fi
 [[ -f "$CLONE/tools/test_branch.sh" ]] ||
     { echo "ci_platform_tests.sh: no tools/test_branch.sh in $CLONE (set OCEAN_HPC_CLONE to the machine's clone)"; exit 1; }
-wait_min="${OCEAN_CI_WAIT_MINUTES:-120}"
-gpus=(); [[ -n "${OCEAN_CI_GPUS:-}" ]] && gpus=(--gpus "$OCEAN_CI_GPUS")
+wait_min="${OCEAN_CI_WAIT_MINUTES:-10}"
+gpus=(--gpus "${OCEAN_CI_GPUS:-1 2}")
 
 out="$(mktemp)"; trap 'rm -f "$out"' EXIT
 start=$SECONDS
@@ -70,9 +73,9 @@ while true; do
     [[ $rc -eq 75 ]] || break
     if (( SECONDS - start + 300 > wait_min * 60 )); then
         echo "^^^ +++"
-        echo "Still busy after $wait_min minutes (GPUs or another test); nothing was run."
+        echo "Still busy after $wait_min minutes (GPUs or another test); nothing was run (back to the queue)."
         command -v buildkite-agent >/dev/null && [[ -n "${BUILDKITE_JOB_ID:-}" ]] &&
-            buildkite-agent annotate --style warning --context platform "Not run: GPUs or the test worktree on $(hostname -s) stayed busy for $wait_min minutes. Retry the build later."
+            buildkite-agent annotate --style warning --context platform "Not run on $(hostname -s): GPUs or the test worktree busy for $wait_min minutes. Buildkite retries it (up to 10 times, either machine); if every try finds both busy, retry the build later."
         exit 75
     fi
     echo "Busy; trying again in 5 minutes ($(( (SECONDS - start) / 60 )) of $wait_min minutes so far)."

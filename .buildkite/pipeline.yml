@@ -2,12 +2,18 @@
 # every pull request and every push to main, run by a Buildkite agent on that server.
 # The pipeline's own settings in Buildkite upload this file ("buildkite-agent pipeline upload").
 steps:
-  - label: ":julia: Platform tests (1 and 4 GPUs)"
+  - label: ":julia: Platform tests (1 and 2 GPUs)"
     command: bash tools/ci_platform_tests.sh
     agents:
       queue: fluidsgpu            # the agents on pelee and rondeau
     # pelee and rondeau share one clone and one test worktree: one test at a time on both.
     concurrency: 1
     concurrency_group: oceananigans-hpc/fluidsgpu-tests
-    # Up to 2 hours waiting for free GPUs, then about 15 minutes of tests.
+    # Busy for 10 min: tools/ci_platform_tests.sh exits 75 and the job goes back in the queue, so the
+    # other machine can take it (11 tries, ~2 h, before the build fails as "busy").
+    retry:
+      automatic:
+        - exit_status: 75
+          limit: 10
+    # Up to 10 min waiting for free GPUs, then about 15 minutes of tests.
     timeout_in_minutes: 180
