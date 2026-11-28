@@ -1,7 +1,7 @@
 # Automatic GPU tests with Buildkite (pelee and rondeau)
 
 The checks in `tests/ci/` run on GitHub for every pull request, but they have no GPUs. The platform
-tests (`tools/run_tests.sh`: 21 steps on 1 and 4 GPUs, about 15 minutes) need a GPU server. This
+tests (`tools/run_tests.sh`; in CI on 1 and 2 GPUs, about 15 minutes) need a GPU server. This
 page sets up [Buildkite](https://buildkite.com), as Oceananigans does, so that they run by
 themselves on pelee or rondeau for every pull request and every push to `main`, with the result as a
 check on the pull request and the summary on the build page.
@@ -11,8 +11,10 @@ It connects out to Buildkite (HTTPS, no open port), waits for work, and runs the
 [`.buildkite/pipeline.yml`](../.buildkite/pipeline.yml). The one step,
 [`tools/ci_platform_tests.sh`](../tools/ci_platform_tests.sh), runs the machine's own
 `tools/test_branch.sh` on the commit being built: the same worktree, free-GPU check and summary as a
-test started by hand. If the GPUs or the test worktree are busy it waits (up to 2 hours) instead of
-skipping steps, and the build passes only if the summary is clean.
+test started by hand. It needs only 2 free GPUs (the tests on 1 and 2 GPUs). If they or the test
+worktree are busy, it waits 10 minutes, then hands the job back to the queue so the other machine can
+take it (up to 10 times, about 2 hours in all), instead of skipping steps; the build passes only if
+the summary is clean.
 
 ## What it can and cannot do
 
@@ -136,7 +138,7 @@ build page; on a pull request, the check appears next to GitHub's own.
 - **Failed, busy, or stopped by a reboot:** fix, then *Retry* the step in Buildkite (or push again).
 - **A release:** *New Build* on the release branch with environment `OCEAN_CI_PUBLISH=1` publishes the
   clean summary as a `results/<machine>_<date>` branch, as `tools/test_branch.sh` does by hand.
-- **Fewer GPUs:** `OCEAN_CI_GPUS="1 2"` on a build.
+- **4 GPUs:** `OCEAN_CI_GPUS="1 4"` on a build (run_tests.sh's own default; needs a machine with all four free).
 - **Stopping the agent:** the administrators' `systemctl stop buildkite-agent` (a trial agent:
   `tmux kill-session -t buildkite`), or *Stop* on the agent's page in Buildkite.
   Revoking the agent token in Buildkite cuts off every agent that uses it.

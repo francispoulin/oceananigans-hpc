@@ -118,8 +118,11 @@ environment). Oceananigans, a package, tests ranges of versions; this repository
   - [x] Agents moved to that account on pelee and rondeau (`pelee-ocean-ci`, `rondeau-ocean-ci`): first
         green build Nov 26 (setup included, about 20 min); the trial agent's token revoked. Files in
         `/u/ocean-ci` (no bow.math folder for the account); modules set up without a login (#55)
-  - [ ] Then BalancedFlows' pipeline on the same agents: needs a read-only deploy key for ocean-ci
-        (the repository is private)
+  - [x] Then BalancedFlows' pipeline on the same agents, with a read-only deploy key for ocean-ci
+        (the repository is private): first green build Nov 27 (#28, quick tier on 2 GPUs)
+  - [x] Builds rarely wait (Nov 27): the tests need only 2 free GPUs (1 and 2 GPUs; people are asked
+        to use at most 2 per machine), and a busy machine hands the job back to the queue after 10 min
+        so the other can take it (BalancedFlows likewise). 4 GPUs: `OCEAN_CI_GPUS="1 4"` on a build
   - [ ] Later, if the cluster's staff agree: one Alliance cluster (Slurm jobs started from Buildkite,
         as CliMA's slurm-buildkite does)
 
