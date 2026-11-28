@@ -169,6 +169,11 @@ Tools:
   - [x] Oceananigans 0.117.2 on Julia 1.13.2 (v1.4.0, Nov 6; tested on pelee and Trillium): Breeze 0.15 and ClimaSeaIce 0.7.2
         require 0.117 (Nov 6). The pressure solve is back to v1.1.0's speed (#6361); hydrostatic results move by design
         (#6398, #6402, #6370; `docs/drac.md` section 10)
+  - [ ] Oceananigans 0.118.2 on Julia 1.13.2, with Breeze 0.15.3 and NumericalEarth 0.9.4 in the main environment
+        (agreed Nov 27; the 0.118 hold of Nov 18 is over: ClimaSeaIce 0.7.4, NumericalEarth 0.9.4 and Breeze 0.15.2+
+        allow 0.118). The `load` test loads both. Release notes read: breaking changes do not touch the platform
+        (particles, `time_difference_seconds`, new type parameters of `LatitudeLongitudeGrid` and `Simulation`);
+        watch the speed (#6493 rewrites `BatchedTridiagonalSolver`) and NCCL (#6492, unique id to every rank)
 
 ## Phase 5: scaling numbers
 

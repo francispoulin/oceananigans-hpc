@@ -106,7 +106,7 @@ The first run downloads and precompiles everything; allow 20 to 30 minutes. It d
 things:
 
 1. **Installs the tested package versions** from the repository's `Manifest.toml`
-   (Oceananigans, CUDA, MPI, NCDatasets, JLD2).
+   (Oceananigans, CUDA, MPI, NCDatasets, JLD2, Breeze, NumericalEarth).
 2. **Makes MPI.jl use the system OpenMPI**, which is built for the cluster's network and for
    Slurm. DRAC modules don't set `LD_LIBRARY_PATH`, so `MPIPreferences.use_system_binary()`
    can't find `libmpi` by searching; the script passes the module's `lib` folder as

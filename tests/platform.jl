@@ -2,7 +2,7 @@
 # Run on 1, 2 or 4 GPUs (one MPI rank per GPU, grid split in x); tools/run_tests.sh does this.
 # Each test prints one line:   TEST <name> <PASS|FAIL|SKIP> <seconds> <detail>
 #
-#   load          packages load, versions, GPU works, MPI starts                       (all)
+#   load          packages load (also Breeze, NumericalEarth), versions, GPU, MPI starts (all)
 #   grids         uniform / stretched-z / lat-lon / immersed grids on the GPU          (1 GPU)
 #   single_mpi    one MPI only, the system OpenMPI, with NetCDF loaded                 (all)
 #   cuda_aware    a different GPU per rank (as Oceananigans picks it), GPU arrays through MPI (2+)
@@ -80,10 +80,12 @@ finite(fields...) = all_ranks(all(f -> all(isfinite, interior(f)), fields))
 # ---- tests --------------------------------------------------------------------------------------
 run_test("load") do
     ok = CUDA.functional() && sum(CUDA.ones(Float64, 10^6)) == 10^6
+    # the packages simulation repositories build on: loading them here is their test
+    extra = [(p, Base.require(Main, Symbol(p))) for p in ("Breeze", "NumericalEarth") if Base.find_package(p) !== nothing]
     if rank == 0
         println("julia         ", VERSION)
         for (k, m) in (("Oceananigans", Oceananigans), ("CUDA", CUDA), ("MPI", MPI), ("NCDatasets", NCDatasets),
-                       ("JLD2", JLD2), ("OpenMPI_jll", OpenMPI_jll))
+                       ("JLD2", JLD2), ("OpenMPI_jll", OpenMPI_jll), extra...)
             println(rpad(k, 14), pkgversion(m))
         end
         println("GPU           ", CUDA.name(CUDA.device()), ", ", round(CUDA.total_memory() / 2^30, digits = 1), " GiB")
