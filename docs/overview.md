@@ -29,10 +29,10 @@ relies on this one by convention: it is not a Julia package and is never listed 
   this repository's         viz/                                   your project's
   environment (tested)      plotting environment                   environment
   Oceananigans, CUDA, MPI,  CairoMakie + NCDatasets only,          (e.g. BeaufortGyre):
-  NCDatasets, JLD2:         no Oceananigans, no MPI:               simulation packages,
-  checks, tests,            movies and plots of NetCDF             never Makie;
-  benchmarks                output                                 LocalPreferences.toml
-                                                                   from configure_mpi.sh
+  NCDatasets, JLD2,         no Oceananigans, no MPI:               simulation packages,
+  Breeze, NumericalEarth:   movies and plots of NetCDF             never Makie;
+  checks, tests,            output                                 LocalPreferences.toml
+  benchmarks                                                       from configure_mpi.sh
 ```
 
 **Three kinds of Julia environment, kept separate on purpose:**
