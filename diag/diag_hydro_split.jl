@@ -31,7 +31,7 @@ function run_case(outdir, tag, substeps, Nx, ts)
         time_step!(m, 300.0)
         n in STEPS || continue
         CUDA.synchronize()
-        f = (u = m.velocities.u, v = m.velocities.v, w = m.velocities.w, b = m.tracers.b, η = m.free_surface.η)
+        f = (u = m.velocities.u, v = m.velocities.v, w = m.velocities.w, b = m.tracers.b, η = m.free_surface.displacement)
         jldsave(joinpath(outdir, "$(tag)_$(nr)gpu_step$(n)_rank$(rank).jld2"); (k => Array(interior(f[k])) for k in FIELDS)...)
     end
     rank == 0 && println("$tag on $nr GPU(s): done (substeps $substeps, Nx $Nx, $ts)")
