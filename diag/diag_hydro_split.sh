@@ -5,7 +5,8 @@
 # tools/test_branch.sh left in the test worktree (Oceananigans 0.118.2). From the folder that holds
 # both files (on $SCRATCH, so the job can write its log there):
 #
-#     sbatch diag_hydro_split.sh
+#     sbatch diag_hydro_split.sh                     # the candidate (0.118.2) in the test worktree
+#     sbatch diag_hydro_split.sh <worktree>          # another environment, e.g. the main clone (0.117.2)
 #
 #   base   substeps 20, Nx 128 (32 cells per rank on 4 GPUs), SplitRungeKutta3: the failing test
 #   sub10  substeps 10 (a shorter barotropic halo reach)
@@ -20,7 +21,7 @@
 #SBATCH --output=%x_%j.out
 
 [[ "${1:-}" == -h || "${1:-}" == --help ]] && { sed -n '2,/^[^#]/{/^#SBATCH/d;s/^# \{0,1\}//p;}' "$0"; exit 0; }   # -h: usage
-WT="${WT:-/project/def-fpoulin/fpoulin/software/oceananigans-hpc-test}"
+WT="${1:-/project/def-fpoulin/fpoulin/software/oceananigans-hpc-test}"   # an argument: SciNet's sbatch passes no environment
 source "$WT/env/ocean_setup.sh" > /dev/null || exit 1
 out="$SCRATCH/diag_hydro_${SLURM_JOB_ID:-test}"; mkdir -p "$out"
 J=(julia --project="$WT" "$SLURM_SUBMIT_DIR/diag_hydro_split.jl")

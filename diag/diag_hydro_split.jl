@@ -5,6 +5,7 @@
 #
 #   srun -n N julia --project=$WT diag_hydro_split.jl run OUTDIR TAG SUBSTEPS NX TIMESTEPPER
 #   julia --project=$WT diag_hydro_split.jl compare OUTDIR TAG N
+#   julia --project=$WT diag_hydro_split.jl cross OUTDIR_A TAG_A N_A OUTDIR_B TAG_B N_B   # e.g. two versions
 #
 # run saves u, v, w, b, η on every rank after steps 1, 2, 5 and 30; compare joins the N ranks in x
 # and prints, per step and field, the largest relative difference from the 1-GPU run, where it is,
@@ -51,27 +52,39 @@ function ranges(is)
     return join([a == b ? "$a" : "$a-$b" for (a, b) in r], ", ")
 end
 
-function compare(outdir, tag, N)
+"One run's fields after step n, its N ranks joined in x."
+function joined(outdir, tag, N, n)
+    parts = [JLD2.load(joinpath(outdir, "$(tag)_$(N)gpu_step$(n)_rank$(r).jld2")) for r in 0:N-1]
+    return Dict(k => cat((p[k] for p in parts)...; dims = 1) for k in string.(FIELDS))
+end
+
+"Run B against run A (A is the reference), per step and field."
+function compare_runs(title, outA, tagA, NA, outB, tagB, NB)
     for n in STEPS
-        one = JLD2.load(joinpath(outdir, "$(tag)_1gpu_step$(n)_rank0.jld2"))
-        parts = [JLD2.load(joinpath(outdir, "$(tag)_$(N)gpu_step$(n)_rank$(r).jld2")) for r in 0:N-1]
-        Nx = size(one["b"], 1)
-        println("== $tag, step $n: $N GPUs vs 1 GPU (rank boundaries after x cells ", join((Nx ÷ N) .* (1:N-1), ", "), ")")
+        A = joined(outA, tagA, NA, n); B = joined(outB, tagB, NB, n)
+        Nx = size(A["b"], 1)
+        bounds = NB > 1 ? " (B's rank boundaries after x cells " * join((Nx ÷ NB) .* (1:NB-1), ", ") * ")" : ""
+        println("== $title, step $n$bounds")
         for k in string.(FIELDS)
-            A = one[k]; B = cat((p[k] for p in parts)...; dims = 1)
-            d = abs.(B .- A); scl = maximum(abs, A)
+            a, b = A[k], B[k]
+            d = abs.(b .- a); scl = maximum(abs, a)
             rel = scl > 0 ? maximum(d) / scl : maximum(d)
             cols = [i for i in axes(d, 1) if maximum(view(d, i, :, :)) > 1e-12 * max(scl, eps())]
-            @printf("  %-2s max relative difference %.2e at %s; x columns that differ: %s\n",
-                    k, rel, Tuple(argmax(d)), ranges(cols))
+            @printf("  %-2s max|A| %.2e  max|B| %.2e  max relative difference %.2e at %s; x columns that differ: %s\n",
+                    k, scl, maximum(abs, b), rel, Tuple(argmax(d)), ranges(cols))
         end
     end
 end
+
+compare(outdir, tag, N) = compare_runs("$tag: A = 1 GPU, B = $N GPUs", outdir, tag, 1, outdir, tag, N)
 
 if ARGS[1] == "run"
     run_case(ARGS[2], ARGS[3], parse(Int, ARGS[4]), parse(Int, ARGS[5]), Symbol(ARGS[6]))
 elseif ARGS[1] == "compare"
     compare(ARGS[2], ARGS[3], parse(Int, ARGS[4]))
+elseif ARGS[1] == "cross"
+    compare_runs("A = $(ARGS[3]) on $(ARGS[4]) GPU(s) in $(basename(ARGS[2])), B = $(ARGS[6]) on $(ARGS[7]) in $(basename(ARGS[5]))",
+                 ARGS[2], ARGS[3], parse(Int, ARGS[4]), ARGS[5], ARGS[6], parse(Int, ARGS[7]))
 else
-    error("usage: diag_hydro_split.jl run OUTDIR TAG SUBSTEPS NX TIMESTEPPER | compare OUTDIR TAG N")
+    error("usage: diag_hydro_split.jl run OUTDIR TAG SUBSTEPS NX TIMESTEPPER | compare OUTDIR TAG N | cross OUTA TAGA NA OUTB TAGB NB")
 end
